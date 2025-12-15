@@ -94,6 +94,9 @@ class _SignupPageState extends State<SignupPage> {
                     ScaffoldMessenger.of(
                       context,
                     ).showSnackBar(SnackBar(content: Text('회원가입이 완료되었습니다.')));
+
+                    // 로그인 페이지로 이동
+                    Navigator.pushReplacementNamed(context, '/login');
                   }
                 },
                 child: const Text('회원가입'),

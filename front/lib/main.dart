@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'screens/login.dart';
 import 'screens/signup.dart';
+import 'screens/sharehouse_create.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,10 +16,11 @@ class MyApp extends StatelessWidget {
       title: 'Login Demo',
       theme: ThemeData(primarySwatch: Colors.blue),
 
-      initialRoute: '/login',
+      initialRoute: '/sharehouse_create',
       routes: {
         '/login': (context) => const LoginPage(),
         '/signup': (context) => const SignupPage(),
+        '/sharehouse_create': (context) => const SharehouseCreatePage(),
       },
     );
   }
