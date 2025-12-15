@@ -45,14 +45,14 @@ class _SharehouseCreatePageState extends State<SharehouseCreatePage> {
   String address = '';
   String fee = '';
   String roomCount = '';
-  String bathroomLaundryCount = '';
+  String bathroomCount = '';
   String residentCount = '';
 
   // 옵션
   bool smokingAllowed = false;
   bool petAllowed = false;
   String genderLimit = '무관';
-  String ageLimit = '';
+  String ageLimit = '무관';
   String religionDiet = '';
 
   // 설명
@@ -138,7 +138,7 @@ class _SharehouseCreatePageState extends State<SharehouseCreatePage> {
         TextFormField(
           decoration: const InputDecoration(labelText: '화장실 개수'),
           keyboardType: TextInputType.number,
-          onSaved: (v) => bathroomLaundryCount = v!,
+          onSaved: (v) => bathroomCount = v!,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           validator: (v) => v!.isEmpty ? '개수를 입력하세요' : null,
         ),
@@ -179,18 +179,28 @@ class _SharehouseCreatePageState extends State<SharehouseCreatePage> {
 
         DropdownButtonFormField<String>(
           decoration: const InputDecoration(labelText: '성별'),
-          value: genderLimit,
+          initialValue: genderLimit,
           items: const [
             DropdownMenuItem(value: '무관', child: Text('무관')),
             DropdownMenuItem(value: '여성 전용', child: Text('여성 전용')),
             DropdownMenuItem(value: '남성 전용', child: Text('남성 전용')),
           ],
-          onChanged: (v) => genderLimit = v!,
+          onChanged: (v) => setState(() => genderLimit = v!),
+          onSaved: (v) => genderLimit = v!,
         ),
 
-        TextFormField(
-          decoration: const InputDecoration(labelText: '나이 제한 (선택)'),
-          onSaved: (v) => ageLimit = v ?? '',
+        DropdownButtonFormField<String>(
+          decoration: const InputDecoration(labelText: '나이 제한'),
+          initialValue: ageLimit,
+          items: const [
+            DropdownMenuItem(value: '무관', child: Text('무관')),
+            DropdownMenuItem(
+              value: '미성년자 불가 (19세 이상)',
+              child: Text('미성년자 불가 (19세 이상)'),
+            ),
+          ],
+          onChanged: (v) => setState(() => ageLimit = v!),
+          onSaved: (v) => ageLimit = v!,
         ),
 
         TextFormField(
