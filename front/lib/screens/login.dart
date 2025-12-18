@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:front/widgets/common_text_field.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -23,18 +24,17 @@ class _LoginPageState extends State<LoginPage> {
           key: _formKey,
           child: Column(
             children: [
-              TextFormField(
-                decoration: const InputDecoration(labelText: '이메일'),
-                onSaved: (value) => email = value!,
-                validator: (value) =>
-                    value == null || value.isEmpty ? '이메일을 입력하세요' : null,
+              CommonTextField(
+                label: '이메일',
+                validator: (v) => v == null || v.isEmpty ? '이메일을 입력하세요' : null,
+                onSaved: (v) => email = v!,
               ),
-              TextFormField(
-                decoration: const InputDecoration(labelText: '비밀번호'),
+
+              CommonTextField(
+                label: '비밀번호',
                 obscureText: true,
-                onSaved: (value) => password = value!,
-                validator: (value) =>
-                    value == null || value.isEmpty ? '비밀번호를 입력하세요' : null,
+                validator: (v) => v == null || v.isEmpty ? '비밀번호를 입력하세요' : null,
+                onSaved: (v) => password = v!,
               ),
 
               const SizedBox(height: 20),
@@ -59,6 +59,11 @@ class _LoginPageState extends State<LoginPage> {
                                 success ? '로그인 성공' : '이메일 또는 비밀번호가 틀렸습니다',
                               ),
                             ),
+                          );
+
+                          Navigator.pushReplacementNamed(
+                            context,
+                            '/sharehouse_create',
                           );
                         }
                       },
