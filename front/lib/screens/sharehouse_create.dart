@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:front/widgets/common_text_field.dart';
+import 'package:front/widgets/common_dropdown.dart';
 
 // 천의 자리 , 표시
 class ThousandsSeparatorInputFormatter extends TextInputFormatter {
@@ -83,17 +85,18 @@ class _SharehouseCreatePageState extends State<SharehouseCreatePage> {
 
   // 매물 유형
   Widget _buildHouseType() {
-    return DropdownButtonFormField<String>(
-      decoration: const InputDecoration(labelText: '매물 유형'),
+    return CommonDropdown<String>(
+      label: '매물 유형',
+      value: houseType,
       items: const [
-        DropdownMenuItem(value: '1인실', child: Text('1인실')),
-        DropdownMenuItem(value: '2인실', child: Text('2인실')),
-        DropdownMenuItem(value: '3인실', child: Text('3인실')),
-        DropdownMenuItem(value: '4인실', child: Text('4인실')),
+        DropdownMenuItem(value: '아파트', child: Text('아파트')),
+        DropdownMenuItem(value: '단독주택', child: Text('단독주택')),
+        DropdownMenuItem(value: '원룸', child: Text('원룸')),
         DropdownMenuItem(value: '기타', child: Text('기타')),
       ],
-      onChanged: (value) => houseType = value,
-      validator: (value) => value == null ? '매물 유형을 선택하세요' : null,
+      onChanged: (v) => setState(() => houseType = v),
+      onSaved: (v) => houseType = v,
+      validator: (v) => v == null ? '매물 유형을 선택하세요' : null,
     );
   }
 
@@ -108,14 +111,15 @@ class _SharehouseCreatePageState extends State<SharehouseCreatePage> {
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
 
-        TextFormField(
-          decoration: const InputDecoration(labelText: '주소 및 위치'),
+        CommonTextField(
+          label: '주소 및 위치',
           onSaved: (v) => address = v!,
           validator: (v) => v!.isEmpty ? '주소를 입력하세요' : null,
         ),
 
-        TextFormField(
-          decoration: const InputDecoration(labelText: '쉐어비', suffixText: '원'),
+        CommonTextField(
+          label: '쉐어비',
+          suffixText: '원',
           keyboardType: TextInputType.number,
           inputFormatters: [
             FilteringTextInputFormatter.digitsOnly,
@@ -127,24 +131,24 @@ class _SharehouseCreatePageState extends State<SharehouseCreatePage> {
           validator: (v) => v!.isEmpty ? '쉐어비를 입력하세요' : null,
         ),
 
-        TextFormField(
-          decoration: const InputDecoration(labelText: '방 개수'),
+        CommonTextField(
+          label: '방 개수',
           keyboardType: TextInputType.number,
           onSaved: (v) => roomCount = v!,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           validator: (v) => v!.isEmpty ? '방 개수를 입력하세요' : null,
         ),
 
-        TextFormField(
-          decoration: const InputDecoration(labelText: '화장실 개수'),
+        CommonTextField(
+          label: '화장실 개수',
           keyboardType: TextInputType.number,
           onSaved: (v) => bathroomCount = v!,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           validator: (v) => v!.isEmpty ? '개수를 입력하세요' : null,
         ),
 
-        TextFormField(
-          decoration: const InputDecoration(labelText: '현 거주 인원'),
+        CommonTextField(
+          label: '현 거주 인원',
           keyboardType: TextInputType.number,
           onSaved: (v) => residentCount = v!,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -177,9 +181,9 @@ class _SharehouseCreatePageState extends State<SharehouseCreatePage> {
           onChanged: (v) => setState(() => petAllowed = v),
         ),
 
-        DropdownButtonFormField<String>(
-          decoration: const InputDecoration(labelText: '성별'),
-          initialValue: genderLimit,
+        CommonDropdown<String>(
+          label: '성별',
+          value: genderLimit,
           items: const [
             DropdownMenuItem(value: '무관', child: Text('무관')),
             DropdownMenuItem(value: '여성 전용', child: Text('여성 전용')),
@@ -189,9 +193,9 @@ class _SharehouseCreatePageState extends State<SharehouseCreatePage> {
           onSaved: (v) => genderLimit = v!,
         ),
 
-        DropdownButtonFormField<String>(
-          decoration: const InputDecoration(labelText: '나이 제한'),
-          initialValue: ageLimit,
+        CommonDropdown<String>(
+          label: '나이 제한',
+          value: ageLimit,
           items: const [
             DropdownMenuItem(value: '무관', child: Text('무관')),
             DropdownMenuItem(
@@ -203,8 +207,8 @@ class _SharehouseCreatePageState extends State<SharehouseCreatePage> {
           onSaved: (v) => ageLimit = v!,
         ),
 
-        TextFormField(
-          decoration: const InputDecoration(labelText: '종교 / 식성 (선택)'),
+        CommonTextField(
+          label: '종교 / 식성 (선택)',
           onSaved: (v) => religionDiet = v ?? '',
         ),
       ],
@@ -216,11 +220,8 @@ class _SharehouseCreatePageState extends State<SharehouseCreatePage> {
     return Column(
       children: [
         const SizedBox(height: 24),
-        TextFormField(
-          decoration: const InputDecoration(
-            labelText: '상세 설명',
-            alignLabelWithHint: true,
-          ),
+        CommonTextField(
+          label: '상세 설명',
           maxLines: 5,
           onSaved: (v) => description = v ?? '',
         ),
