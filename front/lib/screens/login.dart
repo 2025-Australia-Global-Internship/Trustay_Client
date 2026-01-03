@@ -61,10 +61,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           );
 
-                          Navigator.pushReplacementNamed(
-                            context,
-                            '/sharehouse_create',
-                          );
+                          Navigator.pushReplacementNamed(context, '/index');
                         }
                       },
                 child: isLoading
