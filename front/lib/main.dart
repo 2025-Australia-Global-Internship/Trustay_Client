@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:front/screens/intro.dart';
 import 'screens/login.dart';
 import 'screens/signup.dart';
 import 'index.dart';
@@ -17,8 +18,9 @@ class MyApp extends StatelessWidget {
       title: 'Login Demo',
       theme: ThemeData(primarySwatch: Colors.blue),
 
-      initialRoute: '/login',
+      initialRoute: '/',
       routes: {
+        '/': (context) => const IntroPage(),
         '/login': (context) => const LoginPage(),
         '/signup': (context) => const SignupPage(),
         '/index': (context) => const IndexPage(),
