@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../widgets/common_section_title.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class _MenuItem extends StatelessWidget {
   final String title;
@@ -34,6 +37,70 @@ class MyPage extends StatefulWidget {
 }
 
 class _MyPageState extends State<MyPage> {
+  Future<void> logout(BuildContext context) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
+    if (token == null) {
+      // 토큰 없으면 그냥 로그인 페이지로
+      Navigator.pushReplacementNamed(context, '/login');
+      return;
+    }
+
+    final url = Uri.parse('http://54.180.94.203:8080/api/trustay/auth/logout');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token", // JWT 토큰 인증
+        },
+        body: jsonEncode({}), // 로그아웃 요청 body가 필요 없으면 빈 객체
+      );
+
+      final res = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        // 토큰 삭제
+        await prefs.remove('token');
+
+        // 화면 이동
+        Navigator.pushReplacementNamed(context, '/login');
+      } else {
+        // 실패 시 메시지
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('로그아웃 실패'),
+            content: Text(res['message'] ?? '알 수 없는 오류'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('확인'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      // 서버 연결 실패
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('로그아웃 실패'),
+          content: Text('서버 연결 실패: $e'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('확인'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -52,7 +119,7 @@ class _MyPageState extends State<MyPage> {
           _MenuItem(
             title: '로그아웃',
             onTap: () {
-              // 로그아웃 처리
+              logout(context);
             },
           ),
 

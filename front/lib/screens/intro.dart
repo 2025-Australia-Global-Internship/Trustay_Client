@@ -30,10 +30,15 @@ class IntroPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Explore\nYour Place to Stay,\nBuilt on Trust.',
+                  'Explore',
+                  style: TextStyle(fontSize: 36, color: Color(0xFFFFF27B)),
+                ),
+
+                const Text(
+                  'Your Place\nto Stay,\nBuilt on Trust.',
                   style: TextStyle(
-                    fontSize: 32,
-                    color: Colors.white,
+                    fontSize: 36,
+                    color: Color(0xFFFFF27B),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
