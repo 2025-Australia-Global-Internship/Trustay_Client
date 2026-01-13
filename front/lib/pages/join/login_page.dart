@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:front/constants/colors.dart';
 import 'package:front/widgets/common_text_field.dart';
-import 'package:front/widgets/common_action_button.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:front/widgets/primary_button.dart';
+import 'package:front/services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -13,6 +13,7 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
+
   String email = '';
   String password = '';
   bool isLoading = false;
@@ -34,37 +35,21 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  /// 로그인 API
-  Future<bool> login(String email, String password) async {
-    final url = Uri.parse('http://54.180.94.203:8080/api/trustay/auth/login');
+  /// 로그인 버튼 클릭 시 처리
+  Future<bool> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) return false;
+    _formKey.currentState!.save();
 
-    final body = jsonEncode({"email": email, "passwd": password});
+    setState(() => isLoading = true);
 
     try {
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: body,
-      );
-
-      final res = jsonDecode(response.body);
-
-      // 서버 성공 코드 확인
-      final code = res['code'] ?? -1;
-
-      if ((response.statusCode == 200 || response.statusCode == 201) &&
-          code == 200) {
-        // 성공
-        final token = res['data']?['token'];
-        print('로그인 성공, 토큰: $token');
-        return true;
-      } else {
-        showMessage('로그인 실패', res['message'] ?? '이메일 또는 비밀번호가 틀렸습니다');
-        return false;
-      }
+      final success = await AuthService.login(email: email, password: password);
+      return success;
     } catch (e) {
-      showMessage('로그인 실패', '서버 연결 실패: $e');
+      showMessage('로그인 실패', e.toString());
       return false;
+    } finally {
+      setState(() => isLoading = false);
     }
   }
 
@@ -73,10 +58,11 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Welcome Back'),
-        titleTextStyle: TextStyle(
-          color: Color(0xFFFFF27B),
-          fontWeight: FontWeight.bold,
-          fontSize: 24,
+        titleTextStyle: const TextStyle(
+          color: yellow,
+          fontFamily: 'NanumSquareNeo',
+          fontWeight: FontWeight.w800,
+          fontSize: 20,
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
@@ -126,20 +112,13 @@ class _LoginPageState extends State<LoginPage> {
 
                     const SizedBox(height: 20),
 
-                    CommonActionButton(
+                    PrimaryButton(
                       formKey: _formKey,
                       text: 'Login',
                       isLoading: isLoading,
-                      onAction: () async {
-                        if (!_formKey.currentState!.validate()) return false;
-                        _formKey.currentState!.save();
-                        setState(() => isLoading = true);
-                        final result = await login(email, password);
-                        setState(() => isLoading = false);
-                        return result;
-                      },
+                      onAction: _handleLogin,
                       successMessage: '로그인 성공',
-                      failMessage: '', // 실패는 AlertDialog로 처리
+                      failMessage: '',
                       nextRoute: '/index',
                     ),
 
@@ -150,7 +129,11 @@ class _LoginPageState extends State<LoginPage> {
                       children: [
                         const Text(
                           "Don't have an account? ",
-                          style: TextStyle(color: Colors.white),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontFamily: 'NanumSquareNeo',
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                         GestureDetector(
                           onTap: () {
@@ -158,7 +141,11 @@ class _LoginPageState extends State<LoginPage> {
                           },
                           child: const Text(
                             'Register now',
-                            style: TextStyle(color: Color(0xFFFFF27B)),
+                            style: TextStyle(
+                              color: yellow,
+                              fontFamily: 'NanumSquareNeo',
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                         ),
                       ],

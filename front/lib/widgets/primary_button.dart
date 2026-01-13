@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:front/constants/colors.dart';
 
-class CommonActionButton extends StatelessWidget {
+class PrimaryButton extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final bool isLoading;
   final String text;
@@ -9,7 +10,7 @@ class CommonActionButton extends StatelessWidget {
   final String failMessage;
   final String nextRoute;
 
-  const CommonActionButton({
+  const PrimaryButton({
     super.key,
     required this.formKey,
     required this.text,
@@ -27,8 +28,8 @@ class CommonActionButton extends StatelessWidget {
       height: 52,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFFFF27B),
-          foregroundColor: const Color(0xFF454B27),
+          backgroundColor: yellow,
+          foregroundColor: dark,
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(26),
@@ -54,16 +55,14 @@ class CommonActionButton extends StatelessWidget {
             ? const SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Color(0xFF454B27),
-                ),
+                child: CircularProgressIndicator(strokeWidth: 2, color: dark),
               )
             : Text(
                 text,
                 style: const TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.bold,
+                  fontFamily: 'NanumSquareNeo',
+                  fontWeight: FontWeight.w800,
                 ),
               ),
       ),

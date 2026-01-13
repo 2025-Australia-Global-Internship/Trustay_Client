@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:front/constants/colors.dart';
 import 'package:front/widgets/common_text_field.dart';
-import 'package:front/widgets/common_action_button.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:front/widgets/primary_button.dart';
+import 'package:front/services/auth_service.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -20,11 +20,10 @@ class _SignupPageState extends State<SignupPage> {
 
   bool isLoading = false;
 
-  // 변수
+  // 입력값
   String name = '';
   String email = '';
   String password = '';
-  String repassword = '';
 
   @override
   void initState() {
@@ -38,34 +37,6 @@ class _SignupPageState extends State<SignupPage> {
     passwordController.dispose();
     repasswordController.dispose();
     super.dispose();
-  }
-
-  /// 회원가입 POST 요청 함수
-  Future<Map<String, dynamic>> signup() async {
-    final url = Uri.parse(
-      'http://54.180.94.203:8080/api/trustay/members/signup',
-    );
-
-    final body = jsonEncode({"name": name, "email": email, "passwd": password});
-
-    try {
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: body,
-      );
-
-      final res = jsonDecode(response.body);
-
-      final code = res['code'] ?? -1;
-      final isSuccess =
-          (response.statusCode == 200 || response.statusCode == 201) &&
-          code == 200;
-
-      return {'success': isSuccess, 'message': res['message'] ?? '알 수 없는 오류'};
-    } catch (e) {
-      return {'success': false, 'message': '서버 연결 실패: $e'};
-    }
   }
 
   /// 서버 메시지 AlertDialog
@@ -91,9 +62,10 @@ class _SignupPageState extends State<SignupPage> {
       appBar: AppBar(
         title: const Text('Create New Account'),
         titleTextStyle: const TextStyle(
-          color: Color(0xFFFFF27B),
-          fontWeight: FontWeight.bold,
-          fontSize: 24,
+          color: yellow,
+          fontFamily: 'NanumSquareNeo',
+          fontWeight: FontWeight.w800,
+          fontSize: 20,
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
@@ -164,22 +136,30 @@ class _SignupPageState extends State<SignupPage> {
 
                     const SizedBox(height: 20),
 
-                    CommonActionButton(
+                    PrimaryButton(
                       formKey: _formKey,
                       text: 'Sign Up',
-                      isLoading: isLoading, // 로그인처럼 isLoading 추가
+                      isLoading: isLoading,
                       onAction: () async {
                         if (!_formKey.currentState!.validate()) return false;
                         _formKey.currentState!.save();
-                        password = passwordController.text;
-                        repassword = repasswordController.text;
-                        setState(() => isLoading = true);
-                        final result = await signup();
-                        setState(() => isLoading = false);
 
-                        if (result['success']) return true;
-                        showMessage('회원가입 실패', result['message']);
-                        return false;
+                        password = passwordController.text;
+
+                        setState(() => isLoading = true);
+                        try {
+                          await AuthService.signup(
+                            name: name,
+                            email: email,
+                            password: password,
+                          );
+                          return true; // 성공
+                        } catch (e) {
+                          showMessage('회원가입 실패', e.toString());
+                          return false;
+                        } finally {
+                          setState(() => isLoading = false);
+                        }
                       },
                       successMessage: '회원가입 완료',
                       failMessage: '',
@@ -199,7 +179,7 @@ class _SignupPageState extends State<SignupPage> {
                           onTap: () => Navigator.pushNamed(context, '/login'),
                           child: const Text(
                             'Login',
-                            style: TextStyle(color: Color(0xFFFFF27B)),
+                            style: TextStyle(color: yellow),
                           ),
                         ),
                       ],

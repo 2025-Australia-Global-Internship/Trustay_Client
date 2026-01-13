@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'screens/home.dart';
-import 'screens/community.dart';
-import 'screens/map.dart';
-import 'screens/finance.dart';
-import 'screens/mypage.dart';
-import 'widgets/common_bottom_navbar.dart';
+import 'pages/home/home_page.dart';
+import 'pages/community/community_page.dart';
+import 'pages/map/map_page.dart';
+import 'pages/finance/finance_page.dart';
+import 'pages/mypage/mypage_page.dart';
+import 'widgets/bottom_nav_bar.dart';
 
 class IndexPage extends StatefulWidget {
   const IndexPage({super.key});
@@ -28,7 +28,7 @@ class _IndexPageState extends State<IndexPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: _pages),
-      bottomNavigationBar: CommonBottomNavbar(
+      bottomNavigationBar: BottomNavbar(
         currentIndex: _currentIndex,
         onTap: (index) {
           setState(() {

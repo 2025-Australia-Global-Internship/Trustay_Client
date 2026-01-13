@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:front/widgets/common_action_button.dart';
+import 'package:front/constants/colors.dart';
+import 'package:front/widgets/primary_button.dart';
 
 class IntroPage extends StatelessWidget {
   const IntroPage({super.key});
@@ -31,21 +32,27 @@ class IntroPage extends StatelessWidget {
               children: [
                 const Text(
                   'Explore',
-                  style: TextStyle(fontSize: 36, color: Color(0xFFFFF27B)),
+                  style: TextStyle(
+                    fontSize: 36,
+                    color: yellow,
+                    fontFamily: 'NanumSquareNeo',
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
 
                 const Text(
                   'Your Place\nto Stay,\nBuilt on Trust.',
                   style: TextStyle(
                     fontSize: 36,
-                    color: Color(0xFFFFF27B),
-                    fontWeight: FontWeight.bold,
+                    color: yellow,
+                    fontFamily: 'NanumSquareNeo',
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
 
                 const SizedBox(height: 24),
 
-                CommonActionButton(
+                PrimaryButton(
                   formKey: GlobalKey<FormState>(),
                   text: 'Get Started',
                   onAction: () async => true,
