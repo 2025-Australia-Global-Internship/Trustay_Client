@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:front/constants/colors.dart';
 
-class CommonBottomNavbar extends StatelessWidget {
+class BottomNavbar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
 
-  const CommonBottomNavbar({
+  const BottomNavbar({
     super.key,
     required this.currentIndex,
     required this.onTap,
   });
 
-  static const _items = [
-    _BottomNavItem(Icons.home_outlined, 'Home'),
-    _BottomNavItem(Icons.chat_bubble_outline, 'Comms'),
-    _BottomNavItem(Icons.location_on_outlined, 'Map'),
-    _BottomNavItem(Icons.attach_money, 'Finance'),
-    _BottomNavItem(Icons.person_outline, 'My'),
+  static final _items = [
+    _BottomNavItem('assets/icons/home.svg', 'Home'),
+    _BottomNavItem('assets/icons/community.svg', 'Comms'),
+    _BottomNavItem('assets/icons/map.svg', 'Map'),
+    _BottomNavItem('assets/icons/coin.svg', 'Finance'),
+    _BottomNavItem('assets/icons/profile.svg', 'My'),
   ];
 
   @override
@@ -47,21 +49,24 @@ class CommonBottomNavbar extends StatelessWidget {
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: isSelected
-                        ? const Color(0xFFFFF3A0)
-                        : Colors.transparent,
+                    color: isSelected ? yellow : Colors.transparent,
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(_items[index].icon, color: Colors.black87),
+                  child: SvgPicture.asset(
+                    _items[index].iconPath,
+                    width: 24,
+                    height: 24,
+                    color: dark,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   _items[index].label,
                   style: TextStyle(
                     fontSize: 12,
-                    fontWeight: isSelected
-                        ? FontWeight.bold
-                        : FontWeight.normal,
+                    fontFamily: 'NanumSquareNeo',
+                    fontWeight: FontWeight.w700,
+                    color: dark,
                   ),
                 ),
               ],
@@ -74,8 +79,8 @@ class CommonBottomNavbar extends StatelessWidget {
 }
 
 class _BottomNavItem {
-  final IconData icon;
+  final String iconPath;
   final String label;
 
-  const _BottomNavItem(this.icon, this.label);
+  const _BottomNavItem(this.iconPath, this.label);
 }
