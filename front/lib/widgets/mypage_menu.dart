@@ -47,10 +47,10 @@ class MyPageMenuItem extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              color: isDanger ? Colors.red : Colors.black87,
+              color: dark,
               fontFamily: 'NanumSquareNeo',
               fontWeight: FontWeight.w700,
-              fontSize: 15,
+              fontSize: 13,
             ),
           ),
           if (subtitle != null) ...[
@@ -58,7 +58,7 @@ class MyPageMenuItem extends StatelessWidget {
             Text(
               subtitle!,
               style: const TextStyle(
-                color: Colors.grey,
+                color: grey04,
                 fontSize: 10.5,
                 fontFamily: 'NanumSquareNeo',
                 fontWeight: FontWeight.w400,

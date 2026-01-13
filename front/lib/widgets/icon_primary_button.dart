@@ -27,7 +27,7 @@ class IconPrimaryButton extends StatelessWidget {
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: yellow,
-          foregroundColor: dark,
+          foregroundColor: darkgreen,
           elevation: 0,
           padding: padding,
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,

@@ -29,7 +29,7 @@ class PrimaryButton extends StatelessWidget {
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: yellow,
-          foregroundColor: dark,
+          foregroundColor: darkgreen,
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(26),
@@ -60,7 +60,7 @@ class PrimaryButton extends StatelessWidget {
             : Text(
                 text,
                 style: const TextStyle(
-                  fontSize: 16,
+                  fontSize: 14,
                   fontFamily: 'NanumSquareNeo',
                   fontWeight: FontWeight.w800,
                 ),

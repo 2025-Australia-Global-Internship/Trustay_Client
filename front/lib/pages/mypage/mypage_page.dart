@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:front/constants/colors.dart';
 import 'package:front/services/auth_service.dart';
 import 'package:front/widgets/mypage_menu.dart';
 import 'package:front/widgets/icon_primary_button.dart';
+import 'package:front/models/user_model.dart';
 
 class MyPage extends StatefulWidget {
   const MyPage({super.key});
@@ -11,6 +13,21 @@ class MyPage extends StatefulWidget {
 }
 
 class _MyPageState extends State<MyPage> {
+  User? user;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final data = await AuthService.fetchProfile();
+    setState(() {
+      user = data;
+    });
+  }
+
   Future<void> _handleLogout(BuildContext context) async {
     try {
       await AuthService.logout();
@@ -40,16 +57,21 @@ class _MyPageState extends State<MyPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          /// ===== 프로필 영역 =====
+          /// 프로필 영역
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   /// 프로필 사진
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 40,
-                    backgroundImage: NetworkImage('https://i.pravatar.cc/150'),
+                    backgroundImage: NetworkImage(
+                      user?.profileImageUrl?.isNotEmpty == true
+                          ? user!.profileImageUrl!
+                          : 'https://i.pravatar.cc/150',
+                    ),
                   ),
 
                   const SizedBox(width: 16),
@@ -57,21 +79,23 @@ class _MyPageState extends State<MyPage> {
                   /// 이름 / 이메일 / 버튼
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text(
-                        'Emma',
-                        style: TextStyle(
+                      Text(
+                        user?.name ?? '',
+                        style: const TextStyle(
                           fontSize: 20,
                           fontFamily: 'NanumSquareNeo',
                           fontWeight: FontWeight.w800,
+                          color: dark,
                         ),
                       ),
                       const SizedBox(height: 2),
-                      const Text(
-                        'd2421@e-mirim.hs.kr',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 12,
+                      Text(
+                        user?.email ?? '',
+                        style: const TextStyle(
+                          color: grey04,
+                          fontSize: 10,
                           fontFamily: 'NanumSquareNeo',
                           fontWeight: FontWeight.w700,
                         ),
@@ -99,7 +123,7 @@ class _MyPageState extends State<MyPage> {
 
           const SizedBox(height: 34),
 
-          /// ===== 메뉴 섹션 =====
+          /// 메뉴 섹션
           MenuSection(
             children: [
               MyPageMenuItem(
@@ -126,6 +150,9 @@ class _MyPageState extends State<MyPage> {
                 leading: const MenuIcon(
                   assetPath: 'assets/icons/home-edit.svg',
                 ),
+                onTap: () {
+                  Navigator.pushNamed(context, '/sharehouse_create');
+                },
               ),
             ],
           ),

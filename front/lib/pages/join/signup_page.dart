@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:front/constants/colors.dart';
-import 'package:front/widgets/common_text_field.dart';
+import 'package:front/widgets/auth_text_field.dart';
 import 'package:front/widgets/primary_button.dart';
 import 'package:front/services/auth_service.dart';
 
@@ -98,15 +98,17 @@ class _SignupPageState extends State<SignupPage> {
                   children: [
                     const SizedBox(height: 30),
 
-                    CommonTextField(
+                    AuthTextField(
                       label: 'Name',
+                      hintText: 'Enter your name',
                       onSaved: (v) => name = v!,
                       validator: (v) =>
                           v == null || v.isEmpty ? '이름을 입력하세요' : null,
                     ),
 
-                    CommonTextField(
+                    AuthTextField(
                       label: 'Email',
+                      hintText: 'Enter your email',
                       keyboardType: TextInputType.emailAddress,
                       onSaved: (v) => email = v!,
                       validator: (v) {
@@ -116,8 +118,9 @@ class _SignupPageState extends State<SignupPage> {
                       },
                     ),
 
-                    CommonTextField(
+                    AuthTextField(
                       label: 'Password',
+                      hintText: 'Enter your password',
                       obscureText: true,
                       controller: passwordController,
                       validator: (v) => v == null || v.length < 8
@@ -125,8 +128,9 @@ class _SignupPageState extends State<SignupPage> {
                           : null,
                     ),
 
-                    CommonTextField(
+                    AuthTextField(
                       label: 'Repassword',
+                      hintText: 'Enter your password again',
                       obscureText: true,
                       controller: repasswordController,
                       validator: (v) => v != passwordController.text

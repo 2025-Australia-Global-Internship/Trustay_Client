@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:front/constants/colors.dart';
-import 'package:front/widgets/common_text_field.dart';
+import 'package:front/widgets/auth_text_field.dart';
 import 'package:front/widgets/primary_button.dart';
 import 'package:front/services/auth_service.dart';
 
@@ -95,15 +95,17 @@ class _LoginPageState extends State<LoginPage> {
                   children: [
                     const SizedBox(height: 30),
 
-                    CommonTextField(
+                    AuthTextField(
                       label: 'Email',
+                      hintText: 'Enter your email',
                       validator: (v) =>
                           v == null || v.isEmpty ? '이메일을 입력하세요' : null,
                       onSaved: (v) => email = v!,
                     ),
 
-                    CommonTextField(
+                    AuthTextField(
                       label: 'Password',
+                      hintText: 'Enter your password',
                       obscureText: true,
                       validator: (v) =>
                           v == null || v.isEmpty ? '비밀번호를 입력하세요' : null,
