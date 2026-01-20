@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:front/widgets/commom_text_field.dart';
+import 'package:front/widgets/common_text_field.dart';
 import 'package:intl/intl.dart';
 import 'package:front/widgets/common_dropdown.dart';
 

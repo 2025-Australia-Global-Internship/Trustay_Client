@@ -64,7 +64,6 @@ class BottomNavbar extends StatelessWidget {
                   _items[index].label,
                   style: TextStyle(
                     fontSize: 12,
-                    fontFamily: 'NanumSquareNeo',
                     fontWeight: FontWeight.w700,
                     color: darkgreen,
                   ),

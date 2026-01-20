@@ -3,25 +3,34 @@ import 'package:front/constants/colors.dart';
 import 'package:front/widgets/custom_header.dart';
 import 'package:front/widgets/gradient_layout.dart';
 
-class EditProfilePage extends StatefulWidget {
-  const EditProfilePage({super.key});
+class ListingPage extends StatefulWidget {
+  const ListingPage({super.key});
 
   @override
-  State<EditProfilePage> createState() => _EditProfilePage();
+  State<ListingPage> createState() => _ListingPage();
 }
 
-class _EditProfilePage extends State<EditProfilePage> {
+class _ListingPage extends State<ListingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: GradientLayout(
         child: Stack(
           children: [
-            // 스크롤 되는 내용
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CustomHeader(showBack: true),
+                CustomHeader(
+                  center: Text(
+                    'Listings',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: dark,
+                    ),
+                  ),
+                  showBack: true,
+                ),
                 Expanded(
                   child: ListView(
                     padding: const EdgeInsets.all(16),

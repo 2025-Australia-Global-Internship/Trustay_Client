@@ -3,6 +3,8 @@ import 'package:front/constants/colors.dart';
 import 'package:front/widgets/auth_text_field.dart';
 import 'package:front/widgets/primary_button.dart';
 import 'package:front/services/auth_service.dart';
+import 'package:front/routes/navigation_type.dart';
+import 'package:front/widgets/custom_header.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -56,20 +58,6 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Welcome Back'),
-        titleTextStyle: const TextStyle(
-          color: yellow,
-          fontFamily: 'NanumSquareNeo',
-          fontWeight: FontWeight.w800,
-          fontSize: 20,
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      extendBodyBehindAppBar: true,
-
       body: Stack(
         children: [
           /// 배경 이미지
@@ -85,76 +73,98 @@ class _LoginPageState extends State<LoginPage> {
             child: Container(color: Colors.black.withOpacity(0.35)),
           ),
 
-          /// 로그인 UI
+          /// UI 영역
           SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    const SizedBox(height: 30),
-
-                    AuthTextField(
-                      label: 'Email',
-                      hintText: 'Enter your email',
-                      validator: (v) =>
-                          v == null || v.isEmpty ? '이메일을 입력하세요' : null,
-                      onSaved: (v) => email = v!,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CustomHeader(
+                  backButtonStyle: BackButtonStyle.dark,
+                  iconSize: 38,
+                  center: const Text(
+                    'Welcome Back',
+                    style: TextStyle(
+                      color: yellow,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
                     ),
+                  ),
+                ),
 
-                    AuthTextField(
-                      label: 'Password',
-                      hintText: 'Enter your password',
-                      obscureText: true,
-                      validator: (v) =>
-                          v == null || v.isEmpty ? '비밀번호를 입력하세요' : null,
-                      onSaved: (v) => password = v!,
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    PrimaryButton(
-                      formKey: _formKey,
-                      text: 'Login',
-                      isLoading: isLoading,
-                      onAction: _handleLogin,
-                      successMessage: '로그인 성공',
-                      failMessage: '',
-                      nextRoute: '/index',
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          "Don't have an account? ",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontFamily: 'NanumSquareNeo',
-                            fontWeight: FontWeight.w700,
-                          ),
+                        const SizedBox(height: 24),
+
+                        AuthTextField(
+                          label: 'Email',
+                          hintText: 'Enter your email',
+                          validator: (v) =>
+                              v == null || v.isEmpty ? '이메일을 입력하세요' : null,
+                          onSaved: (v) => email = v!,
                         ),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.pushNamed(context, '/signup');
-                          },
-                          child: const Text(
-                            'Register now',
-                            style: TextStyle(
-                              color: yellow,
-                              fontFamily: 'NanumSquareNeo',
-                              fontWeight: FontWeight.w800,
+
+                        AuthTextField(
+                          label: 'Password',
+                          hintText: 'Enter your password',
+                          obscureText: true,
+                          validator: (v) =>
+                              v == null || v.isEmpty ? '비밀번호를 입력하세요' : null,
+                          onSaved: (v) => password = v!,
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        PrimaryButton(
+                          formKey: _formKey,
+                          text: 'Login',
+                          isLoading: isLoading,
+                          onAction: _handleLogin,
+                          successMessage: '로그인 성공',
+                          failMessage: '',
+                          nextRoute: '/index',
+                          navigationType: NavigationType.clearStack,
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text(
+                              "Don't have an account? ",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 12,
+                              ),
                             ),
-                          ),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.pushNamed(context, '/signup');
+                              },
+                              child: const Text(
+                                'Register now',
+                                style: TextStyle(
+                                  color: yellow,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                  decoration: TextDecoration.underline,
+                                  decorationColor: yellow,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         ],

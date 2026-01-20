@@ -45,11 +45,11 @@ class CommonTextField extends StatelessWidget {
             label,
             style: const TextStyle(
               color: dark,
-              fontSize: 13,
+              fontSize: 14,
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
 
           TextFormField(
             controller: controller,
@@ -61,8 +61,17 @@ class CommonTextField extends StatelessWidget {
             validator: validator,
             onSaved: onSaved,
             maxLines: maxLines,
-            style: const TextStyle(color: dark, fontSize: 14),
+            cursorColor: grey03,
+            style: const TextStyle(
+              color: dark,
+              fontSize: 13.5,
+              fontWeight: FontWeight.w700,
+            ),
             decoration: InputDecoration(
+              contentPadding: const EdgeInsets.symmetric(
+                vertical: 20,
+                horizontal: 12,
+              ),
               hintText: hintText,
               hintStyle: const TextStyle(color: grey01, fontSize: 14),
               suffixText: suffixText,
@@ -71,26 +80,21 @@ class CommonTextField extends StatelessWidget {
               filled: true,
               fillColor: Colors.white,
 
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: grey01),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: grey02),
-              ),
-              errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Colors.redAccent),
-              ),
-              focusedErrorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Colors.redAccent),
-              ),
+              enabledBorder: _border(grey02),
+              focusedBorder: _border(grey03),
+              errorBorder: _border(Colors.redAccent),
+              focusedErrorBorder: _border(Colors.redAccent),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  static OutlineInputBorder _border(Color color) {
+    return OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: color, width: 1.2),
     );
   }
 }

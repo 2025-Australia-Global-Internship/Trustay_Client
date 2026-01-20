@@ -40,7 +40,7 @@ class MyPageMenuItem extends StatelessWidget {
     return ListTile(
       leading: leading,
       dense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -48,9 +48,8 @@ class MyPageMenuItem extends StatelessWidget {
             title,
             style: TextStyle(
               color: dark,
-              fontFamily: 'NanumSquareNeo',
               fontWeight: FontWeight.w700,
-              fontSize: 13,
+              fontSize: 13.5,
             ),
           ),
           if (subtitle != null) ...[
@@ -60,7 +59,6 @@ class MyPageMenuItem extends StatelessWidget {
               style: const TextStyle(
                 color: grey04,
                 fontSize: 10.5,
-                fontFamily: 'NanumSquareNeo',
                 fontWeight: FontWeight.w400,
               ),
             ),
@@ -78,22 +76,25 @@ class MenuIcon extends StatelessWidget {
   final String assetPath;
   final Color backgroundColor;
   final Color iconColor;
+  final double size;
 
   const MenuIcon({
     super.key,
     required this.assetPath,
     this.backgroundColor = green,
     this.iconColor = yellow,
+    this.size = 22,
   });
 
   @override
   Widget build(BuildContext context) {
     return CircleAvatar(
+      radius: 21,
       backgroundColor: backgroundColor,
       child: SvgPicture.asset(
         assetPath,
-        width: 22,
-        height: 22,
+        width: size,
+        height: size,
         colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
       ),
     );
