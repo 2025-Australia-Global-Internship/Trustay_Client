@@ -3,6 +3,9 @@ import '../pages/join/intro_page.dart';
 import '../pages/join/login_page.dart';
 import '../pages/join/signup_page.dart';
 import '../index.dart';
+import '../pages/mypage/listing.dart';
+import '../pages/mypage/edit_profile.dart';
+import '../pages/mypage/personal_details.dart';
 import '../pages/mypage/sharehouse_create.dart';
 import 'app_routes.dart';
 
@@ -11,5 +14,8 @@ final Map<String, WidgetBuilder> appRouter = {
   AppRoutes.login: (_) => const LoginPage(),
   AppRoutes.signup: (_) => const SignupPage(),
   AppRoutes.index: (_) => const IndexPage(),
+  AppRoutes.listing: (_) => const ListingPage(),
+  AppRoutes.editProfile: (_) => const EditProfilePage(),
+  AppRoutes.personalDetails: (_) => const PersonalDetailsPage(),
   AppRoutes.sharehouseCreate: (_) => const SharehouseCreatePage(),
 };

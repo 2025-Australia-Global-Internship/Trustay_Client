@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:front/constants/colors.dart';
 import 'package:front/widgets/primary_button.dart';
+import 'package:front/routes/navigation_type.dart';
 
 class IntroPage extends StatelessWidget {
   const IntroPage({super.key});
@@ -35,7 +36,6 @@ class IntroPage extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 36,
                     color: yellow,
-                    fontFamily: 'NanumSquareNeo',
                     fontWeight: FontWeight.w400,
                   ),
                 ),
@@ -45,7 +45,6 @@ class IntroPage extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 36,
                     color: yellow,
-                    fontFamily: 'NanumSquareNeo',
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -59,6 +58,7 @@ class IntroPage extends StatelessWidget {
                   successMessage: '',
                   failMessage: '',
                   nextRoute: '/login',
+                  navigationType: NavigationType.push,
                 ),
               ],
             ),

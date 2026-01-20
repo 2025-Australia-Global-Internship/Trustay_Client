@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:front/constants/colors.dart';
 
 class CommonTextField extends StatelessWidget {
   final String label;
+  final String? hintText;
   final String? suffixText;
   final Widget? suffixIcon;
   final bool obscureText;
@@ -18,6 +20,7 @@ class CommonTextField extends StatelessWidget {
   const CommonTextField({
     super.key,
     required this.label,
+    this.hintText,
     this.suffixText,
     this.suffixIcon,
     this.obscureText = false,
@@ -35,44 +38,63 @@ class CommonTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: TextFormField(
-        controller: controller,
-        readOnly: readOnly,
-        onTap: onTap,
-        obscureText: obscureText,
-        keyboardType: keyboardType,
-        inputFormatters: inputFormatters,
-        validator: validator,
-        onSaved: onSaved,
-        maxLines: maxLines,
-        style: const TextStyle(color: Colors.white, fontSize: 14),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: const TextStyle(color: Colors.white70),
-          suffixText: suffixText,
-          suffixIcon: suffixIcon,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: dark,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
 
-          filled: true,
-          fillColor: Colors.transparent,
+          TextFormField(
+            controller: controller,
+            readOnly: readOnly,
+            onTap: onTap,
+            obscureText: obscureText,
+            keyboardType: keyboardType,
+            inputFormatters: inputFormatters,
+            validator: validator,
+            onSaved: onSaved,
+            maxLines: maxLines,
+            cursorColor: grey03,
+            style: const TextStyle(
+              color: dark,
+              fontSize: 13.5,
+              fontWeight: FontWeight.w700,
+            ),
+            decoration: InputDecoration(
+              contentPadding: const EdgeInsets.symmetric(
+                vertical: 20,
+                horizontal: 12,
+              ),
+              hintText: hintText,
+              hintStyle: const TextStyle(color: grey01, fontSize: 14),
+              suffixText: suffixText,
+              suffixIcon: suffixIcon,
 
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.white54),
+              filled: true,
+              fillColor: Colors.white,
+
+              enabledBorder: _border(grey02),
+              focusedBorder: _border(grey03),
+              errorBorder: _border(Colors.redAccent),
+              focusedErrorBorder: _border(Colors.redAccent),
+            ),
           ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.white),
-          ),
-          errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.redAccent),
-          ),
-          focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.redAccent),
-          ),
-        ),
+        ],
       ),
+    );
+  }
+
+  static OutlineInputBorder _border(Color color) {
+    return OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: color, width: 1.2),
     );
   }
 }

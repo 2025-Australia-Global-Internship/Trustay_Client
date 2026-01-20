@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:front/constants/colors.dart';
-import 'package:front/widgets/common_text_field.dart';
+import 'package:front/widgets/auth_text_field.dart';
 import 'package:front/widgets/primary_button.dart';
 import 'package:front/services/auth_service.dart';
+import 'package:front/widgets/custom_header.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -59,20 +60,6 @@ class _SignupPageState extends State<SignupPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create New Account'),
-        titleTextStyle: const TextStyle(
-          color: yellow,
-          fontFamily: 'NanumSquareNeo',
-          fontWeight: FontWeight.w800,
-          fontSize: 20,
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      extendBodyBehindAppBar: true,
-
       body: Stack(
         children: [
           /// 배경 이미지
@@ -90,102 +77,139 @@ class _SignupPageState extends State<SignupPage> {
 
           /// 회원가입 UI
           SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    const SizedBox(height: 30),
-
-                    CommonTextField(
-                      label: 'Name',
-                      onSaved: (v) => name = v!,
-                      validator: (v) =>
-                          v == null || v.isEmpty ? '이름을 입력하세요' : null,
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CustomHeader(
+                    backButtonStyle: BackButtonStyle.dark,
+                    iconSize: 38,
+                    center: const Text(
+                      'Create New Account',
+                      style: TextStyle(
+                        color: yellow,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
+                  ),
 
-                    CommonTextField(
-                      label: 'Email',
-                      keyboardType: TextInputType.emailAddress,
-                      onSaved: (v) => email = v!,
-                      validator: (v) {
-                        if (v == null || v.isEmpty) return '이메일을 입력하세요';
-                        if (!v.contains('@')) return '유효한 이메일을 입력하세요';
-                        return null;
-                      },
-                    ),
+                  const SizedBox(height: 24),
 
-                    CommonTextField(
-                      label: 'Password',
-                      obscureText: true,
-                      controller: passwordController,
-                      validator: (v) => v == null || v.length < 8
-                          ? '비밀번호는 최소 8자리 이상이어야 합니다'
-                          : null,
-                    ),
-
-                    CommonTextField(
-                      label: 'Repassword',
-                      obscureText: true,
-                      controller: repasswordController,
-                      validator: (v) => v != passwordController.text
-                          ? '비밀번호가 일치하지 않습니다'
-                          : null,
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    PrimaryButton(
-                      formKey: _formKey,
-                      text: 'Sign Up',
-                      isLoading: isLoading,
-                      onAction: () async {
-                        if (!_formKey.currentState!.validate()) return false;
-                        _formKey.currentState!.save();
-
-                        password = passwordController.text;
-
-                        setState(() => isLoading = true);
-                        try {
-                          await AuthService.signup(
-                            name: name,
-                            email: email,
-                            password: password,
-                          );
-                          return true; // 성공
-                        } catch (e) {
-                          showMessage('회원가입 실패', e.toString());
-                          return false;
-                        } finally {
-                          setState(() => isLoading = false);
-                        }
-                      },
-                      successMessage: '회원가입 완료',
-                      failMessage: '',
-                      nextRoute: '/login',
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text(
-                          "Already have an account? ",
-                          style: TextStyle(color: Colors.white),
-                        ),
-                        GestureDetector(
-                          onTap: () => Navigator.pushNamed(context, '/login'),
-                          child: const Text(
-                            'Login',
-                            style: TextStyle(color: yellow),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          AuthTextField(
+                            label: 'Name',
+                            hintText: 'Enter your name',
+                            onSaved: (v) => name = v!,
+                            validator: (v) =>
+                                v == null || v.isEmpty ? '이름을 입력하세요' : null,
                           ),
-                        ),
-                      ],
+
+                          AuthTextField(
+                            label: 'Email',
+                            hintText: 'Enter your email',
+                            keyboardType: TextInputType.emailAddress,
+                            onSaved: (v) => email = v!,
+                            validator: (v) {
+                              if (v == null || v.isEmpty) return '이메일을 입력하세요';
+                              if (!v.contains('@')) return '유효한 이메일을 입력하세요';
+                              return null;
+                            },
+                          ),
+
+                          AuthTextField(
+                            label: 'Password',
+                            hintText: 'Enter your password',
+                            obscureText: true,
+                            controller: passwordController,
+                            validator: (v) => v == null || v.length < 8
+                                ? '비밀번호는 최소 8자리 이상이어야 합니다'
+                                : null,
+                          ),
+
+                          AuthTextField(
+                            label: 'Repassword',
+                            hintText: 'Enter your password again',
+                            obscureText: true,
+                            controller: repasswordController,
+                            validator: (v) => v != passwordController.text
+                                ? '비밀번호가 일치하지 않습니다'
+                                : null,
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          PrimaryButton(
+                            formKey: _formKey,
+                            text: 'Sign Up',
+                            isLoading: isLoading,
+                            onAction: () async {
+                              if (!_formKey.currentState!.validate())
+                                return false;
+                              _formKey.currentState!.save();
+
+                              password = passwordController.text;
+
+                              setState(() => isLoading = true);
+                              try {
+                                await AuthService.signup(
+                                  name: name,
+                                  email: email,
+                                  password: password,
+                                );
+                                return true;
+                              } catch (e) {
+                                showMessage('회원가입 실패', e.toString());
+                                return false;
+                              } finally {
+                                setState(() => isLoading = false);
+                              }
+                            },
+                            successMessage: '회원가입 완료',
+                            failMessage: '',
+                            nextRoute: '/login',
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text(
+                                "Already have an account? ",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () =>
+                                    Navigator.pushNamed(context, '/login'),
+                                child: const Text(
+                                  'Login',
+                                  style: TextStyle(
+                                    color: yellow,
+                                    fontSize: 12,
+                                    decoration: TextDecoration.underline,
+                                    decorationColor: Colors.yellow,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
