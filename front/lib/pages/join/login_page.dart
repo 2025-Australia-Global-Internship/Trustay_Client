@@ -49,6 +49,7 @@ class _LoginPageState extends State<LoginPage> {
       return success;
     } catch (e) {
       showMessage('로그인 실패', e.toString());
+      print(e.toString());
       return false;
     } finally {
       setState(() => isLoading = false);

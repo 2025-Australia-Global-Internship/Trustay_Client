@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 
 class AuthService {
-  static const String baseUrl = 'http://54.180.94.203:8080/api/trustay';
+  static const String baseUrl = 'https://trustay.digitalbasis.com/api/trustay';
 
   /// 로그인
   static Future<bool> login({
