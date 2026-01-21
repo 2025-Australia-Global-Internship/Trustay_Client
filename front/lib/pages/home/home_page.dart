@@ -103,7 +103,7 @@ class _HomePageState extends State<HomePage> {
                     onPressed: () {},
                   ),
                   CircleIconButton(
-                    svgAsset: 'assets/icons/alarm.svg',
+                    svgAsset: 'assets/icons/bell.svg',
                     iconSize: 20,
                     iconColor: dark,
                     onPressed: () {},
