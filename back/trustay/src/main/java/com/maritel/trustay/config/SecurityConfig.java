@@ -61,8 +61,7 @@ public class SecurityConfig {
                                 "/swagger-resources/**",
                                 "/webjars/**",
                                 "/api/**",
-                                "/api/auth/**",
-                                "/images/**"
+                                "/api/auth/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
@@ -81,8 +80,8 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(Arrays.asList("*",
                 "http://172.20.10.3:8080",
-                "http://54.180.94.203:8080",
-                "http://3.38.185.232:8081",
+                "http://trustay.digitalbasis.com",
+                "https://trustay.digitalbasis.com",
                 "http://localhost:3000"));
         //configuration.addAllowedHeader("*");
         //configuration.setAllowedMethods(Arrays.asList("*"));
