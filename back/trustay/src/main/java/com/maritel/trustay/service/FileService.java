@@ -28,11 +28,8 @@ public class FileService {
     @Value("${pkg.imgLocation}")
     private String imageStoragePath;
 
-    @Value("${pkg.server.host}")
-    private String serverHost;
-
-    @Value("${pkg.server.port}")
-    private String serverPort;
+    @Value("${pkg.server.domain}")
+    private String serverDomain;
 
     @Value("${pkg.file.prefix}")
     private String filePrefix;
@@ -46,7 +43,7 @@ public class FileService {
 
         log.debug("** fileUpload originalFileName = {} **", file.getOriginalFilename());
 
-        if (fileExt.equals(".jpg") || fileExt.equals(".jpeg") || fileExt.equals(".png")) {
+        if (fileExt.equals(".jpg") || fileExt.equals(".jpeg") || fileExt.equals(".png") || fileExt.equals(".heic") || fileExt.equals(".heif")) {
             String fileName = this.getNewFileName(fileExt);
             String url = this.uploadLocal(fileName, file);
             log.info(">>>>  fileUpload fileurl {}**", url);
@@ -101,8 +98,8 @@ public class FileService {
         }
 
         // URL 생성 (File.separator 대신 "/" 사용)
-        String uploadedURLPath = String.format("http://%s:%s/images/%s/%s",
-                serverHost, serverPort, datePath, filename);
+        String uploadedURLPath = String.format("https://%s/images/%s/%s",
+                serverDomain, datePath, filename);
         return uploadedURLPath;
     }
 

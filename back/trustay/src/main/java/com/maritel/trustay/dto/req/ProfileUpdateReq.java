@@ -18,7 +18,7 @@ public class ProfileUpdateReq {
     @Pattern(regexp = PatternConstants.PHONE_REGEX, message = PatternConstants.PHONE_MESSAGE)
     private String phone;
 
-    @Size(max = 50, message = "계좌 정보는 50자 이하로 입력해주세요.")
+    @Pattern(regexp = PatternConstants.ACCOUNT_REGEX, message = PatternConstants.ACCOUNT_MESSAGE)
     private String accountInfo;
 
     // 프로필 이미지는 MultipartFile로 별도 처리

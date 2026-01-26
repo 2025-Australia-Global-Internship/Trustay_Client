@@ -1,6 +1,9 @@
 package com.maritel.trustay.service;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
 import com.maritel.trustay.dto.req.LoginReq;
+import com.maritel.trustay.dto.req.OAuthLoginReq;
 import com.maritel.trustay.entity.Member;
 import com.maritel.trustay.repository.MemberRepository;
 import com.maritel.trustay.util.JwtUtil; // JwtUtil 추가
@@ -35,5 +38,22 @@ public class AuthService {
 
         // 3. 토큰 생성 (JwtUtil 사용으로 중복 코드 제거)
         return jwtUtil.generateToken(member.getEmail());
+    }
+
+    @Transactional
+    public String OAuthLogin(OAuthLoginReq req) {
+        String userEmail;
+        try {
+            userEmail = FirebaseAuth.getInstance().verifyIdToken(req.getFirebaseToken()).getEmail();
+            log.info("User email: {}", userEmail);
+        } catch (FirebaseAuthException e) {
+            throw new RuntimeException("Invalid Firebase Token", e);
+        }
+        memberRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        log.info("Try login member: {}", userEmail);
+
+        return jwtUtil.generateToken(userEmail);
     }
 }

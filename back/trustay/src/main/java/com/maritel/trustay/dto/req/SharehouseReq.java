@@ -2,6 +2,7 @@ package com.maritel.trustay.dto.req;
 
 import com.maritel.trustay.constant.HouseType;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
@@ -23,8 +24,6 @@ public class SharehouseReq {
     @NotBlank(message = "주소는 필수입니다.")
     private String address;
 
-    // 위도, 경도는 프론트에서 지도 API로 추출해서 보내주거나, 백엔드에서 주소를 변환해야 합니다.
-    // 여기서는 입력을 받는다고 가정합니다.
     private Double latitude;
     private Double longitude;
 
@@ -41,6 +40,9 @@ public class SharehouseReq {
     private Integer bathroomCount;
     private Integer currentResidents;
 
-    // DB에는 String으로 저장되지만, 요청은 편의상 List로 받아서 서비스에서 변환합니다.
     private List<String> options;
+
+    // [변경] 파일 객체 대신, 업로드된 이미지 URL 리스트를 받습니다.
+    @NotEmpty(message = "이미지는 최소 1장 이상 등록해야 합니다.")
+    private List<String> imageUrls;
 }

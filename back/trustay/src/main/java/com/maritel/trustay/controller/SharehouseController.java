@@ -1,15 +1,18 @@
 package com.maritel.trustay.controller;
 
+import org.springframework.web.bind.annotation.RequestBody;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.maritel.trustay.constant.ApprovalStatus;
 import com.maritel.trustay.dto.req.SharehouseReq;
 import com.maritel.trustay.dto.req.SharehouseSearchReq;
 import com.maritel.trustay.dto.req.SharehouseUpdateReq;
 import com.maritel.trustay.dto.res.*;
+import com.maritel.trustay.service.FileService;
 import com.maritel.trustay.service.SharehouseService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +28,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -36,37 +41,35 @@ import java.util.List;
 public class SharehouseController {
 
     private final SharehouseService sharehouseService;
+    private final FileService fileService; // [추가] 컨트롤러에서 직접 파일 저장 호출
 
-    @Operation(summary = "쉐어하우스 매물 등록", description = "로그인한 사용자가 호스트로서 매물을 등록합니다.")
-    @PostMapping
-    public ResponseEntity<DataResponse<SharehouseRes>> registerSharehouse(
-            Principal principal,
-            @Valid @RequestBody SharehouseReq req) {
+    @Operation(summary = "매물 이미지 업로드", description = "이미지를 서버에 업로드하고 URL 리스트를 반환합니다.")
+    @PostMapping(value = "/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<DataResponse<List<String>>> uploadSharehouseImages(
+            @RequestPart("images") List<MultipartFile> images
+    ) throws IOException {
 
-        String userEmail = principal.getName();
-        SharehouseRes response = sharehouseService.registerSharehouse(userEmail, req);
-
-        return ResponseEntity.ok(DataResponse.of(ResponseCode.SUCCESS, response));
+        List<String> uploadedUrls = new ArrayList<>();
+        for (MultipartFile image : images) {
+            // FileService의 기존 메서드 활용
+            String url = fileService.uploadFile(image);
+            uploadedUrls.add(url);
+        }
+        return ResponseEntity.ok(DataResponse.of(ResponseCode.SUCCESS, uploadedUrls));
     }
 
-    @Operation(
-            summary = "쉐어하우스 매물 등록(이미지 여러장)",
-            description = "multipart/form-data로 매물 정보(req) + 이미지들(images[])를 업로드합니다. 이미지는 선택사항이며 여러 장 업로드 가능합니다.",
-            requestBody = @RequestBody(
-                    content = @Content(
-                            mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
-                            schema = @Schema(implementation = SharehouseReq.class)
-                    )
-            )
-    )
-    @PostMapping(value = "/with-images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<DataResponse<SharehouseRes>> registerSharehouseWithImages(
+    @Operation(summary = "쉐어하우스 매물 등록", description = "이미지 업로드 후 받은 URL을 포함하여 매물 정보를 등록합니다.")
+    @PostMapping("") // consumes 삭제 (이제 JSON만 받음)
+    public ResponseEntity<DataResponse<SharehouseRes>> registerSharehouse(
             Principal principal,
-            @Valid @RequestPart("req") SharehouseReq req,
-            @RequestPart(value = "images", required = false) List<MultipartFile> images) {
-
+            @Valid @RequestBody SharehouseReq req // [핵심] @RequestPart -> @RequestBody 변경
+    ) {
+        // ObjectMapper 변환 과정 삭제됨 -> 스프링이 알아서 해줌
         String userEmail = principal.getName();
-        SharehouseRes response = sharehouseService.registerSharehouse(userEmail, req, images);
+
+        // 파일 없이 DTO만 넘김
+        SharehouseRes response = sharehouseService.registerSharehouse(userEmail, req);
+
         return ResponseEntity.ok(DataResponse.of(ResponseCode.SUCCESS, response));
     }
 

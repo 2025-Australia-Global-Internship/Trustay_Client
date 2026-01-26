@@ -1,6 +1,7 @@
 package com.maritel.trustay.controller;
 
 import com.maritel.trustay.dto.req.LoginReq;
+import com.maritel.trustay.dto.req.OAuthLoginReq;
 import com.maritel.trustay.dto.res.DataResponse;
 import com.maritel.trustay.dto.res.LoginResultRes;
 import com.maritel.trustay.dto.res.ResponseCode;
@@ -44,6 +45,23 @@ public class AuthController {
             res.setToken(token);
             return ResponseEntity.ok(DataResponse.of(ResponseCode.SUCCESS, res));
         } catch (RuntimeException e) {
+            return ResponseEntity.ok(DataResponse.of(ResponseCode.NOT_FOUND, null));
+        } catch (Exception e) {
+            return ResponseEntity.ok(DataResponse.of(ResponseCode.NOT_MATCHED, null));
+        }
+    }
+
+    @Operation(summary = "OAuth 로그인")
+    @PostMapping("/oauth")
+    public ResponseEntity<DataResponse<LoginResultRes>> oAuthLogin(@RequestBody OAuthLoginReq req) {
+        LoginResultRes res = new LoginResultRes();
+        try {
+            String token = this.authService.OAuthLogin(req);
+            res.setToken(token);
+            return ResponseEntity.ok(DataResponse.of(ResponseCode.SUCCESS, res));
+        } catch (RuntimeException e) {
+            return ResponseEntity.ok(DataResponse.of(ResponseCode.NOT_FOUND, null));
+        } catch (Exception e) {
             return ResponseEntity.ok(DataResponse.of(ResponseCode.NOT_MATCHED, null));
         }
     }

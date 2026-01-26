@@ -34,54 +34,26 @@ public class SharehouseService {
 
     private final SharehouseRepository sharehouseRepository;
     private final MemberRepository memberRepository;
-    private final FileService fileService;
 
-    /**
-     * 쉐어하우스 등록
-     */
     @Transactional
     public SharehouseRes registerSharehouse(String userEmail, SharehouseReq req) {
-        return registerSharehouse(userEmail, req, null);
-    }
 
-    /**
-     * 쉐어하우스 등록 (이미지 여러장 업로드 지원)
-     */
-    @Transactional
-    public SharehouseRes registerSharehouse(String userEmail, SharehouseReq req, List<MultipartFile> images) {
-        // 1. 등록하려는 사용자 조회
-        Member member = memberRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new IllegalArgumentException("회원 정보를 찾을 수 없습니다."));
+        // 1. 사용자 조회
+        Member host = memberRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new IllegalArgumentException("사용자 정보를 찾을 수 없습니다."));
 
-        Profile profile = member.getProfile();
+        // 2. 이미지 URL 리스트 -> 문자열 변환 (DB 저장용)
+        // ["url1", "url2"] -> "url1,url2"
+        String imageUrlsString = String.join(",", req.getImageUrls());
 
-        // [추가된 로직] 이 사람이 아직 HOST 권한이 없다면 추가해준다!
-        if (!profile.getRoles().contains(Role.HOST)) {
-            profile.addRole(Role.HOST);
-            // Profile은 영속성 컨텍스트 안에 있으므로, 메서드 종료 시 DB에 자동 반영(Update)됩니다.
-        }
+        // 3. 옵션 리스트 -> 문자열 변환
+        String optionsString = (req.getOptions() != null)
+                ? String.join(",", req.getOptions())
+                : "";
 
-        // 2. 옵션 리스트를 String으로 변환 (예: [WIFI, PARKING] -> "WIFI,PARKING")
-        String optionsString = null;
-        if (req.getOptions() != null && !req.getOptions().isEmpty()) {
-            optionsString = String.join(",", req.getOptions());
-        }
-
-        String imageUrlsString = null;
-        if (images != null && !images.isEmpty()) {
-            try {
-                List<String> uploadedUrls = fileService.uploadFiles(images);
-                if (!uploadedUrls.isEmpty()) {
-                    imageUrlsString = String.join(",", uploadedUrls);
-                }
-            } catch (MalformedURLException | BadRequestException e) {
-                throw new IllegalArgumentException("이미지 업로드에 실패했습니다.", e);
-            }
-        }
-
-        // 3. 엔티티 생성
+        // 4. 엔티티 생성
         Sharehouse sharehouse = Sharehouse.builder()
-                .host(member)
+                .host(host)
                 .title(req.getTitle())
                 .description(req.getDescription())
                 .address(req.getAddress())
@@ -94,14 +66,13 @@ public class SharehouseService {
                 .bathroomCount(req.getBathroomCount())
                 .currentResidents(req.getCurrentResidents())
                 .options(optionsString)
-                .imageUrls(imageUrlsString)
-                .approvalStatus(ApprovalStatus.WAITING) // 기본값: 승인 대기
+                .imageUrls(imageUrlsString) // URL 문자열 저장
+                .approvalStatus(ApprovalStatus.WAITING)
                 .build();
 
-        // 4. 저장
-        Sharehouse savedSharehouse = sharehouseRepository.save(sharehouse);
+        sharehouseRepository.save(sharehouse);
 
-        return SharehouseRes.from(savedSharehouse);
+        return SharehouseRes.from(sharehouse);
     }
 
 

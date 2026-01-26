@@ -7,6 +7,9 @@ public enum ResponseCode {
     /* Success  */
     SUCCESS(200, "요청이 성공적으로 처리되었습니다."),
 
+    /* 404 Not Found */
+    NOT_FOUND(404, "존재하지 않는 계정입니다"),
+
     /* Already Exist */
     ALREADY_EXIST_USER_EMAIL(1001, "입력하신 이메일이 이미 존재합니다."),
     ALREADY_EXIST_USER_MOBILE(1001, "입력하신 휴대폰 번호가 이미 존재합니다."),

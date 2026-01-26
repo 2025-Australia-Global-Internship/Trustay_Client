@@ -8,6 +8,7 @@ import com.maritel.trustay.entity.Member;
 import com.maritel.trustay.entity.Profile;
 import com.maritel.trustay.repository.MemberRepository;
 import com.maritel.trustay.repository.ProfileRepository;
+import com.maritel.trustay.service.FileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
