@@ -4,6 +4,7 @@ import 'package:front/widgets/common_text_field.dart';
 import 'package:front/widgets/custom_header.dart';
 import 'package:front/widgets/gradient_layout.dart';
 import 'package:front/widgets/primary_button.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class PersonalDetailsPage extends StatefulWidget {
   const PersonalDetailsPage({super.key});
@@ -41,10 +42,14 @@ class _PersonalDetailsPage extends State<PersonalDetailsPage> {
                         hintText: 'DD/MM/YYYY',
                         readOnly: true,
                         controller: _dateController,
-                        suffixIcon: const Icon(
-                          Icons.calendar_month_rounded,
-                          size: 24,
-                          color: green,
+                        suffixIcon: Padding(
+                          padding: const EdgeInsets.only(right: 20),
+                          child: SvgPicture.asset(
+                            'assets/icons/calendar.svg',
+                            width: 20,
+                            height: 20,
+                            color: green,
+                          ),
                         ),
                         onTap: () async {
                           final DateTime? picked = await showDatePicker(

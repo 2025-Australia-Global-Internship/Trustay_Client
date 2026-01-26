@@ -11,6 +11,7 @@ class PrimaryButton extends StatelessWidget {
   final String failMessage;
   final String? nextRoute;
   final NavigationType navigationType;
+  final bool enabled;
 
   const PrimaryButton({
     super.key,
@@ -21,7 +22,8 @@ class PrimaryButton extends StatelessWidget {
     required this.failMessage,
     this.nextRoute,
     this.isLoading = false,
-    this.navigationType = NavigationType.push, // 기본값
+    this.navigationType = NavigationType.push,
+    this.enabled = true,
   });
 
   void _navigate(BuildContext context) {
@@ -52,15 +54,23 @@ class PrimaryButton extends StatelessWidget {
       width: double.infinity,
       height: 52,
       child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: yellow,
-          foregroundColor: darkgreen,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(26),
+        style: ButtonStyle(
+          backgroundColor: MaterialStateProperty.resolveWith<Color>((states) {
+            if (states.contains(MaterialState.disabled)) {
+              return const Color(0xFFFFF8B6); // 비활성화 색상
+            }
+            return yellow; // 활성화 색상
+          }),
+          foregroundColor: MaterialStateProperty.all(
+            enabled ? darkgreen : grey02,
+          ),
+          elevation: MaterialStateProperty.all(0),
+          shape: MaterialStateProperty.all(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
           ),
         ),
-        onPressed: isLoading
+
+        onPressed: (!enabled || isLoading)
             ? null
             : () async {
                 if (formKey.currentState != null) {

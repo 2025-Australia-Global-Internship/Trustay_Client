@@ -16,6 +16,8 @@ class CircleIconButton extends StatelessWidget {
   final double elevation;
   final EdgeInsetsGeometry padding;
 
+  final bool applySvgColor;
+
   const CircleIconButton({
     super.key,
     this.icon,
@@ -29,6 +31,7 @@ class CircleIconButton extends StatelessWidget {
     this.borderWidth = 1,
     this.elevation = 4,
     this.padding = EdgeInsets.zero,
+    this.applySvgColor = true,
   });
 
   @override
@@ -54,7 +57,9 @@ class CircleIconButton extends StatelessWidget {
                     svgAsset!,
                     width: iconSize,
                     height: iconSize,
-                    colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+                    colorFilter: applySvgColor
+                        ? ColorFilter.mode(iconColor, BlendMode.srcIn)
+                        : null,
                   )
                 : Icon(icon, size: iconSize, color: iconColor),
           ),

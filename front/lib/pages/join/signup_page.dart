@@ -17,7 +17,6 @@ class _SignupPageState extends State<SignupPage> {
 
   // Controllers
   late TextEditingController passwordController;
-  late TextEditingController repasswordController;
 
   bool isLoading = false;
 
@@ -25,18 +24,17 @@ class _SignupPageState extends State<SignupPage> {
   String name = '';
   String email = '';
   String password = '';
+  bool isAgree = false;
 
   @override
   void initState() {
     super.initState();
     passwordController = TextEditingController();
-    repasswordController = TextEditingController();
   }
 
   @override
   void dispose() {
     passwordController.dispose();
-    repasswordController.dispose();
     super.dispose();
   }
 
@@ -127,27 +125,60 @@ class _SignupPageState extends State<SignupPage> {
                             label: 'Password',
                             hintText: 'Enter your password',
                             obscureText: true,
+                            bottomPadding: 14,
                             controller: passwordController,
                             validator: (v) => v == null || v.length < 8
                                 ? '비밀번호는 최소 8자리 이상이어야 합니다'
                                 : null,
                           ),
 
-                          AuthTextField(
-                            label: 'Repassword',
-                            hintText: 'Enter your password again',
-                            obscureText: true,
-                            controller: repasswordController,
-                            validator: (v) => v != passwordController.text
-                                ? '비밀번호가 일치하지 않습니다'
-                                : null,
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                isAgree = !isAgree;
+                              });
+                            },
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 20,
+                                  height: 20,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(color: Colors.white),
+                                    color: isAgree
+                                        ? Colors.white
+                                        : Colors.transparent,
+                                  ),
+                                  child: isAgree
+                                      ? const Icon(
+                                          Icons.check,
+                                          size: 16,
+                                          color: Colors.black,
+                                        )
+                                      : null,
+                                ),
+                                const SizedBox(width: 10),
+                                const Expanded(
+                                  child: Text(
+                                    'Agree with Terms & Conditions',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
 
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 35),
 
                           PrimaryButton(
                             formKey: _formKey,
                             text: 'Sign Up',
+                            enabled: isAgree,
                             isLoading: isLoading,
                             onAction: () async {
                               if (!_formKey.currentState!.validate())
