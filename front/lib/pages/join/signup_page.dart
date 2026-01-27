@@ -4,6 +4,7 @@ import 'package:front/widgets/auth_text_field.dart';
 import 'package:front/widgets/primary_button.dart';
 import 'package:front/services/auth_service.dart';
 import 'package:front/widgets/custom_header.dart';
+import 'package:front/widgets/circle_icon_button.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -17,7 +18,6 @@ class _SignupPageState extends State<SignupPage> {
 
   // Controllers
   late TextEditingController passwordController;
-  late TextEditingController repasswordController;
 
   bool isLoading = false;
 
@@ -25,18 +25,17 @@ class _SignupPageState extends State<SignupPage> {
   String name = '';
   String email = '';
   String password = '';
+  bool isAgree = false;
 
   @override
   void initState() {
     super.initState();
     passwordController = TextEditingController();
-    repasswordController = TextEditingController();
   }
 
   @override
   void dispose() {
     passwordController.dispose();
-    repasswordController.dispose();
     super.dispose();
   }
 
@@ -127,27 +126,60 @@ class _SignupPageState extends State<SignupPage> {
                             label: 'Password',
                             hintText: 'Enter your password',
                             obscureText: true,
+                            bottomPadding: 14,
                             controller: passwordController,
                             validator: (v) => v == null || v.length < 8
                                 ? '비밀번호는 최소 8자리 이상이어야 합니다'
                                 : null,
                           ),
 
-                          AuthTextField(
-                            label: 'Repassword',
-                            hintText: 'Enter your password again',
-                            obscureText: true,
-                            controller: repasswordController,
-                            validator: (v) => v != passwordController.text
-                                ? '비밀번호가 일치하지 않습니다'
-                                : null,
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                isAgree = !isAgree;
+                              });
+                            },
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 20,
+                                  height: 20,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(color: Colors.white),
+                                    color: isAgree
+                                        ? Colors.white
+                                        : Colors.transparent,
+                                  ),
+                                  child: isAgree
+                                      ? const Icon(
+                                          Icons.check,
+                                          size: 16,
+                                          color: Colors.black,
+                                        )
+                                      : null,
+                                ),
+                                const SizedBox(width: 10),
+                                const Expanded(
+                                  child: Text(
+                                    'Agree with Terms & Conditions',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
 
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 35),
 
                           PrimaryButton(
                             formKey: _formKey,
                             text: 'Sign Up',
+                            enabled: isAgree,
                             isLoading: isLoading,
                             onAction: () async {
                               if (!_formKey.currentState!.validate())
@@ -176,7 +208,97 @@ class _SignupPageState extends State<SignupPage> {
                             nextRoute: '/login',
                           ),
 
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 35),
+
+                          Row(
+                            children: const [
+                              Expanded(
+                                child: Divider(
+                                  color: Colors.white54,
+                                  thickness: 1,
+                                ),
+                              ),
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 10),
+                                child: Text(
+                                  'or sign up with',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Divider(
+                                  color: Colors.white54,
+                                  thickness: 1,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 40),
+
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              CircleIconButton(
+                                svgAsset: 'assets/icons/apple.svg',
+                                iconColor: Colors.white,
+                                backgroundColor: Colors.transparent,
+                                size: 54,
+                                borderWidth: 1,
+                                borderColor: Colors.white,
+                                applySvgColor: false,
+                                onPressed: () {},
+                              ),
+                              const SizedBox(width: 25),
+                              CircleIconButton(
+                                svgAsset: 'assets/icons/google.svg',
+                                backgroundColor: Colors.transparent,
+                                size: 54,
+                                borderWidth: 1,
+                                borderColor: Colors.white,
+                                applySvgColor: false,
+                                onPressed: () async {
+                                  setState(() => isLoading = true);
+                                  try {
+                                    final success =
+                                        await AuthService.loginWithGoogle(
+                                          context,
+                                        );
+                                    if (success) {
+                                      if (!mounted) return;
+                                      // 로그인 성공 시 이동
+                                      Navigator.pushReplacementNamed(
+                                        context,
+                                        '/index',
+                                      );
+                                    }
+                                  } catch (e) {
+                                    if (!mounted) return;
+                                    showMessage('Google 로그인 실패', e.toString());
+                                  } finally {
+                                    if (mounted)
+                                      setState(() => isLoading = false);
+                                  }
+                                },
+                              ),
+                              const SizedBox(width: 25),
+                              CircleIconButton(
+                                svgAsset: 'assets/icons/facebook.svg',
+                                backgroundColor: Colors.transparent,
+                                size: 54,
+                                borderWidth: 1,
+                                borderColor: Colors.white,
+                                applySvgColor: false,
+                                onPressed: () {},
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 40),
 
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,

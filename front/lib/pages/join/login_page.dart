@@ -4,6 +4,7 @@ import 'package:front/widgets/auth_text_field.dart';
 import 'package:front/widgets/primary_button.dart';
 import 'package:front/services/auth_service.dart';
 import 'package:front/routes/navigation_type.dart';
+import 'package:front/widgets/circle_icon_button.dart';
 import 'package:front/widgets/custom_header.dart';
 
 class LoginPage extends StatefulWidget {
@@ -19,6 +20,7 @@ class _LoginPageState extends State<LoginPage> {
   String email = '';
   String password = '';
   bool isLoading = false;
+  bool isAgree = false;
 
   /// 서버 메시지 AlertDialog
   void showMessage(String title, String message) {
@@ -112,13 +114,55 @@ class _LoginPageState extends State<LoginPage> {
                         AuthTextField(
                           label: 'Password',
                           hintText: 'Enter your password',
+                          bottomPadding: 14,
                           obscureText: true,
                           validator: (v) =>
                               v == null || v.isEmpty ? '비밀번호를 입력하세요' : null,
                           onSaved: (v) => password = v!,
                         ),
 
-                        const SizedBox(height: 20),
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              isAgree = !isAgree;
+                            });
+                          },
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 20,
+                                height: 20,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: Colors.white),
+                                  color: isAgree
+                                      ? Colors.white
+                                      : Colors.transparent,
+                                ),
+                                child: isAgree
+                                    ? const Icon(
+                                        Icons.check,
+                                        size: 16,
+                                        color: Colors.black,
+                                      )
+                                    : null,
+                              ),
+                              const SizedBox(width: 10),
+                              const Expanded(
+                                child: Text(
+                                  'Remember me',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 35),
 
                         PrimaryButton(
                           formKey: _formKey,
@@ -131,7 +175,97 @@ class _LoginPageState extends State<LoginPage> {
                           navigationType: NavigationType.clearStack,
                         ),
 
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 35),
+
+                        Row(
+                          children: const [
+                            Expanded(
+                              child: Divider(
+                                color: Colors.white54,
+                                thickness: 1,
+                              ),
+                            ),
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 10),
+                              child: Text(
+                                'or sign up with',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: Divider(
+                                color: Colors.white54,
+                                thickness: 1,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 40),
+
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            CircleIconButton(
+                              svgAsset: 'assets/icons/apple.svg',
+                              iconColor: Colors.white,
+                              backgroundColor: Colors.transparent,
+                              size: 52,
+                              borderWidth: 1,
+                              borderColor: Colors.white,
+                              applySvgColor: false,
+                              onPressed: () {},
+                            ),
+                            const SizedBox(width: 25),
+                            CircleIconButton(
+                              svgAsset: 'assets/icons/google.svg',
+                              backgroundColor: Colors.transparent,
+                              size: 52,
+                              borderWidth: 1,
+                              borderColor: Colors.white,
+                              applySvgColor: false,
+                              onPressed: () async {
+                                setState(() => isLoading = true);
+                                try {
+                                  final success =
+                                      await AuthService.loginWithGoogle(
+                                        context,
+                                      );
+                                  if (success) {
+                                    if (!mounted) return;
+                                    // 로그인 성공 시 이동
+                                    Navigator.pushReplacementNamed(
+                                      context,
+                                      '/index',
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (!mounted) return;
+                                  showMessage('Google 로그인 실패', e.toString());
+                                } finally {
+                                  if (mounted)
+                                    setState(() => isLoading = false);
+                                }
+                              },
+                            ),
+                            const SizedBox(width: 25),
+                            CircleIconButton(
+                              svgAsset: 'assets/icons/facebook.svg',
+                              backgroundColor: Colors.transparent,
+                              size: 52,
+                              borderWidth: 1,
+                              borderColor: Colors.white,
+                              applySvgColor: false,
+                              onPressed: () {},
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 40),
 
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,

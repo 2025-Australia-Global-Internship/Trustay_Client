@@ -11,6 +11,8 @@ class AuthTextField extends StatefulWidget {
   final String? Function(String?)? validator;
   final void Function(String?)? onSaved;
 
+  final double bottomPadding;
+
   const AuthTextField({
     super.key,
     required this.label,
@@ -20,6 +22,7 @@ class AuthTextField extends StatefulWidget {
     this.controller,
     this.validator,
     this.onSaved,
+    this.bottomPadding = 30,
   });
 
   @override
@@ -38,7 +41,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 30),
+      padding: EdgeInsets.only(bottom: widget.bottomPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -47,7 +50,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
             widget.label,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 14,
+              fontSize: 13.5,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -68,13 +71,13 @@ class _AuthTextFieldState extends State<AuthTextField> {
             ),
             decoration: InputDecoration(
               contentPadding: const EdgeInsets.symmetric(
-                vertical: 20,
+                vertical: 18,
                 horizontal: 12,
               ),
               hintText: widget.hintText,
               hintStyle: const TextStyle(
                 color: grey02,
-                fontSize: 13.5,
+                fontSize: 13,
                 fontWeight: FontWeight.w400,
               ),
               suffixIcon: widget.obscureText

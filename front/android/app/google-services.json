@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "421355477489",
+    "project_id": "trustay-ac768",
+    "storage_bucket": "trustay-ac768.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:421355477489:android:1abc351d3292f4047f0c50",
+        "android_client_info": {
+          "package_name": "com.example.front"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "421355477489-3h7b8u1qlvgaj6bg80ld49i6s05k1g8u.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.front",
+            "certificate_hash": "b579fb7ab03b9293529bf00e5f156dd3c17d4d0d"
+          }
+        },
+        {
+          "client_id": "421355477489-ju3jgj3e6ulea5m5bkqjivfuqhe4vl09.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA808uYfqIlnzpCNAy5lNpg0sde8tDqBq8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "421355477489-ju3jgj3e6ulea5m5bkqjivfuqhe4vl09.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -75,7 +75,17 @@ class CommonTextField extends StatelessWidget {
               hintText: hintText,
               hintStyle: const TextStyle(color: grey01, fontSize: 14),
               suffixText: suffixText,
-              suffixIcon: suffixIcon,
+              suffixIcon: suffixIcon != null
+                  ? Padding(
+                      padding: const EdgeInsets.only(right: 20),
+                      child: suffixIcon,
+                    )
+                  : null,
+
+              suffixIconConstraints: const BoxConstraints(
+                minWidth: 20,
+                minHeight: 20,
+              ),
 
               filled: true,
               fillColor: Colors.white,
@@ -93,7 +103,7 @@ class CommonTextField extends StatelessWidget {
 
   static OutlineInputBorder _border(Color color) {
     return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(18),
       borderSide: BorderSide(color: color, width: 1.2),
     );
   }
