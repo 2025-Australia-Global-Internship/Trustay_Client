@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:front/constants/colors.dart';
 import 'package:front/widgets/custom_header.dart';
 import 'package:front/widgets/gradient_layout.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class ListingPage extends StatefulWidget {
   const ListingPage({super.key});
@@ -32,22 +33,41 @@ class _ListingPage extends State<ListingPage> {
                   showBack: true,
                 ),
                 Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      // 여기에 Listing 아이템들을 넣으면 됨
-                      Container(
-                        height: 200,
-                        color: Colors.grey[300],
-                        margin: const EdgeInsets.only(bottom: 10),
-                      ),
-                      Container(
-                        height: 200,
-                        color: Colors.grey[400],
-                        margin: const EdgeInsets.only(bottom: 10),
-                      ),
-                      // ... 더 많은 아이템
-                    ],
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 86,
+                          height: 86,
+                          child: Center(
+                            child: SvgPicture.asset(
+                              'assets/icons/home-edit.svg',
+                              width: 86,
+                              height: 86,
+                              color: grey02,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'No listings yet.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: grey02,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const Text(
+                          'List your shared house to get started.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: grey02,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],

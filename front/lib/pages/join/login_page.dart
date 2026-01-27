@@ -232,7 +232,9 @@ class _LoginPageState extends State<LoginPage> {
                                 setState(() => isLoading = true);
                                 try {
                                   final success =
-                                      await AuthService.loginWithGoogle();
+                                      await AuthService.loginWithGoogle(
+                                        context,
+                                      );
                                   if (success) {
                                     if (!mounted) return;
                                     // 로그인 성공 시 이동

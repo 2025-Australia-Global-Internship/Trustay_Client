@@ -4,6 +4,7 @@ import 'package:front/widgets/auth_text_field.dart';
 import 'package:front/widgets/primary_button.dart';
 import 'package:front/services/auth_service.dart';
 import 'package:front/widgets/custom_header.dart';
+import 'package:front/widgets/circle_icon_button.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -207,7 +208,97 @@ class _SignupPageState extends State<SignupPage> {
                             nextRoute: '/login',
                           ),
 
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 35),
+
+                          Row(
+                            children: const [
+                              Expanded(
+                                child: Divider(
+                                  color: Colors.white54,
+                                  thickness: 1,
+                                ),
+                              ),
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 10),
+                                child: Text(
+                                  'or sign up with',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Divider(
+                                  color: Colors.white54,
+                                  thickness: 1,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 40),
+
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              CircleIconButton(
+                                svgAsset: 'assets/icons/apple.svg',
+                                iconColor: Colors.white,
+                                backgroundColor: Colors.transparent,
+                                size: 54,
+                                borderWidth: 1,
+                                borderColor: Colors.white,
+                                applySvgColor: false,
+                                onPressed: () {},
+                              ),
+                              const SizedBox(width: 25),
+                              CircleIconButton(
+                                svgAsset: 'assets/icons/google.svg',
+                                backgroundColor: Colors.transparent,
+                                size: 54,
+                                borderWidth: 1,
+                                borderColor: Colors.white,
+                                applySvgColor: false,
+                                onPressed: () async {
+                                  setState(() => isLoading = true);
+                                  try {
+                                    final success =
+                                        await AuthService.loginWithGoogle(
+                                          context,
+                                        );
+                                    if (success) {
+                                      if (!mounted) return;
+                                      // 로그인 성공 시 이동
+                                      Navigator.pushReplacementNamed(
+                                        context,
+                                        '/index',
+                                      );
+                                    }
+                                  } catch (e) {
+                                    if (!mounted) return;
+                                    showMessage('Google 로그인 실패', e.toString());
+                                  } finally {
+                                    if (mounted)
+                                      setState(() => isLoading = false);
+                                  }
+                                },
+                              ),
+                              const SizedBox(width: 25),
+                              CircleIconButton(
+                                svgAsset: 'assets/icons/facebook.svg',
+                                backgroundColor: Colors.transparent,
+                                size: 54,
+                                borderWidth: 1,
+                                borderColor: Colors.white,
+                                applySvgColor: false,
+                                onPressed: () {},
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 40),
 
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,

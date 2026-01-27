@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart'; // 서버 모델 User
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/material.dart';
 
 class AuthService {
   static const String baseUrl = 'https://trustay.digitalbasis.com/api/trustay';
@@ -42,23 +43,31 @@ class AuthService {
   }
 
   /// Google OAuth 로그인
-  static Future<bool> loginWithGoogle() async {
+  static Future<bool> loginWithGoogle(BuildContext context) async {
+    GoogleSignInAccount? googleUser;
+
+    // 1️⃣ Google 로그인 화면 띄우기
     try {
-      // Google Sign-In 시작
       final GoogleSignIn googleSignIn = GoogleSignIn(
         scopes: ['email', 'profile'],
       );
+      googleUser = await googleSignIn.signIn();
+    } catch (e) {
+      // 로그인 화면 띄우기 실패
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Google 로그인 화면을 열 수 없습니다: $e')));
+      return false;
+    }
 
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-      if (googleUser == null) {
-        // 사용자가 로그인 취소
-        return false;
-      }
+    if (googleUser == null) {
+      // 사용자가 취소했을 때
+      return false;
+    }
 
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-
-      // Firebase Credential 생성 및 로그인
+    // 2️⃣ Firebase 로그인 & 서버 호출은 여기서 처리
+    try {
+      final googleAuth = await googleUser.authentication;
       final credential = fb.GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
@@ -66,44 +75,68 @@ class AuthService {
 
       final userCredential = await fb.FirebaseAuth.instance
           .signInWithCredential(credential);
-      final fb.User? firebaseUser = userCredential.user;
+      final firebaseUser = userCredential.user;
+
       if (firebaseUser == null) throw Exception('Firebase User 없음');
 
-      // Firebase 토큰 가져오기
       final firebaseToken = await firebaseUser.getIdToken();
+      if (firebaseToken == null || firebaseToken.isEmpty) {
+        throw Exception('Firebase Token 없음');
+      }
 
-      // 서버에 사용자 정보 전송
-      final url = Uri.parse('$baseUrl/members/oauth-login');
+      // 서버 호출
+      final url = Uri.parse('$baseUrl/auth/oauth');
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "name": firebaseUser.displayName ?? "Unknown", // 이름
-          "email": firebaseUser.email ?? "", // 이메일
-          "oauth_provider": "google", // 구글임을 명시
-          "firebase_token": firebaseToken, // 서버에서 검증용
-        }),
+        body: jsonEncode({"firebaseToken": firebaseToken}),
       );
 
       final res = jsonDecode(response.body);
       final code = res['code'] ?? -1;
 
-      if (!((response.statusCode == 200 || response.statusCode == 201) &&
-          code == 200)) {
-        throw Exception(res['message'] ?? '서버 OAuth 로그인 실패');
+      if (response.statusCode != 200 || code != 200) {
+        final msg = res['message'] ?? '서버 OAuth 로그인 실패';
+        if (msg.contains('존재하지 않는 계정') || msg.contains('not found')) {
+          await showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Text('회원가입 필요'),
+              content: Text('서버에 등록된 계정이 없습니다.\n회원가입 후 다시 시도해주세요.'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(context, '/signup');
+                  },
+                  child: Text('회원가입'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('취소'),
+                ),
+              ],
+            ),
+          );
+          return false;
+        } else {
+          throw Exception(msg);
+        }
       }
 
-      // 서버 토큰 SharedPreferences에 저장
-      final prefs = await SharedPreferences.getInstance();
+      // 서버 JWT 저장
       final serverToken = res['data']?['token'];
-      if (serverToken == null) {
-        throw Exception('서버에서 토큰을 받지 못함');
-      }
+      if (serverToken == null) throw Exception('서버 JWT 없음');
+
+      final prefs = await SharedPreferences.getInstance();
       await prefs.setString('token', serverToken);
 
-      return true;
+      return true; // 로그인 성공
     } catch (e) {
-      throw Exception('Google 로그인 실패: ${e.toString()}');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('로그인 중 오류 발생: $e')));
+      return false;
     }
   }
 
