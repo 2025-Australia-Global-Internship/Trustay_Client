@@ -6,6 +6,8 @@ import 'package:front/widgets/gradient_layout.dart';
 import 'package:front/models/user_model.dart';
 import 'package:front/services/auth_service.dart';
 import 'package:front/widgets/circle_icon_button.dart';
+import 'package:front/data/home_dummy_data.dart';
+import 'package:front/widgets/house_card.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -116,14 +118,120 @@ class _HomePageState extends State<HomePage> {
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.all(16),
-                children: const [
-                  SizedBox(height: 34),
-                  // 나머지 홈 컨텐츠
+                children: [
+                  const SizedBox(height: 34),
+
+                  /// 메인 카피
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        'Explore Your Place to Stay,',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: dark,
+                        ),
+                      ),
+                      SizedBox(height: 6),
+                      Text(
+                        'Built on Trust.',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: dark,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  /// 필터 버튼
+                  SizedBox(
+                    height: 42,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: [
+                        _filterChip('Filter', icon: 'assets/icons/filter.svg'),
+                        _filterChip('All', selected: true),
+                        _filterChip('House'),
+                        _filterChip('Apartment'),
+                      ],
+                    ),
+                  ),
+
+                  /// 타이틀
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: const [
+                      Text(
+                        'Popular listings',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      Text(
+                        'See all',
+                        style: TextStyle(
+                          color: green,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  /// 가로 스크롤 카드
+                  SizedBox(
+                    height: 280,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: popularHousesDummy.length,
+                      itemBuilder: (context, index) {
+                        return HouseCard(house: popularHousesDummy[index]);
+                      },
+                    ),
+                  ),
                 ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _filterChip(String text, {bool selected = false, String? icon}) {
+    return Container(
+      margin: const EdgeInsets.only(right: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      decoration: BoxDecoration(
+        color: selected ? green : Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: selected ? green : grey02),
+      ),
+      child: Row(
+        children: [
+          if (icon != null) ...[
+            SvgPicture.asset(
+              icon,
+              width: 16,
+              height: 16,
+              color: selected ? Colors.white : dark,
+            ),
+            const SizedBox(width: 6),
+          ],
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              color: selected ? Colors.white : dark,
+            ),
+          ),
+        ],
       ),
     );
   }
