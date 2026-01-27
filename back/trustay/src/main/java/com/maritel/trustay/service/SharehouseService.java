@@ -58,6 +58,7 @@ public class SharehouseService {
 
         // 2. 좌표 변환 로직 실행
         Map<String, Double> coords = geocodingService.getCoordinates(req.getAddress());
+
         Double latitude = (coords != null) ? coords.get("lat") : 0.0;
         Double longitude = (coords != null) ? coords.get("lon") : 0.0;
 
