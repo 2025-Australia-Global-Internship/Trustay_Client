@@ -24,6 +24,8 @@ public class SharehouseResultRes {
     private String options;
     private Integer viewCount;
     private String hostName; // 집주인 이름 표시
+    private Double lat;
+    private Double lon;
     private List<String> imageUrls;
 
     // Entity -> DTO 변환 메서드
@@ -41,6 +43,8 @@ public class SharehouseResultRes {
                 .options(sharehouse.getOptions())
                 .viewCount(sharehouse.getViewCount())
                 .hostName(sharehouse.getHost().getName())
+                .lat(sharehouse.getLatitude())
+                .lon(sharehouse.getLongitude())
                 .imageUrls(parseImageUrls(sharehouse.getImageUrls()))
                 .build();
     }

@@ -42,17 +42,17 @@ public class AuthService {
 
     @Transactional
     public String OAuthLogin(OAuthLoginReq req) {
-        String userEmail;
+        String userEmail; String userName;
         try {
             userEmail = FirebaseAuth.getInstance().verifyIdToken(req.getFirebaseToken()).getEmail();
+            userName = FirebaseAuth.getInstance().verifyIdToken(req.getFirebaseToken()).getName();
+            log.info("User name: {}", userName);
             log.info("User email: {}", userEmail);
         } catch (FirebaseAuthException e) {
             throw new RuntimeException("Invalid Firebase Token", e);
         }
         memberRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-
-        log.info("Try login member: {}", userEmail);
 
         return jwtUtil.generateToken(userEmail);
     }

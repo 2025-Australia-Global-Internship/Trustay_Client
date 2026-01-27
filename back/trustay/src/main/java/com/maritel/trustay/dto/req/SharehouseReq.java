@@ -24,9 +24,6 @@ public class SharehouseReq {
     @NotBlank(message = "주소는 필수입니다.")
     private String address;
 
-    private Double latitude;
-    private Double longitude;
-
     @NotNull(message = "주거 형태를 선택해주세요.")
     private HouseType houseType;
 

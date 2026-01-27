@@ -24,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.net.MalformedURLException;
 import java.util.List;
+import java.util.Map;
 
 
 @Slf4j
@@ -34,31 +35,43 @@ public class SharehouseService {
 
     private final SharehouseRepository sharehouseRepository;
     private final MemberRepository memberRepository;
+    private final GeocodingService geocodingService; // 1. 주입 추가
+
+
+    /**
+     * 내가 등록한 쉐어하우스 목록 조회
+     */
+    public Page<SharehouseRes> getMySharehouseList(String email, Pageable pageable) {
+        // 1. 해당 이메일을 가진 호스트의 매물 조회
+        Page<Sharehouse> sharehouses = sharehouseRepository.findByHostEmail(email, pageable);
+
+        // 2. SharehouseRes로 변환하여 반환
+        return sharehouses.map(SharehouseRes::from);
+    }
+
+
 
     @Transactional
     public SharehouseRes registerSharehouse(String userEmail, SharehouseReq req) {
-
-        // 1. 사용자 조회
         Member host = memberRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new IllegalArgumentException("사용자 정보를 찾을 수 없습니다."));
 
-        // 2. 이미지 URL 리스트 -> 문자열 변환 (DB 저장용)
-        // ["url1", "url2"] -> "url1,url2"
+        // 2. 좌표 변환 로직 실행
+        Map<String, Double> coords = geocodingService.getCoordinates(req.getAddress());
+        Double latitude = (coords != null) ? coords.get("lat") : 0.0;
+        Double longitude = (coords != null) ? coords.get("lon") : 0.0;
+
         String imageUrlsString = String.join(",", req.getImageUrls());
+        String optionsString = (req.getOptions() != null) ? String.join(",", req.getOptions()) : "";
 
-        // 3. 옵션 리스트 -> 문자열 변환
-        String optionsString = (req.getOptions() != null)
-                ? String.join(",", req.getOptions())
-                : "";
-
-        // 4. 엔티티 생성
+        // 3. 엔티티에 세팅 (기존 주석 해제)
         Sharehouse sharehouse = Sharehouse.builder()
                 .host(host)
                 .title(req.getTitle())
                 .description(req.getDescription())
                 .address(req.getAddress())
-                .latitude(req.getLatitude())
-                .longitude(req.getLongitude())
+                .latitude(latitude)  // 좌표 입력
+                .longitude(longitude) // 좌표 입력
                 .houseType(req.getHouseType())
                 .rentPrice(req.getRentPrice())
                 .deposit(req.getDeposit())
@@ -66,12 +79,11 @@ public class SharehouseService {
                 .bathroomCount(req.getBathroomCount())
                 .currentResidents(req.getCurrentResidents())
                 .options(optionsString)
-                .imageUrls(imageUrlsString) // URL 문자열 저장
+                .imageUrls(imageUrlsString)
                 .approvalStatus(ApprovalStatus.WAITING)
                 .build();
 
         sharehouseRepository.save(sharehouse);
-
         return SharehouseRes.from(sharehouse);
     }
 

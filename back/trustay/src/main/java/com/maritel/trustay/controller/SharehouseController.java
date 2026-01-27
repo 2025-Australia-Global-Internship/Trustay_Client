@@ -113,7 +113,25 @@ public class SharehouseController {
         return ResponseEntity.ok(DataResponse.of(ResponseCode.SUCCESS));
     }
 
-    // --- [수정된 부분: 상세 조회 & 목록 조회] ---
+    // SharehouseController.java
+
+    @Operation(summary = "내가 등록한 쉐어하우스 목록 조회", description = "로그인한 집주인이 본인이 등록한 매물 목록을 조회합니다.")
+    @GetMapping("/my")
+    public ResponseEntity<DataResponse<PageResponse<SharehouseRes>>> getMySharehouses(
+            Principal principal,
+            // sort를 "id"로 변경, 필요에 따라 direction(DESC/ASC)을 설정하세요.
+            @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+
+        String email = principal.getName();
+
+        // 서비스 호출 (SharehouseService의 메서드)
+        Page<SharehouseRes> resultPage = sharehouseService.getMySharehouseList(email, pageable);
+
+        // PageResponse로 변환하여 반환
+        PageResponse<SharehouseRes> response = new PageResponse<>(resultPage);
+
+        return ResponseEntity.ok(DataResponse.of(ResponseCode.SUCCESS, response));
+    }
 
     @Operation(summary = "쉐어하우스 상세 조회", description = "매물 상세 정보를 조회합니다. (조회수 1 증가)")
     @GetMapping("/{houseId}")
