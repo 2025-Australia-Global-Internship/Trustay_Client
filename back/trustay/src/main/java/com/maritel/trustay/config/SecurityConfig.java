@@ -62,6 +62,7 @@ public class SecurityConfig {
                                 "/webjars/**",
                                 "/api/**",
                                 "/api/auth/**",
+                                "/static/**",
                                 "/images/**"
                         ).permitAll()
                         .anyRequest().authenticated()
@@ -105,7 +106,11 @@ public class SecurityConfig {
         return source;
     }
 
+    @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
-        return web -> web.ignoring().requestMatchers("/images/**");
+        return web -> web.ignoring().requestMatchers(
+                "/images/**",
+                "/"
+        );
     }
 }
