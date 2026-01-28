@@ -98,12 +98,15 @@ public class SharehouseService {
         Sharehouse sharehouse = sharehouseRepository.findById(houseId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 쉐어하우스가 존재하지 않습니다."));
 
-        // 작성자 검증 (현재 로그인한 유저와 집주인이 같은지)
-        if (!sharehouse.getHost().getEmail().equals(email)) {
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("사용자 정보를 찾을 수 없습니다."));
+
+        Boolean isAdmin = member.getProfile().getRoles().contains(Role.ADMIN);
+        Boolean isHost = sharehouse.getHost().getEmail().equals(email);
+        if (!isHost && !isAdmin) {
             throw new IllegalStateException("수정 권한이 없습니다.");
         }
 
-        // 데이터 업데이트
         sharehouse.updateSharehouse(
                 req.getTitle(), req.getDescription(), req.getRentPrice(),
                 req.getDeposit(), req.getOptions(), req.getRoomCount(),
@@ -120,7 +123,13 @@ public class SharehouseService {
         Sharehouse sharehouse = sharehouseRepository.findById(houseId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 쉐어하우스가 존재하지 않습니다."));
 
-        if (!sharehouse.getHost().getEmail().equals(email)) {
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("사용자 정보를 찾을 수 없습니다."));
+
+
+        Boolean isAdmin = member.getProfile().getRoles().contains(Role.ADMIN);
+        Boolean isHost = sharehouse.getHost().getEmail().equals(email);
+        if (!isHost && !isAdmin) {
             throw new IllegalStateException("삭제 권한이 없습니다.");
         }
 
