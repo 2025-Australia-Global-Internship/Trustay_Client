@@ -261,29 +261,7 @@ class _SignupPageState extends State<SignupPage> {
                                 borderWidth: 1,
                                 borderColor: Colors.white,
                                 applySvgColor: false,
-                                onPressed: () async {
-                                  setState(() => isLoading = true);
-                                  try {
-                                    final success =
-                                        await AuthService.loginWithGoogle(
-                                          context,
-                                        );
-                                    if (success) {
-                                      if (!mounted) return;
-                                      // 로그인 성공 시 이동
-                                      Navigator.pushReplacementNamed(
-                                        context,
-                                        '/index',
-                                      );
-                                    }
-                                  } catch (e) {
-                                    if (!mounted) return;
-                                    showMessage('Google 로그인 실패', e.toString());
-                                  } finally {
-                                    if (mounted)
-                                      setState(() => isLoading = false);
-                                  }
-                                },
+                                onPressed: () {},
                               ),
                               const SizedBox(width: 25),
                               CircleIconButton(

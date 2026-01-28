@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import '../models/house_dummy.dart';
-import '../constants/colors.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../constants/colors.dart';
+import '../models/house_dummy.dart';
 
 class HouseCard extends StatelessWidget {
   final HouseDummy house;
+  final bool isGrid;
 
-  const HouseCard({super.key, required this.house});
+  const HouseCard({super.key, required this.house, this.isGrid = false});
 
   @override
   Widget build(BuildContext context) {
@@ -15,60 +16,77 @@ class HouseCard extends StatelessWidget {
         : 'https://via.placeholder.com/400x300';
 
     return Container(
-      width: 280,
-      margin: const EdgeInsets.only(right: 16),
+      width: isGrid ? double.infinity : 300,
+      margin: EdgeInsets.only(right: isGrid ? 0 : 14, bottom: isGrid ? 16 : 0),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 15,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          /// 이미지
+          // 이미지
           Padding(
-            padding: const EdgeInsets.all(10), // 카드 안에서 띄우기
+            padding: EdgeInsets.all(7),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(14), // 이미지 자체 라디우스
+              borderRadius: BorderRadius.circular(14),
               child: Image.network(
                 imageUrl,
-                height: 150,
+                height: 140,
                 width: double.infinity,
                 fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) {
+                  return Container(
+                    height: 140,
+                    width: double.infinity,
+                    color: grey01,
+                    child: const Icon(Icons.home, size: 50, color: grey01),
+                  );
+                },
               ),
             ),
           ),
 
+          // 카드 내용
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+            padding: const EdgeInsets.fromLTRB(16, 7, 16, 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
+                // 제목 + 가격
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
                       child: Text(
                         house.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 15,
+                        style: TextStyle(
+                          fontSize: isGrid ? 13 : 15,
                           fontWeight: FontWeight.w800,
+                          color: dark,
+                          height: 1.2,
                         ),
                       ),
                     ),
+                    const SizedBox(width: 8),
                     Text(
                       '\$${house.price}',
-                      style: const TextStyle(
-                        fontSize: 13,
+                      style: TextStyle(
+                        fontSize: isGrid ? 12 : 13,
                         fontWeight: FontWeight.w800,
+                        color: dark,
+                        height: 1.2,
                       ),
                     ),
                   ],
@@ -76,6 +94,7 @@ class HouseCard extends StatelessWidget {
 
                 const SizedBox(height: 6),
 
+                // 주소
                 Row(
                   children: [
                     SvgPicture.asset(
@@ -90,28 +109,38 @@ class HouseCard extends StatelessWidget {
                         house.address,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 12, color: grey04),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: grey04,
+                          height: 1.2,
+                        ),
                       ),
                     ),
                   ],
                 ),
 
-                const SizedBox(height: 16),
+                isGrid ? SizedBox(height: 14) : SizedBox(height: 19),
 
-                /// 아이콘 영역
-                Row(
+                // 아이콘 영역
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 3,
                   children: [
                     _iconChip(
                       svg: 'assets/icons/bed.svg',
                       text: '${house.beds}',
+                      isGrid: isGrid,
                     ),
                     _iconChip(
                       svg: 'assets/icons/bathroom.svg',
                       text: '${house.baths}',
+                      isGrid: isGrid,
                     ),
                     _iconChip(
                       svg: 'assets/icons/profile.svg',
                       text: '${house.people}',
+                      isGrid: isGrid,
                     ),
                   ],
                 ),
@@ -122,26 +151,45 @@ class HouseCard extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _iconChip({required String svg, required String text}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      margin: const EdgeInsets.only(right: 8),
-      decoration: BoxDecoration(
-        color: Colors.transparent,
-        border: Border.all(color: grey02, width: 1.2),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          SvgPicture.asset(svg, width: 16, height: 16, color: dark),
-          const SizedBox(width: 6),
-          Text(
-            text,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+Widget _iconChip({
+  required String svg,
+  required String text,
+  bool isGrid = false,
+}) {
+  return Container(
+    padding: EdgeInsets.symmetric(
+      horizontal: isGrid ? 8.65 : 14,
+      vertical: isGrid ? 7 : 8,
+    ),
+    decoration: BoxDecoration(
+      color: Colors.transparent,
+      border: Border.all(color: grey01, width: 1.2),
+      borderRadius: isGrid
+          ? BorderRadius.circular(16)
+          : BorderRadius.circular(20),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SvgPicture.asset(
+          svg,
+          width: isGrid ? 13 : 18,
+          height: isGrid ? 13 : 18,
+          color: dark,
+        ),
+        SizedBox(width: isGrid ? 6 : 8),
+        Text(
+          text,
+          style: TextStyle(
+            fontSize: isGrid ? 11 : 13,
+            fontWeight: FontWeight.w700,
+            color: dark,
+            height: 1,
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
 }

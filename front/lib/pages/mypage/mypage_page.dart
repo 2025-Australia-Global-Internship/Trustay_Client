@@ -46,15 +46,17 @@ class _MyPageState extends State<MyPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: GradientLayout(
-        child: Column(
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: 16),
           children: [
+            /// 헤더
             CustomHeader(
               showBack: false,
-              leading: Padding(
-                padding: const EdgeInsets.only(left: 18),
+              leading: const Padding(
+                padding: EdgeInsets.only(left: 16),
                 child: Text(
                   'Profile',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 21,
                     fontWeight: FontWeight.w800,
                     color: dark,
@@ -62,106 +64,109 @@ class _MyPageState extends State<MyPage> {
                 ),
               ),
               trailing: CircleIconButton(
+                padding: EdgeInsets.zero,
                 icon: Icons.logout,
                 iconSize: 23,
                 onPressed: () => _handleLogout(context),
               ),
             ),
 
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 6, 16, 16),
+            const SizedBox(height: 6),
+
+            /// 프로필 영역
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  /// 프로필 영역
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                  CircleAvatar(
+                    radius: 40,
+                    backgroundImage: NetworkImage(
+                      user?.profileImageUrl?.isNotEmpty == true
+                          ? user!.profileImageUrl!
+                          : 'https://i.pravatar.cc/150',
+                    ),
+                  ),
+
+                  const SizedBox(width: 18),
+
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      /// 프로필 사진
-                      CircleAvatar(
-                        radius: 40,
-                        backgroundImage: NetworkImage(
-                          user?.profileImageUrl?.isNotEmpty == true
-                              ? user!.profileImageUrl!
-                              : 'https://i.pravatar.cc/150',
+                      Text(
+                        user?.name ?? '',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: dark,
                         ),
                       ),
+                      const SizedBox(height: 2),
 
-                      const SizedBox(width: 18),
-
-                      /// 이름 / 이메일 / 버튼
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
+                      Row(
                         children: [
+                          const Icon(
+                            Icons.email_outlined,
+                            size: 12,
+                            color: grey04,
+                          ),
+                          const SizedBox(width: 4),
                           Text(
-                            user?.name ?? '',
+                            user?.email ?? '',
                             style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w800,
-                              color: dark,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.email_outlined,
-                                size: 12,
-                                color: grey04,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                user?.email ?? '',
-                                style: const TextStyle(
-                                  color: grey04,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-
-                          const SizedBox(height: 6),
-
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.pushNamed(context, '/edit_profile');
-                            },
-                            icon: const Icon(
-                              Icons.edit_outlined,
-                              size: 16,
-                              color: darkgreen,
-                            ),
-                            label: const Text(
-                              'Edit profile',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: darkgreen,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: yellow,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
-                              ),
-                              minimumSize: const Size(0, 36),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
+                              color: grey04,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ],
                       ),
+
+                      const SizedBox(height: 6),
+
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pushNamed(context, '/edit_profile');
+                        },
+                        icon: const Icon(
+                          Icons.edit_outlined,
+                          size: 16,
+                          color: darkgreen,
+                        ),
+                        label: const Text(
+                          'Edit profile',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: darkgreen,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: yellow,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          minimumSize: const Size(0, 36),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
+                ],
+              ),
+            ),
 
-                  const SizedBox(height: 34),
+            const SizedBox(height: 34),
 
-                  /// 메뉴 섹션들
+            /// 메뉴 섹션들
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: [
                   MenuSection(
                     children: [
                       MyPageMenuItem(
@@ -215,6 +220,12 @@ class _MyPageState extends State<MyPage> {
                         title: 'My Reviews',
                         leading: const MenuIcon(
                           assetPath: 'assets/icons/review.svg',
+                        ),
+                      ),
+                      MyPageMenuItem(
+                        title: 'My Wallet',
+                        leading: const MenuIcon(
+                          assetPath: 'assets/icons/coin-fill.svg',
                         ),
                       ),
                       MyPageMenuItem(
