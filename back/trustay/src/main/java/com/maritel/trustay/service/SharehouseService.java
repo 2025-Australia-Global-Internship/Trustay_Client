@@ -20,6 +20,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.net.MalformedURLException;
@@ -37,6 +38,18 @@ public class SharehouseService {
     private final MemberRepository memberRepository;
     private final GeocodingService geocodingService; // 1. 주입 추가
 
+
+    /**
+     * 내 목록에서 쉐어하우스 상세 조회하기
+     * @param houseId
+     * @return
+     */
+    public SharehouseResultRes getMySharehouseDetail(@PathVariable Long houseId) {
+        Sharehouse sharehouse = sharehouseRepository.findById(houseId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 쉐어하우스가 존재하지 않습니다."));
+
+        return SharehouseResultRes.from(sharehouse);
+    }
 
     /**
      * 내가 등록한 쉐어하우스 목록 조회

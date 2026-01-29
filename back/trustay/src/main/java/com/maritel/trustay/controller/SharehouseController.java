@@ -1,5 +1,6 @@
 package com.maritel.trustay.controller;
 
+import lombok.Getter;
 import org.springframework.web.bind.annotation.RequestBody;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -113,14 +114,20 @@ public class SharehouseController {
         return ResponseEntity.ok(DataResponse.of(ResponseCode.SUCCESS));
     }
 
-    // SharehouseController.java
+    @Operation(summary = "내가 들록한 쉐어하우스 자세히 보기", description = "상세보기를 하되, 조회수는 안 올라가는 api")
+    @GetMapping("/my/{houseId}")
+    public ResponseEntity<DataResponse<SharehouseResultRes>> getMySharehouseDetail(@PathVariable Long houseId) {
+        SharehouseResultRes response = sharehouseService.getMySharehouseDetail(houseId);
+
+        return ResponseEntity.ok(DataResponse.of(ResponseCode.SUCCESS, response));
+    }
 
     @Operation(summary = "내가 등록한 쉐어하우스 목록 조회", description = "로그인한 집주인이 본인이 등록한 매물 목록을 조회합니다.")
     @GetMapping("/my")
     public ResponseEntity<DataResponse<PageResponse<SharehouseRes>>> getMySharehouses(
             Principal principal,
             // sort를 "id"로 변경, 필요에 따라 direction(DESC/ASC)을 설정하세요.
-            @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+            @PageableDefault(size = 10, sort = "viewCount", direction = Sort.Direction.DESC) Pageable pageable) {
 
         String email = principal.getName();
 
