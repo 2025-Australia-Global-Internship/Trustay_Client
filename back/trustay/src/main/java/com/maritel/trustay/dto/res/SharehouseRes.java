@@ -16,6 +16,7 @@ public class SharehouseRes {
     private Long id;
     private String title;
     private String address;
+    private Integer viewCount;
     private HouseType houseType;
     private ApprovalStatus approvalStatus;
     private List<String> imageUrls;
@@ -25,6 +26,7 @@ public class SharehouseRes {
                 .id(sharehouse.getId())
                 .title(sharehouse.getTitle())
                 .address(sharehouse.getAddress())
+                .viewCount(sharehouse.getViewCount())
                 .houseType(sharehouse.getHouseType())
                 .approvalStatus(sharehouse.getApprovalStatus())
                 .imageUrls(parseImageUrls(sharehouse.getImageUrls()))
