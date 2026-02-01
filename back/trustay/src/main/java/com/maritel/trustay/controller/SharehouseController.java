@@ -97,7 +97,7 @@ public class SharehouseController {
         return ResponseEntity.ok(DataResponse.of(ResponseCode.SUCCESS));
     }
 
-    @Operation(summary = "쉐어하우스 승인 상태 변경", description = "관리자가 매물을 승인(APPROVED)하거나 거절(REJECTED)합니다.")
+    @Operation(summary = "쉐어하우스 승인 상태 변경", description = "관리자가 매물을 승인(ACTIVE)하거나 거절(REJECTED)합니다.")
     @PatchMapping("/{houseId}/approval")
     public ResponseEntity<DataResponse<Void>> approveSharehouse(
             @PathVariable Long houseId,

@@ -8,23 +8,17 @@ import com.maritel.trustay.dto.req.SharehouseUpdateReq;
 import com.maritel.trustay.dto.res.SharehouseRes;
 import com.maritel.trustay.dto.res.SharehouseResultRes;
 import com.maritel.trustay.entity.Member;
-import com.maritel.trustay.entity.Profile;
 import com.maritel.trustay.entity.Sharehouse;
 import com.maritel.trustay.repository.MemberRepository;
 import com.maritel.trustay.repository.SharehouseRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.coyote.BadRequestException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.net.MalformedURLException;
-import java.util.List;
 import java.util.Map;
 
 
@@ -94,7 +88,7 @@ public class SharehouseService {
                 .currentResidents(req.getCurrentResidents())
                 .options(optionsString)
                 .imageUrls(imageUrlsString)
-                .approvalStatus(ApprovalStatus.WAITING)
+                .approvalStatus(ApprovalStatus.PENDING)
                 .build();
 
         sharehouseRepository.save(sharehouse);

@@ -60,7 +60,7 @@ public class Sharehouse extends BaseEntity {
 
     // --- 관리 정보 ---
     @Enumerated(EnumType.STRING)
-    private ApprovalStatus approvalStatus; // WAITING, APPROVED, REJECTED
+    private ApprovalStatus approvalStatus; // PENDING, ACTIVE, REJECTED
 
     @Builder
     public Sharehouse(Member host, String title, String description, String address,

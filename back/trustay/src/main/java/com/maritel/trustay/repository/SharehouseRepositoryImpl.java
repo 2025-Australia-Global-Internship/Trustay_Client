@@ -72,7 +72,7 @@ public class SharehouseRepositoryImpl implements SharehouseRepositoryCustom {
     // --- [BooleanExpression: 검색 조건들] ---
 
     private BooleanExpression isApproved() {
-        return sharehouse.approvalStatus.eq(ApprovalStatus.APPROVED);
+        return sharehouse.approvalStatus.eq(ApprovalStatus.ACTIVE);
     }
 
     private BooleanExpression containsKeyword(String keyword) {
