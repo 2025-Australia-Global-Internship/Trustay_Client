@@ -35,6 +35,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: GradientLayout(
         child: CustomScrollView(
           slivers: [
@@ -104,7 +105,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     CircleIconButton(
                       svgAsset: 'assets/icons/bell.svg',
-                      iconSize: 19,
+                      iconSize: 18.5,
                       iconColor: dark,
                       onPressed: () {},
                     ),
@@ -144,7 +145,7 @@ class _HomePageState extends State<HomePage> {
 
             SliverToBoxAdapter(
               child: SizedBox(
-                height: 42,
+                height: 45,
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -278,7 +279,7 @@ class _HomePageState extends State<HomePage> {
               height: 16,
               color: selected ? Colors.white : dark,
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 8),
           ],
           Text(
             text,

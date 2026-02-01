@@ -41,6 +41,8 @@ dependencies:
   firebase_auth: ^6.1.4
   google_sign_in: ^6.1.0
 
+  table_calendar: ^3.0.9
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

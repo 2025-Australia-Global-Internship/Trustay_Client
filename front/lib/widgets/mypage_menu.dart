@@ -12,8 +12,12 @@ class MenuSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Column(children: children),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 9),
+        child: Column(children: children),
+      ),
     );
   }
 }
@@ -40,7 +44,7 @@ class MyPageMenuItem extends StatelessWidget {
     return ListTile(
       leading: leading,
       dense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -66,7 +70,12 @@ class MyPageMenuItem extends StatelessWidget {
         ],
       ),
       subtitle: null,
-      trailing: const Icon(Icons.chevron_right),
+      trailing: SvgPicture.asset(
+        'assets/icons/arrow_right.svg',
+        width: 16,
+        height: 16,
+        colorFilter: ColorFilter.mode(dark, BlendMode.srcIn),
+      ),
       onTap: onTap,
     );
   }
