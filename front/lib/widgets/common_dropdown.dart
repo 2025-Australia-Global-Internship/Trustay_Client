@@ -48,7 +48,7 @@ class CommonDropdown<T> extends StatelessWidget {
                 value: item.value,
                 child: DefaultTextStyle(
                   style: const TextStyle(
-                    fontFamily: 'NanumSquareNeo', // 원하는 폰트
+                    fontFamily: 'NanumSquareNeo',
                     fontSize: 15,
                     fontWeight: FontWeight.w400,
                     color: dark,
@@ -115,7 +115,7 @@ class CommonDropdown<T> extends StatelessWidget {
   static OutlineInputBorder _border(Color color) {
     return OutlineInputBorder(
       borderRadius: BorderRadius.circular(18),
-      borderSide: BorderSide(color: color),
+      borderSide: BorderSide(color: color, width: 1.2),
     );
   }
 }

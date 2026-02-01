@@ -45,6 +45,7 @@ class _MyPageState extends State<MyPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: GradientLayout(
         child: ListView(
           padding: const EdgeInsets.only(bottom: 16),
@@ -65,7 +66,7 @@ class _MyPageState extends State<MyPage> {
               ),
               trailing: CircleIconButton(
                 padding: EdgeInsets.zero,
-                icon: Icons.logout,
+                svgAsset: 'assets/icons/logout.svg',
                 iconSize: 23,
                 onPressed: () => _handleLogout(context),
               ),
@@ -145,8 +146,8 @@ class _MyPageState extends State<MyPage> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: yellow,
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
+                            horizontal: 11,
+                            vertical: 10,
                           ),
                           minimumSize: const Size(0, 36),
                           shape: RoundedRectangleBorder(
@@ -160,7 +161,7 @@ class _MyPageState extends State<MyPage> {
               ),
             ),
 
-            const SizedBox(height: 34),
+            const SizedBox(height: 30),
 
             /// 메뉴 섹션들
             Padding(
@@ -183,7 +184,7 @@ class _MyPageState extends State<MyPage> {
                     ],
                   ),
 
-                  const SizedBox(height: 9),
+                  const SizedBox(height: 4),
 
                   MenuSection(
                     children: [
@@ -206,7 +207,7 @@ class _MyPageState extends State<MyPage> {
                     ],
                   ),
 
-                  const SizedBox(height: 9),
+                  const SizedBox(height: 4),
 
                   MenuSection(
                     children: [
@@ -226,6 +227,7 @@ class _MyPageState extends State<MyPage> {
                         title: 'My Wallet',
                         leading: const MenuIcon(
                           assetPath: 'assets/icons/coin-fill.svg',
+                          size: 26,
                         ),
                       ),
                       MyPageMenuItem(

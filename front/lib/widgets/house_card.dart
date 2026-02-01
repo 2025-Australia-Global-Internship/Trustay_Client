@@ -179,7 +179,7 @@ Widget _iconChip({
           height: isGrid ? 13 : 18,
           color: dark,
         ),
-        SizedBox(width: isGrid ? 6 : 8),
+        SizedBox(width: isGrid ? 6 : 10),
         Text(
           text,
           style: TextStyle(
