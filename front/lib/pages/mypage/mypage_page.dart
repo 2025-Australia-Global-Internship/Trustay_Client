@@ -6,6 +6,7 @@ import 'package:front/widgets/gradient_layout.dart';
 import 'package:front/widgets/mypage_menu.dart';
 import 'package:front/widgets/circle_icon_button.dart';
 import 'package:front/widgets/custom_header.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class MyPage extends StatefulWidget {
   const MyPage({super.key});
@@ -103,7 +104,7 @@ class _MyPageState extends State<MyPage> {
                           color: dark,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 5),
 
                       Row(
                         children: [
@@ -126,23 +127,10 @@ class _MyPageState extends State<MyPage> {
 
                       const SizedBox(height: 6),
 
-                      ElevatedButton.icon(
+                      ElevatedButton(
                         onPressed: () {
                           Navigator.pushNamed(context, '/edit_profile');
                         },
-                        icon: const Icon(
-                          Icons.edit_outlined,
-                          size: 16,
-                          color: darkgreen,
-                        ),
-                        label: const Text(
-                          'Edit profile',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: darkgreen,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: yellow,
                           padding: const EdgeInsets.symmetric(
@@ -153,6 +141,29 @@ class _MyPageState extends State<MyPage> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20),
                           ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min, // 버튼 크기 최소화
+                          children: [
+                            SvgPicture.asset(
+                              'assets/icons/pencil.svg',
+                              width: 14,
+                              height: 14,
+                              colorFilter: const ColorFilter.mode(
+                                darkgreen,
+                                BlendMode.srcIn,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Edit profile',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: darkgreen,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],

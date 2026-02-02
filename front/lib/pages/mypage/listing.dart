@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-
-// [중요] 경로에 맞춰 import를 수정해주세요.
 import '../../constants/colors.dart';
 import '../../widgets/custom_header.dart';
 import '../../widgets/gradient_layout.dart';
 import '../../models/listing_model.dart';
 import '../../services/listing_service.dart';
 import '../../widgets/my_listing_card.dart';
-import 'sharehouse_detail_page.dart'; // [추가] 상세 페이지 import
+import 'sharehouse_detail_page.dart';
 
 class ListingPage extends StatefulWidget {
   const ListingPage({super.key});
@@ -82,15 +80,15 @@ class _ListingPage extends State<ListingPage> {
           _listings.removeWhere((item) => item.id == id);
         });
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("매물이 삭제되었습니다.")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("매물이 삭제되었습니다.")));
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("삭제 실패: $e")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("삭제 실패: $e")));
     }
   }
 
@@ -98,60 +96,63 @@ class _ListingPage extends State<ListingPage> {
   void _editListing(int id) {
     // TODO: 수정 페이지로 이동 구현
     print("Edit Listing ID: $id");
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("수정 페이지로 이동합니다 (구현 예정)")),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text("수정 페이지로 이동합니다 (구현 예정)")));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: GradientLayout(
-        child: Column(
+        child: Stack(
           children: [
-            CustomHeader(
-              center: const Text(
-                'Listings',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: dark,
-                ),
-              ),
-              showBack: true,
-            ),
-            
-            Expanded(
-              child: _buildContent(),
-            ),
-
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: () {
-                    // 생성 후 돌아왔을 때 새로고침
-                    Navigator.pushNamed(context, '/sharehouse_create').then((_) {
-                      _loadData();
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: yellow,
-                    foregroundColor: darkgreen,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(26),
-                    ),
-                  ),
-                  child: const Text(
-                    'Create New Listing',
+            Column(
+              children: [
+                CustomHeader(
+                  center: const Text(
+                    'Listings',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 20,
                       fontWeight: FontWeight.w800,
+                      color: dark,
                     ),
                   ),
+                  showBack: true,
+                ),
+                Expanded(child: _buildContent()),
+              ],
+            ),
+            Positioned(
+              bottom: 20,
+              right: 20,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pushNamed(
+                    context,
+                    '/sharehouse_create',
+                  ).then((_) => _loadData());
+                },
+                icon: const Icon(Icons.add, size: 20, color: Colors.white),
+                label: const Text(
+                  'Create Listing',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: green,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 16,
+                  ),
+                  minimumSize: const Size(0, 36),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  elevation: 3,
                 ),
               ),
             ),
@@ -175,11 +176,16 @@ class _ListingPage extends State<ListingPage> {
             const SizedBox(height: 10),
             TextButton(
               onPressed: () {
-                setState(() { _isLoading = true; });
+                setState(() {
+                  _isLoading = true;
+                });
                 _loadData();
               },
-              child: const Text("다시 시도", style: TextStyle(color: dark, fontWeight: FontWeight.bold)),
-            )
+              child: const Text(
+                "다시 시도",
+                style: TextStyle(color: dark, fontWeight: FontWeight.bold),
+              ),
+            ),
           ],
         ),
       );
@@ -191,18 +197,32 @@ class _ListingPage extends State<ListingPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(
-              width: 86,
-              height: 86,
+              width: 96,
+              height: 96,
               child: SvgPicture.asset(
                 'assets/icons/home-edit.svg',
-                color: grey02,
-                placeholderBuilder: (_) => const Icon(Icons.home, size: 86, color: grey02),
+                color: grey01,
+                placeholderBuilder: (_) =>
+                    const Icon(Icons.home, size: 86, color: grey02),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             const Text(
-              '등록된 매물이 없습니다.',
-              style: TextStyle(fontSize: 13, color: grey02, fontWeight: FontWeight.w700),
+              'No listings yet.',
+              style: TextStyle(
+                fontSize: 14,
+                color: grey02,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'List your shared house to get started.',
+              style: TextStyle(
+                fontSize: 14,
+                color: grey02,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ],
         ),
