@@ -28,8 +28,9 @@ public class Contract extends BaseEntity {
     @JoinColumn(name = "tenant_id")
     private Member tenant; // 세입자
 
-    @Column(length = 500)
-    private String contractImageUrl; // 스캔된 계약서 이미지 경로
+    @OneToOne(fetch = FetchType.LAZY) // 계약서 스캔본 1:1
+    @JoinColumn(name = "image_id")
+    private Image contractImage;
 
     @Lob
     private String ocrTextData; // OCR로 추출한 텍스트 데이터

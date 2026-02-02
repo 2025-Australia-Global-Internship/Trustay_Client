@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Trustay Real-time Chat Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        #chat-box { border: 1px solid #ddd; height: 400px; overflow-y: scroll; padding: 15px; background: #f9f9f9; display: flex; flex-direction: column; }
+        .message { margin-bottom: 10px; padding: 8px 12px; border-radius: 15px; max-width: 70%; word-break: break-all; }
+        .mine { align-self: flex-end; background-color: #ffe812; color: #333; } /* 내 메시지: 카톡 노란색 */
+        .others { align-self: flex-start; background-color: #fff; border: 1px solid #ccc; } /* 상대방: 흰색 */
+        .system { align-self: center; font-size: 12px; color: #888; }
+    </style>
+</head>
+<body>
+<h2>Trustay 실시간 채팅 테스트</h2>
+<div style="margin-bottom: 10px;">
+    <input type="number" id="roomId" placeholder="Room ID (방 번호)">
+    <input type="number" id="senderId" placeholder="My ID (내 회원번호)">
+    <button onclick="connect()" id="connect-btn">1. 연결 및 구독</button>
+</div>
+
+<div id="chat-box">
+    <div class="system">먼저 연결 버튼을 눌러주세요.</div>
+</div>
+
+<div style="margin-top: 10px;">
+    <input type="text" id="messageInput" placeholder="메시지 내용" style="width: 300px;">
+    <button onclick="sendMessage()" id="send-btn" disabled>2. 전송</button>
+</div>
+
+<script>
+    var stompClient = null;
+
+    function connect() {
+        var roomId = document.getElementById('roomId').value;
+        var senderId = document.getElementById('senderId').value;
+
+        if(!roomId || !senderId) {
+            alert("Room ID와 My ID를 입력해주세요.");
+            return;
+        }
+
+        var socket = new SockJS('/ws-stomp');
+        stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, function (frame) {
+            console.log('연결됨: ' + frame);
+            document.getElementById('connect-btn').innerText = "연결 완료";
+            document.getElementById('connect-btn').disabled = true;
+            document.getElementById('send-btn').disabled = false;
+
+            // [핵심] 해당 채팅방 경로를 구독하여 실시간으로 메시지를 수신
+            stompClient.subscribe('/sub/chat/room/' + roomId, function (response) {
+                var messageData = JSON.parse(response.body);
+                renderMessage(messageData);
+            });
+
+            var chatBox = document.getElementById('chat-box');
+            chatBox.innerHTML += '<div class="system">채팅방(' + roomId + ')에 연결되었습니다.</div>';
+        });
+    }
+
+    function sendMessage() {
+        var roomId = document.getElementById('roomId').value;
+        var senderId = document.getElementById('senderId').value;
+        var message = document.getElementById('messageInput').value;
+
+        if (!message) return;
+
+        // 서버의 @MessageMapping("/chat/send")로 발송
+        stompClient.send("/pub/chat/send", {}, JSON.stringify({
+            'roomId': roomId,
+            'senderId': senderId,
+            'message': message,
+            'messageType': 'TEXT'
+        }));
+
+        document.getElementById('messageInput').value = '';
+    }
+
+    function renderMessage(res) {
+        var chatBox = document.getElementById('chat-box');
+        var myId = document.getElementById('senderId').value;
+
+        // 내 메시지인지 상대방 메시지인지 구분하여 클래스 부여
+        var isMine = res.senderId == myId;
+        var className = isMine ? 'mine' : 'others';
+
+        var msgHtml = '<div class="message ' + className + '">' +
+            '<strong>' + res.senderName + '</strong><br>' +
+            res.message +
+            '</div>';
+
+        chatBox.innerHTML += msgHtml;
+        chatBox.scrollTop = chatBox.scrollHeight; // 스크롤 하단 이동
+    }
+
+    // 엔터키 전송 이벤트
+    document.getElementById("messageInput").addEventListener("keyup", function(event) {
+        if (event.key === "Enter") sendMessage();
+    });
+</script>
+</body>
+</html>

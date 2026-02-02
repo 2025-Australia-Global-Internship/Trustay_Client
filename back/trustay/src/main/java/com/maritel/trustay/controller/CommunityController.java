@@ -60,7 +60,7 @@ public class CommunityController {
     }
 
     @Operation(summary = "내가 만든 커뮤니티 목록", description = "로그인한 사용자가 생성한 커뮤니티 목록을 조회합니다.")
-    @GetMapping("/my-created")
+    @GetMapping("/created")
     public ResponseEntity<DataResponse<List<CommunityRes>>> getMyCommunities(Principal principal) {
         String userEmail = principal.getName();
         List<CommunityRes> response = communityService.getMyCommunities(userEmail);
@@ -68,7 +68,7 @@ public class CommunityController {
     }
 
     @Operation(summary = "내가 가입한 커뮤니티 목록", description = "로그인한 사용자가 가입한 커뮤니티 목록을 조회합니다.")
-    @GetMapping("/my-joined")
+    @GetMapping("/joined")
     public ResponseEntity<DataResponse<List<CommunityRes>>> getJoinedCommunities(Principal principal) {
         String userEmail = principal.getName();
         List<CommunityRes> response = communityService.getJoinedCommunities(userEmail);

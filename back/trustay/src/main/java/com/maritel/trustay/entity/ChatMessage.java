@@ -3,13 +3,12 @@ package com.maritel.trustay.entity;
 import com.maritel.trustay.constant.MessageType;
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "TBL_CHAT_MESSAGE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class ChatMessage {
+public class ChatMessage extends BaseEntity { // BaseEntity 상속으로 변경
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "message_id")
@@ -24,14 +23,12 @@ public class ChatMessage {
     private Member sender;
 
     @Column(columnDefinition = "TEXT")
-    private String message; // 메시지 내용
+    private String message; // 메시지 내용 또는 파일 URL
 
     @Enumerated(EnumType.STRING)
-    private MessageType messageType; // TEXT, IMAGE, CONTRACT(계약서)
+    private MessageType messageType; // TEXT, IMAGE, CONTRACT
 
     private boolean isRead; // 읽음 확인
-
-    private LocalDateTime sentAt; // 전송 시간 (BaseEntity 안쓰고 별도 관리 추천)
 
     @Builder
     public ChatMessage(ChatRoom chatRoom, Member sender, String message, MessageType messageType) {
@@ -39,7 +36,11 @@ public class ChatMessage {
         this.sender = sender;
         this.message = message;
         this.messageType = messageType;
-        this.isRead = false;
-        this.sentAt = LocalDateTime.now();
+        this.isRead = false; // 기본값 미읽음
+    }
+
+    // 읽음 처리 메서드 추가
+    public void markAsRead() {
+        this.isRead = true;
     }
 }

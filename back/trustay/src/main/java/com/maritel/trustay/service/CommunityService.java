@@ -4,9 +4,11 @@ import com.maritel.trustay.dto.req.CommunityReq;
 import com.maritel.trustay.dto.res.CommunityRes;
 import com.maritel.trustay.entity.Community;
 import com.maritel.trustay.entity.CommunityMember;
+import com.maritel.trustay.entity.Image;
 import com.maritel.trustay.entity.Member;
 import com.maritel.trustay.repository.CommunityMemberRepository;
 import com.maritel.trustay.repository.CommunityRepository;
+import com.maritel.trustay.repository.ImageRepository;
 import com.maritel.trustay.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +29,7 @@ public class CommunityService {
     private final CommunityRepository communityRepository;
     private final CommunityMemberRepository communityMemberRepository;
     private final MemberRepository memberRepository;
+    private final ImageRepository imageRepository;
 
     /**
      * 커뮤니티 생성
@@ -36,11 +39,20 @@ public class CommunityService {
         Member member = memberRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new IllegalArgumentException("회원 정보를 찾을 수 없습니다."));
 
+        // 1. [수정] 입력받은 URL 문자열을 Image 엔티티로 변환하여 저장
+        Image communityImage = null;
+        if (req.getImageUrl() != null && !req.getImageUrl().isEmpty()) {
+            communityImage = imageRepository.save(Image.builder()
+                    .imageUrl(req.getImageUrl())
+                    .build());
+        }
+
+        // 2. [수정] Community 빌더에 Image 객체 전달 (필드명이 communityImage로 바뀌었을 경우)
         Community community = Community.builder()
                 .owner(member)
                 .name(req.getName())
                 .description(req.getDescription())
-                .imageUrl(req.getImageUrl())
+                .communityImage(communityImage) // .imageUrl(req.getImageUrl())에서 변경
                 .build();
 
         Community savedCommunity = communityRepository.save(community);
@@ -176,7 +188,12 @@ public class CommunityService {
             throw new IllegalStateException("수정 권한이 없습니다.");
         }
 
-        community.updateCommunity(req.getName(), req.getDescription(), req.getImageUrl());
+        Image image = imageRepository.save(Image.builder()
+                .imageUrl(req.getImageUrl())
+                .build());
+
+        // Community 엔티티의 update 메서드도 Image를 받도록 수정되어 있어야 함
+        community.updateCommunity(req.getName(), req.getDescription(), image);
     }
 
     /**

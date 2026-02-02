@@ -110,7 +110,10 @@ public class SecurityConfig {
     public WebSecurityCustomizer webSecurityCustomizer() {
         return web -> web.ignoring().requestMatchers(
                 "/images/**",
-                "/static/**"
+                "/static/**",
+                "/favicon.ico",
+                "/ws-stomp/**", // 웹소켓 핸드쉐이크 허용
+                "/chat-test.html" // 테스트용 페이지 허용
         );
     }
 }

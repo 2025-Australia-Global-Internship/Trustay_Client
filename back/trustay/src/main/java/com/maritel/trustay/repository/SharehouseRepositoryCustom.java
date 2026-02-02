@@ -6,5 +6,5 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface SharehouseRepositoryCustom {
-    Page<Sharehouse> search(SharehouseSearchReq req, Pageable pageable);
+    Page<Sharehouse> searchSharehouses(SharehouseSearchReq req, Pageable pageable);
 }

@@ -28,6 +28,7 @@ public class PostService {
     private final SharehouseCommunityRepository sharehouseCommunityRepository;
     private final SharehouseRepository sharehouseRepository;
     private final MemberRepository memberRepository;
+    private final ImageRepository imageRepository;
 
     /**
      * 게시글 작성
@@ -82,9 +83,17 @@ public class PostService {
         if (req.getImageUrls() != null && !req.getImageUrls().isEmpty()) {
             List<PostImage> postImages = new ArrayList<>();
             for (int i = 0; i < req.getImageUrls().size(); i++) {
+                String url = req.getImageUrls().get(i);
+
+                // 1. 통합 이미지 테이블에 저장
+                Image image = imageRepository.save(Image.builder()
+                        .imageUrl(url)
+                        .build());
+
+                // 2. 연결 테이블(PostImage)에 저장
                 PostImage postImage = PostImage.builder()
-                        .post(savedPost)
-                        .imageUrl(req.getImageUrls().get(i))
+                        .post(post)
+                        .image(image) // URL 대신 Image 객체 참조
                         .displayOrder(i)
                         .build();
                 postImages.add(postImage);
@@ -94,7 +103,7 @@ public class PostService {
 
         List<String> imageUrls = postImageRepository.findByPostIdOrderByDisplayOrderAsc(savedPost.getId())
                 .stream()
-                .map(PostImage::getImageUrl)
+                .map(postImage -> postImage.getImage().getImageUrl())
                 .collect(Collectors.toList());
 
         return PostRes.from(savedPost, imageUrls);
@@ -114,7 +123,7 @@ public class PostService {
 
         List<String> imageUrls = postImageRepository.findByPostIdOrderByDisplayOrderAsc(postId)
                 .stream()
-                .map(PostImage::getImageUrl)
+                .map(postImage -> postImage.getImage().getImageUrl())
                 .collect(Collectors.toList());
 
         return PostRes.from(post, imageUrls);
@@ -128,7 +137,7 @@ public class PostService {
         return posts.map(post -> {
             List<String> imageUrls = postImageRepository.findByPostIdOrderByDisplayOrderAsc(post.getId())
                     .stream()
-                    .map(PostImage::getImageUrl)
+                    .map(postImage -> postImage.getImage().getImageUrl())
                     .collect(Collectors.toList());
             return PostRes.from(post, imageUrls);
         });
@@ -155,7 +164,7 @@ public class PostService {
         return posts.map(post -> {
             List<String> imageUrls = postImageRepository.findByPostIdOrderByDisplayOrderAsc(post.getId())
                     .stream()
-                    .map(PostImage::getImageUrl)
+                    .map(postImage -> postImage.getImage().getImageUrl())
                     .collect(Collectors.toList());
             return PostRes.from(post, imageUrls);
         });
@@ -169,7 +178,7 @@ public class PostService {
         return posts.map(post -> {
             List<String> imageUrls = postImageRepository.findByPostIdOrderByDisplayOrderAsc(post.getId())
                     .stream()
-                    .map(PostImage::getImageUrl)
+                    .map(postImage -> postImage.getImage().getImageUrl())
                     .collect(Collectors.toList());
             return PostRes.from(post, imageUrls);
         });
@@ -186,15 +195,11 @@ public class PostService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
 
-        // 권한 확인
+        // 권한 확인 로직 (기존과 동일)
         boolean hasPermission = false;
-
-        // 일반 커뮤니티: 작성자만 수정 가능
         if (post.getCommunity() != null) {
             hasPermission = post.getAuthor().getId().equals(member.getId());
-        }
-        // 쉐어하우스 커뮤니티: 집주인만 수정 가능
-        else if (post.getSharehouseCommunity() != null) {
+        } else if (post.getSharehouseCommunity() != null) {
             Sharehouse sharehouse = post.getSharehouseCommunity().getSharehouse();
             hasPermission = sharehouse.getHost().getId().equals(member.getId());
         }
@@ -203,21 +208,31 @@ public class PostService {
             throw new IllegalStateException("수정 권한이 없습니다.");
         }
 
-        // 게시글 수정
+        // 1. 게시글 본문 수정
         post.updatePost(req.getTitle(), req.getContent(), req.getIsNotice());
 
-        // 기존 이미지 삭제
+        // 2. 기존 이미지 연결 삭제
         postImageRepository.deleteByPostId(postId);
 
-        // 새 이미지 저장
+        // 3. 새 이미지 저장 (수정된 부분)
         if (req.getImageUrls() != null && !req.getImageUrls().isEmpty()) {
             List<PostImage> postImages = new ArrayList<>();
+
             for (int i = 0; i < req.getImageUrls().size(); i++) {
+                String url = req.getImageUrls().get(i);
+
+                // [핵심] 3-1. 공통 이미지 테이블(TBL_IMAGE)에 먼저 저장
+                Image imageEntity = imageRepository.save(Image.builder()
+                        .imageUrl(url)
+                        .build());
+
+                // [핵심] 3-2. 연결 테이블(PostImage)에 Image 객체 전달
                 PostImage postImage = PostImage.builder()
                         .post(post)
-                        .imageUrl(req.getImageUrls().get(i))
+                        .image(imageEntity) // .imageUrl(url) 대신 .image(imageEntity)
                         .displayOrder(i)
                         .build();
+
                 postImages.add(postImage);
             }
             postImageRepository.saveAll(postImages);

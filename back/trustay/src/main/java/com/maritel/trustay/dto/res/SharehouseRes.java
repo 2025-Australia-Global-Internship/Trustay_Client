@@ -3,12 +3,12 @@ package com.maritel.trustay.dto.res;
 import com.maritel.trustay.constant.ApprovalStatus;
 import com.maritel.trustay.constant.HouseType;
 import com.maritel.trustay.entity.Sharehouse;
+import com.maritel.trustay.entity.SharehouseImage; // 추가 필수
 import lombok.Builder;
 import lombok.Getter;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.stream.Collectors; // 추가 필수
 
 @Getter
 @Builder
@@ -21,7 +21,8 @@ public class SharehouseRes {
     private ApprovalStatus approvalStatus;
     private List<String> imageUrls;
 
-    public static SharehouseRes from(Sharehouse sharehouse) {
+    // [수정] 메서드 시그니처에 List<SharehouseImage> images 추가
+    public static SharehouseRes from(Sharehouse sharehouse, List<SharehouseImage> images) {
         return SharehouseRes.builder()
                 .id(sharehouse.getId())
                 .title(sharehouse.getTitle())
@@ -29,15 +30,10 @@ public class SharehouseRes {
                 .viewCount(sharehouse.getViewCount())
                 .houseType(sharehouse.getHouseType())
                 .approvalStatus(sharehouse.getApprovalStatus())
-                .imageUrls(parseImageUrls(sharehouse.getImageUrls()))
+                // [수정] images 리스트를 스트림으로 변환하여 URL 추출
+                .imageUrls(images != null ? images.stream()
+                        .map(si -> si.getImage().getImageUrl())
+                        .collect(Collectors.toList()) : List.of())
                 .build();
-    }
-
-    private static List<String> parseImageUrls(String raw) {
-        if (raw == null || raw.isBlank()) return List.of();
-        return Arrays.stream(raw.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isBlank())
-                .collect(Collectors.toList());
     }
 }
