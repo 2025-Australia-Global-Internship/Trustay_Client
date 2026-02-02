@@ -29,7 +29,7 @@ class CircleIconButton extends StatelessWidget {
     this.backgroundColor = Colors.white,
     this.borderColor,
     this.borderWidth = 1,
-    this.elevation = 4,
+    this.elevation = 0,
     this.padding = EdgeInsets.zero,
     this.applySvgColor = true,
   });
@@ -38,31 +38,36 @@ class CircleIconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: padding,
-      child: SizedBox(
+      child: Container(
         width: size,
         height: size,
-        child: Material(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
           color: backgroundColor,
-          shape: CircleBorder(
-            side: borderColor != null
-                ? BorderSide(color: borderColor!, width: borderWidth)
-                : BorderSide.none,
-          ),
-          elevation: elevation,
-          child: IconButton(
-            padding: EdgeInsets.zero,
-            onPressed: onPressed,
-            icon: svgAsset != null
-                ? SvgPicture.asset(
-                    svgAsset!,
-                    width: iconSize,
-                    height: iconSize,
-                    colorFilter: applySvgColor
-                        ? ColorFilter.mode(iconColor, BlendMode.srcIn)
-                        : null,
-                  )
-                : Icon(icon, size: iconSize, color: iconColor),
-          ),
+          border: borderColor != null
+              ? Border.all(color: borderColor!, width: borderWidth)
+              : null,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.14),
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: IconButton(
+          padding: EdgeInsets.zero,
+          onPressed: onPressed,
+          icon: svgAsset != null
+              ? SvgPicture.asset(
+                  svgAsset!,
+                  width: iconSize,
+                  height: iconSize,
+                  colorFilter: applySvgColor
+                      ? ColorFilter.mode(iconColor, BlendMode.srcIn)
+                      : null,
+                )
+              : Icon(icon, size: iconSize, color: iconColor),
         ),
       ),
     );

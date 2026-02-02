@@ -20,19 +20,16 @@ class _CommunityPageState extends State<CommunityPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       body: GradientLayout(
-        child: Column(
-          children: [
-            // 상단 스위치 헤더
-            _buildTopSwitchHeader(),
-            // 모드별 페이지
-            Expanded(
-              child: _topTabIndex == 0
-                  ? HouseCommPage() // House 모드
-                  : SocialCommPage(), // Social 모드
-            ),
-          ],
+        child: SafeArea(
+          child: Column(
+            children: [
+              _buildTopSwitchHeader(),
+              Expanded(
+                child: _topTabIndex == 0 ? HouseCommPage() : SocialCommPage(),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -40,41 +37,58 @@ class _CommunityPageState extends State<CommunityPage> {
 
   /// 상단 House / Social 스위치
   Widget _buildTopSwitchHeader() {
-    return CustomHeader(
-      toolbarHeight: 60, // 원하는 높이
-      leading: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildTopTab('House', 'assets/icons/house.svg', 0),
-          SizedBox(width: 8),
-          _buildTopTab('Social', 'assets/icons/social.svg', 1),
-        ],
-      ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (_topTabIndex == 1)
+    return Padding(
+      padding: const EdgeInsets.only(left: 16),
+      child: CustomHeader(
+        toolbarHeight: 60, // 원하는 높이
+        leading: Container(
+          padding: EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.14),
+                blurRadius: 8,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildTopTab('House', 'assets/icons/house.svg', 0),
+              SizedBox(width: 4),
+              _buildTopTab('Social', 'assets/icons/social.svg', 1),
+            ],
+          ),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_topTabIndex == 1)
+              CircleIconButton(
+                svgAsset: 'assets/icons/search.svg',
+                iconSize: 23,
+                iconColor: dark,
+                padding: const EdgeInsets.only(right: 8),
+                onPressed: () {},
+              ),
             CircleIconButton(
-              svgAsset: 'assets/icons/search.svg',
-              iconSize: 23,
+              svgAsset: 'assets/icons/bell.svg',
+              iconSize: 22,
               iconColor: dark,
               padding: const EdgeInsets.only(right: 8),
               onPressed: () {},
             ),
-          CircleIconButton(
-            svgAsset: 'assets/icons/bell.svg',
-            iconSize: 19,
-            iconColor: dark,
-            padding: const EdgeInsets.only(right: 8),
-            onPressed: () {},
-          ),
-          CircleIconButton(
-            svgAsset: 'assets/icons/profile.svg',
-            iconColor: dark,
-            iconSize: 24,
-            onPressed: () {},
-          ),
-        ],
+            CircleIconButton(
+              svgAsset: 'assets/icons/profile.svg',
+              iconColor: dark,
+              iconSize: 23,
+              onPressed: () {},
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -89,20 +103,15 @@ class _CommunityPageState extends State<CommunityPage> {
         });
       },
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: EdgeInsets.symmetric(horizontal: 11, vertical: 12),
         decoration: BoxDecoration(
           color: isSelected ? yellow : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: isSelected ? dark : grey02, width: 1),
+          borderRadius: BorderRadius.circular(28),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SvgPicture.asset(
-              svgPath,
-              width: 16,
-              height: 16, // 색상 적용 가능
-            ),
+            SvgPicture.asset(svgPath, width: 18, height: 18),
             SizedBox(width: 4),
             Text(
               label,

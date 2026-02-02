@@ -40,12 +40,15 @@ class IntroPage extends StatelessWidget {
                   ),
                 ),
 
+                const SizedBox(height: 4),
+
                 const Text(
                   'Your Place\nto Stay,\nBuilt on Trust.',
                   style: TextStyle(
                     fontSize: 36,
                     color: yellow,
                     fontWeight: FontWeight.w800,
+                    height: 1.4,
                   ),
                 ),
 

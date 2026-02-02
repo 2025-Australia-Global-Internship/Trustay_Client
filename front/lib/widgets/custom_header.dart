@@ -52,7 +52,7 @@ class CustomHeader extends StatelessWidget {
                       leading ??
                       (showBack && canGoBack
                           ? CircleIconButton(
-                              padding: EdgeInsetsGeometry.only(left: 16),
+                              padding: EdgeInsets.only(left: 16),
                               icon: Icons.arrow_back_ios_rounded,
                               iconColor: isDark ? Colors.white : dark,
                               backgroundColor: isDark

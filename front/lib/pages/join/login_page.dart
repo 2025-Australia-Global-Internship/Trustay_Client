@@ -129,32 +129,49 @@ class _LoginPageState extends State<LoginPage> {
                           },
                           child: Row(
                             children: [
-                              Container(
-                                width: 20,
-                                height: 20,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: Colors.white),
-                                  color: isAgree
-                                      ? Colors.white
-                                      : Colors.transparent,
-                                ),
-                                child: isAgree
-                                    ? const Icon(
-                                        Icons.check,
-                                        size: 16,
-                                        color: Colors.black,
-                                      )
-                                    : null,
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 20,
+                                    height: 20,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(color: Colors.white),
+                                      color: isAgree
+                                          ? Colors.white
+                                          : Colors.transparent,
+                                    ),
+                                    child: isAgree
+                                        ? const Icon(
+                                            Icons.check,
+                                            size: 16,
+                                            color: Colors.black,
+                                          )
+                                        : null,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  const Text(
+                                    'Remember me',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 10),
-                              const Expanded(
-                                child: Text(
-                                  'Remember me',
+
+                              const Spacer(),
+                              GestureDetector(
+                                onTap: () {
+                                  // TODO: 비밀번호 찾기 이동
+                                },
+                                child: const Text(
+                                  'Forgot your password?',
                                   style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
+                                    color: yellow,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w800,
                                   ),
                                 ),
                               ),
@@ -215,6 +232,7 @@ class _LoginPageState extends State<LoginPage> {
                               iconColor: Colors.white,
                               backgroundColor: Colors.transparent,
                               size: 52,
+                              iconSize: 24,
                               borderWidth: 1,
                               borderColor: Colors.white,
                               applySvgColor: false,
@@ -225,6 +243,7 @@ class _LoginPageState extends State<LoginPage> {
                               svgAsset: 'assets/icons/google.svg',
                               backgroundColor: Colors.transparent,
                               size: 52,
+                              iconSize: 22,
                               borderWidth: 1,
                               borderColor: Colors.white,
                               applySvgColor: false,
@@ -235,6 +254,7 @@ class _LoginPageState extends State<LoginPage> {
                               svgAsset: 'assets/icons/facebook.svg',
                               backgroundColor: Colors.transparent,
                               size: 52,
+                              iconSize: 26,
                               borderWidth: 1,
                               borderColor: Colors.white,
                               applySvgColor: false,

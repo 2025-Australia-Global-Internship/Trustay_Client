@@ -18,6 +18,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   User? user;
+  String _selectedFilter = 'ALL'; // 필터 상태: ALL, HOUSE, APARTMENT, UNIT
 
   @override
   void initState() {
@@ -34,6 +35,21 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    // 필터 적용된 데이터
+    final filteredPopularHouses = popularHousesDummy
+        .where(
+          (house) =>
+              _selectedFilter == 'ALL' || house.houseType == _selectedFilter,
+        )
+        .toList();
+
+    final filteredGeneralHouses = generalHousesDummy
+        .where(
+          (house) =>
+              _selectedFilter == 'ALL' || house.houseType == _selectedFilter,
+        )
+        .toList();
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: GradientLayout(
@@ -81,7 +97,7 @@ class _HomePageState extends State<HomePage> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 3),
+                          const SizedBox(height: 5),
                           Text(
                             'Welcome, ${user?.name ?? ''}!',
                             style: const TextStyle(
@@ -101,11 +117,13 @@ class _HomePageState extends State<HomePage> {
                       svgAsset: 'assets/icons/search.svg',
                       iconSize: 23,
                       padding: const EdgeInsets.only(right: 8),
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/search');
+                      },
                     ),
                     CircleIconButton(
                       svgAsset: 'assets/icons/bell.svg',
-                      iconSize: 18.5,
+                      iconSize: 22,
                       iconColor: dark,
                       onPressed: () {},
                     ),
@@ -117,7 +135,7 @@ class _HomePageState extends State<HomePage> {
             // 제목
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: const [
@@ -129,7 +147,7 @@ class _HomePageState extends State<HomePage> {
                         color: dark,
                       ),
                     ),
-                    SizedBox(height: 3),
+                    SizedBox(height: 10),
                     Text(
                       'Built on Trust.',
                       style: TextStyle(
@@ -143,6 +161,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
+            // 필터칩
             SliverToBoxAdapter(
               child: SizedBox(
                 height: 45,
@@ -150,11 +169,30 @@ class _HomePageState extends State<HomePage> {
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   children: [
-                    _filterChip('Filter', icon: 'assets/icons/filter.svg'),
-                    _filterChip('All', selected: true),
-                    _filterChip('House'),
-                    _filterChip('Apartment'),
-                    _filterChip('Unit'),
+                    _filterChip(
+                      'Filter',
+                      icon: 'assets/icons/filter.svg',
+                    ), // 장식용
+                    _filterChip(
+                      'All',
+                      selected: _selectedFilter == 'ALL',
+                      type: 'ALL',
+                    ),
+                    _filterChip(
+                      'House',
+                      selected: _selectedFilter == 'HOUSE',
+                      type: 'HOUSE',
+                    ),
+                    _filterChip(
+                      'Apartment',
+                      selected: _selectedFilter == 'APARTMENT',
+                      type: 'APARTMENT',
+                    ),
+                    _filterChip(
+                      'Unit',
+                      selected: _selectedFilter == 'UNIT',
+                      type: 'UNIT',
+                    ),
                   ],
                 ),
               ),
@@ -191,15 +229,16 @@ class _HomePageState extends State<HomePage> {
 
             const SliverToBoxAdapter(child: SizedBox(height: 14)),
 
+            // Popular horizontal list
             SliverToBoxAdapter(
               child: SizedBox(
                 height: 270,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  itemCount: popularHousesDummy.length,
+                  itemCount: filteredPopularHouses.length,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemBuilder: (context, index) => HouseCard(
-                    house: popularHousesDummy[index],
+                    house: filteredPopularHouses[index],
                     isGrid: false,
                   ),
                 ),
@@ -241,15 +280,17 @@ class _HomePageState extends State<HomePage> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               sliver: SliverGrid(
                 delegate: SliverChildBuilderDelegate(
-                  (context, index) =>
-                      HouseCard(house: generalHousesDummy[index], isGrid: true),
-                  childCount: generalHousesDummy.length,
+                  (context, index) => HouseCard(
+                    house: filteredGeneralHouses[index],
+                    isGrid: true,
+                  ),
+                  childCount: filteredGeneralHouses.length,
                 ),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2, // 한 행에 보여줄 아이템 수
-                  mainAxisSpacing: 9, // 세로
-                  crossAxisSpacing: 11, // 가로
-                  childAspectRatio: 0.68, // 가로:세로 비율
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 9,
+                  crossAxisSpacing: 11,
+                  childAspectRatio: 0.68,
                 ),
               ),
             ),
@@ -261,35 +302,51 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _filterChip(String text, {bool selected = false, String? icon}) {
-    return Container(
-      margin: const EdgeInsets.only(right: 5),
-      padding: const EdgeInsets.symmetric(horizontal: 18),
-      decoration: BoxDecoration(
-        color: selected ? green : Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: selected ? green : grey01, width: 1.2),
-      ),
-      child: Row(
-        children: [
-          if (icon != null) ...[
-            SvgPicture.asset(
-              icon,
-              width: 16,
-              height: 16,
-              color: selected ? Colors.white : dark,
+  Widget _filterChip(
+    String text, {
+    bool selected = false,
+    String? icon,
+    String? type,
+  }) {
+    return GestureDetector(
+      onTap:
+          type !=
+              null // type이 있는 칩만 클릭 가능
+          ? () {
+              setState(() {
+                _selectedFilter = type;
+              });
+            }
+          : null,
+      child: Container(
+        margin: const EdgeInsets.only(right: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 18),
+        decoration: BoxDecoration(
+          color: selected ? green : Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: selected ? green : grey01, width: 1.2),
+        ),
+        child: Row(
+          children: [
+            if (icon != null) ...[
+              SvgPicture.asset(
+                icon,
+                width: 16,
+                height: 16,
+                color: selected ? Colors.white : dark,
+              ),
+              const SizedBox(width: 8),
+            ],
+            Text(
+              text,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: selected ? Colors.white : dark,
+              ),
             ),
-            const SizedBox(width: 8),
           ],
-          Text(
-            text,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: selected ? Colors.white : dark,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

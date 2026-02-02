@@ -15,20 +15,22 @@ class _HouseCommPageState extends State<HouseCommPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.transparent,
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return [SliverToBoxAdapter(child: _buildHouseSubTabs())];
         },
         body: _buildContent(),
       ),
-      floatingActionButton: _buildFloatingButton(),
+      floatingActionButton: _houseSubTabIndex == 0
+          ? _buildFloatingButton() // Notice일 때만 표시
+          : null,
     );
   }
 
   Widget _buildHouseSubTabs() {
     return Container(
-      padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(color: Colors.grey[200]!, width: 1.2),
@@ -136,73 +138,113 @@ class _HouseCommPageState extends State<HouseCommPage> {
           Divider(height: 1, indent: 72, endIndent: 16),
       itemBuilder: (context, index) {
         final item = chatItems[index];
-        return ListTile(
-          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          leading: CircleAvatar(
-            radius: 28,
-            backgroundColor: Colors.grey[300],
-            child: Text(
-              item['name'].toString()[0],
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[700],
-              ),
-            ),
-          ),
-          title: Row(
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Expanded(
+              // 아바타
+              CircleAvatar(
+                radius: 28,
+                backgroundColor: Colors.grey[300],
                 child: Text(
-                  item['name'].toString(),
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  item['name'].toString()[0],
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: grey03,
+                  ),
                 ),
               ),
-              Text(
-                item['time'].toString(),
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              SizedBox(width: 15),
+
+              // 메시지 영역
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 이름 + 시간
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          item['name'].toString(),
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        Text(
+                          item['time'].toString(),
+                          style: TextStyle(fontSize: 10, color: grey04),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 6), // 이름과 메시지 간격
+                    // 메시지 + unread badge
+                    Row(
+                      children: [
+                        // 메시지 미리보기
+                        Expanded(
+                          child: Text(
+                            item['message'].toString(),
+                            style: TextStyle(fontSize: 13, color: grey04),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        // 안읽음 표시
+                        if ((item['unread'] as int) > 0) ...[
+                          SizedBox(width: 6),
+                          Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: green,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Text(
+                                item['unread'].toString(),
+                                style: TextStyle(
+                                  color: yellow,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-          subtitle: Text(
-            item['message'].toString(),
-            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          trailing: item['unread'] as int > 0
-              ? Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: Color(0xFF4CAF50),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      item['unread'].toString(),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                )
-              : null,
         );
       },
     );
   }
 
   Widget _buildFloatingButton() {
-    return FloatingActionButton(
-      onPressed: () {
-        // Notice / Chat 새 글 작성
-      },
-      backgroundColor: Color(0xFF7D9B5B),
-      elevation: 4,
-      child: Icon(Icons.edit, color: Colors.white, size: 24),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: SizedBox(
+        width: 64,
+        height: 64,
+        child: FloatingActionButton(
+          onPressed: () {},
+          backgroundColor: green,
+          elevation: 4,
+          child: SvgPicture.asset(
+            'assets/icons/pencil.svg',
+            width: 25,
+            height: 25,
+            color: yellow,
+          ),
+        ),
+      ),
     );
   }
 }
