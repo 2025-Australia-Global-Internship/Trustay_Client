@@ -7,14 +7,17 @@ import com.maritel.trustay.dto.req.SharehouseSearchReq;
 import com.maritel.trustay.dto.req.SharehouseUpdateReq;
 import com.maritel.trustay.dto.res.SharehouseRes;
 import com.maritel.trustay.dto.res.SharehouseResultRes;
+import com.maritel.trustay.dto.res.WishToggleRes;
 import com.maritel.trustay.entity.Image;
 import com.maritel.trustay.entity.Member;
 import com.maritel.trustay.entity.Sharehouse;
 import com.maritel.trustay.entity.SharehouseImage;
+import com.maritel.trustay.entity.SharehouseWish;
 import com.maritel.trustay.repository.ImageRepository;
 import com.maritel.trustay.repository.MemberRepository;
 import com.maritel.trustay.repository.SharehouseImageRepository;
 import com.maritel.trustay.repository.SharehouseRepository;
+import com.maritel.trustay.repository.SharehouseWishRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -38,6 +41,7 @@ public class SharehouseService {
     private final GeocodingService geocodingService; // 1. 주입 추가
     private final ImageRepository imageRepository;
     private final SharehouseImageRepository sharehouseImageRepository;
+    private final SharehouseWishRepository sharehouseWishRepository;
 
 
     /**
@@ -213,6 +217,48 @@ public class SharehouseService {
 
             // [수정] 파라미터 2개 전달
             return SharehouseRes.from(sharehouse, images);
+        });
+    }
+
+    /**
+     * 쉐어하우스 찜하기/찜 해제 (토글)
+     */
+    @Transactional
+    public WishToggleRes toggleWish(String userEmail, Long houseId) {
+        Member member = memberRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new IllegalArgumentException("사용자 정보를 찾을 수 없습니다."));
+        Sharehouse sharehouse = sharehouseRepository.findById(houseId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 쉐어하우스가 존재하지 않습니다."));
+
+        var existing = sharehouseWishRepository.findByMember_IdAndSharehouse_Id(member.getId(), sharehouse.getId());
+        if (existing.isPresent()) {
+            sharehouseWishRepository.delete(existing.get());
+            sharehouse.decreaseWishCount();
+            sharehouseRepository.save(sharehouse);
+            return WishToggleRes.builder().sharehouseId(houseId).wished(false).build();
+        } else {
+            sharehouseWishRepository.save(SharehouseWish.builder()
+                    .member(member)
+                    .sharehouse(sharehouse)
+                    .build());
+            sharehouse.increaseWishCount();
+            sharehouseRepository.save(sharehouse);
+            return WishToggleRes.builder().sharehouseId(houseId).wished(true).build();
+        }
+    }
+
+    /**
+     * 내가 찜한 쉐어하우스 목록 조회
+     */
+    @Transactional(readOnly = true)
+    public Page<SharehouseRes> getMyWishlist(String userEmail, Pageable pageable) {
+        Member member = memberRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new IllegalArgumentException("사용자 정보를 찾을 수 없습니다."));
+        Page<SharehouseWish> wishes = sharehouseWishRepository.findByMember_IdOrderByRegTimeDesc(member.getId(), pageable);
+        return wishes.map(w -> {
+            Sharehouse sh = w.getSharehouse();
+            List<SharehouseImage> images = sharehouseImageRepository.findBySharehouseId(sh.getId());
+            return SharehouseRes.from(sh, images, true);
         });
     }
 

@@ -4,6 +4,7 @@ import com.maritel.trustay.dto.req.ChatRoomCreateReq;
 import com.maritel.trustay.dto.res.ChatMessageRes;
 import com.maritel.trustay.dto.res.ChatRoomListRes;
 import com.maritel.trustay.dto.res.DataResponse;
+import com.maritel.trustay.dto.res.ResponseCode;
 import com.maritel.trustay.service.ChatMessageService;
 import com.maritel.trustay.service.ChatRoomService;
 import lombok.RequiredArgsConstructor;
@@ -36,5 +37,12 @@ public class ChatRoomController {
     @GetMapping("/rooms/{memberId}")
     public DataResponse<List<ChatRoomListRes>> getRooms(@PathVariable Long memberId) {
         return DataResponse.of(chatRoomService.getMyChatRooms(memberId));
+    }
+
+    // 채팅방 나가기
+    @PostMapping("/room/{roomId}/leave")
+    public DataResponse<Void> leaveRoom(@PathVariable Long roomId, @RequestParam Long memberId) {
+        chatRoomService.leaveRoom(roomId, memberId);
+        return DataResponse.of(ResponseCode.SUCCESS);
     }
 }

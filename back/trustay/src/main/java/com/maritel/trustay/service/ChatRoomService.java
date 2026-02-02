@@ -46,7 +46,7 @@ public class ChatRoomService {
 
         // 이미 생성된 방이 있는지 확인
         Optional<ChatRoom> existingRoom = chatRoomRepository
-                .findBySharehouseIdAndSenderIdAndReceiverId(house.getId(), sender.getId(), host.getId());
+                .findBySharehouse_IdAndSender_IdAndReceiver_Id(house.getId(), sender.getId(), host.getId());
 
         if (existingRoom.isPresent()) {
             return existingRoom.get().getId();
@@ -62,10 +62,10 @@ public class ChatRoomService {
         return chatRoomRepository.save(newRoom).getId();
     }
 
-    // 2. 참여 중인 채팅방 목록 조회 (마지막 메시지 포함)
+    // 2. 참여 중인 채팅방 목록 조회 (나가지 않은 방만, 마지막 메시지 포함)
     @Transactional(readOnly = true)
     public List<ChatRoomListRes> getMyChatRooms(Long memberId) {
-        List<ChatRoom> rooms = chatRoomRepository.findBySenderIdOrReceiverId(memberId, memberId);
+        List<ChatRoom> rooms = chatRoomRepository.findActiveRoomsByMemberId(memberId);
 
         return rooms.stream().map(room -> {
             // 마지막 메시지 조회 (방 번호로 메시지 중 가장 최근 것 하나)
@@ -86,5 +86,18 @@ public class ChatRoomService {
                     .lastMessageTime(lastMsg != null ? lastMsg.getRegTime().toString() : "")
                     .build();
         }).collect(Collectors.toList());
+    }
+
+    // 3. 채팅방 나가기
+    public void leaveRoom(Long roomId, Long memberId) {
+        ChatRoom room = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new EntityNotFoundException("채팅방을 찾을 수 없습니다."));
+        if (room.getSender().getId().equals(memberId)) {
+            room.leaveBySender();
+        } else if (room.getReceiver().getId().equals(memberId)) {
+            room.leaveByReceiver();
+        } else {
+            throw new IllegalArgumentException("해당 채팅방의 참여자가 아닙니다.");
+        }
     }
 }

@@ -147,6 +147,27 @@ public class SharehouseController {
         return ResponseEntity.ok(DataResponse.of(ResponseCode.SUCCESS, response));
     }
 
+    @Operation(summary = "쉐어하우스 찜하기/찜 해제", description = "매물에 찜을 누르거나 해제합니다. (토글)")
+    @PostMapping("/{houseId}/wish")
+    public ResponseEntity<DataResponse<WishToggleRes>> toggleWish(
+            Principal principal,
+            @PathVariable Long houseId) {
+        String email = principal.getName();
+        WishToggleRes response = sharehouseService.toggleWish(email, houseId);
+        return ResponseEntity.ok(DataResponse.of(ResponseCode.SUCCESS, response));
+    }
+
+    @Operation(summary = "내가 찜한 쉐어하우스 목록", description = "로그인한 사용자가 찜한 매물 목록을 조회합니다.")
+    @GetMapping("/wishlist")
+    public ResponseEntity<DataResponse<PageResponse<SharehouseRes>>> getMyWishlist(
+            Principal principal,
+            @PageableDefault(size = 10, sort = "regTime", direction = Sort.Direction.DESC) Pageable pageable) {
+        String email = principal.getName();
+        Page<SharehouseRes> resultPage = sharehouseService.getMyWishlist(email, pageable);
+        PageResponse<SharehouseRes> response = new PageResponse<>(resultPage);
+        return ResponseEntity.ok(DataResponse.of(ResponseCode.SUCCESS, response));
+    }
+
     @Operation(summary = "쉐어하우스 목록 조회")
     @GetMapping
     public ResponseEntity<DataResponse<PageResponse<SharehouseRes>>> getSharehouseList(

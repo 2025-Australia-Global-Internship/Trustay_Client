@@ -35,6 +35,9 @@ public class Sharehouse extends BaseEntity {
     @ColumnDefault("0") // DB 생성 시 기본값 0
     private Integer viewCount = 0;
 
+    @ColumnDefault("0")
+    private Integer wishCount = 0; // 찜 개수
+
     // --- 위치 정보 ---
     private Double latitude;  // 위도
     private Double longitude; // 경도
@@ -79,6 +82,17 @@ public class Sharehouse extends BaseEntity {
         this.options = options;
         this.approvalStatus = approvalStatus;
         this.viewCount = 0;
+        this.wishCount = 0;
+    }
+
+    public void increaseWishCount() {
+        this.wishCount = (this.wishCount == null ? 0 : this.wishCount) + 1;
+    }
+
+    public void decreaseWishCount() {
+        if (this.wishCount != null && this.wishCount > 0) {
+            this.wishCount--;
+        }
     }
 
     public void updateSharehouse(String title, String description, Integer rentPrice,
