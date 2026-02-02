@@ -53,7 +53,7 @@ class CustomHeader extends StatelessWidget {
                       (showBack && canGoBack
                           ? CircleIconButton(
                               padding: EdgeInsets.only(left: 16),
-                              icon: Icons.arrow_back_ios_rounded,
+                              svgAsset: 'assets/icons/arrow_back.svg',
                               iconColor: isDark ? Colors.white : dark,
                               backgroundColor: isDark
                                   ? Colors.transparent

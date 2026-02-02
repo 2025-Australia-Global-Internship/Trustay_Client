@@ -103,7 +103,7 @@ class _CommunityPageState extends State<CommunityPage> {
         });
       },
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 11, vertical: 12),
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected ? yellow : Colors.white,
           borderRadius: BorderRadius.circular(28),
@@ -116,7 +116,7 @@ class _CommunityPageState extends State<CommunityPage> {
             Text(
               label,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: FontWeight.w700,
                 color: dark,
               ),

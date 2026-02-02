@@ -238,13 +238,14 @@ class _MyPageState extends State<MyPage> {
                         title: 'My Wallet',
                         leading: const MenuIcon(
                           assetPath: 'assets/icons/coin-fill.svg',
-                          size: 26,
+                          size: 25.5,
                         ),
                       ),
                       MyPageMenuItem(
                         title: 'My Contracts',
                         leading: const MenuIcon(
                           assetPath: 'assets/icons/contract.svg',
+                          size: 21.5,
                         ),
                       ),
                       MyPageMenuItem(

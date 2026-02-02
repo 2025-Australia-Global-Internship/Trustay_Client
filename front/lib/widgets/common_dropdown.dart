@@ -39,7 +39,7 @@ class CommonDropdown<T> extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
 
           DropdownButtonFormField<T>(
             value: value,
@@ -49,8 +49,8 @@ class CommonDropdown<T> extends StatelessWidget {
                 child: DefaultTextStyle(
                   style: const TextStyle(
                     fontFamily: 'NanumSquareNeo',
-                    fontSize: 15,
-                    fontWeight: FontWeight.w400,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w700,
                     color: dark,
                   ),
                   child: item.child,
@@ -71,14 +71,11 @@ class CommonDropdown<T> extends StatelessWidget {
             style: const TextStyle(
               fontFamily: 'NanumSquareNeo', // 입력창 텍스트 폰트
               color: dark,
-              fontSize: 13,
+              fontSize: 13.5,
               fontWeight: FontWeight.w400,
             ),
             decoration: InputDecoration(
-              contentPadding: const EdgeInsets.symmetric(
-                vertical: 20,
-                horizontal: 12,
-              ),
+              contentPadding: const EdgeInsets.fromLTRB(16, 20, 12, 20),
               hintText: hintText,
               hintStyle: const TextStyle(
                 fontFamily: 'NanumSquareNeo', // 힌트 텍스트 폰트
@@ -87,7 +84,7 @@ class CommonDropdown<T> extends StatelessWidget {
               ),
               prefixIcon: prefixIcon != null
                   ? Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 9, 0),
+                      padding: const EdgeInsets.fromLTRB(20, 0, 13, 0),
                       child: prefixIcon,
                     )
                   : null,
@@ -101,8 +98,8 @@ class CommonDropdown<T> extends StatelessWidget {
               ),
               filled: true,
               fillColor: Colors.white,
-              enabledBorder: _border(grey02),
-              focusedBorder: _border(grey03),
+              enabledBorder: _border(grey01),
+              focusedBorder: _border(grey02),
               errorBorder: _border(Colors.redAccent),
               focusedErrorBorder: _border(Colors.redAccent),
             ),
