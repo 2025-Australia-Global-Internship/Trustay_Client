@@ -135,17 +135,17 @@ class _ListingPage extends State<ListingPage> {
                 },
                 icon: const Icon(Icons.add, size: 20, color: Colors.white),
                 label: const Text(
-                  'Create Listing',
+                  'Create',
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.white,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: green,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
+                    horizontal: 28,
                     vertical: 16,
                   ),
                   minimumSize: const Size(0, 36),
@@ -239,7 +239,6 @@ class _ListingPage extends State<ListingPage> {
           item: item,
           onEdit: () => _editListing(item.id),
           onDelete: () => _deleteListing(item.id),
-          // [추가된 부분] 카드를 눌렀을 때 상세 페이지로 이동
           onTap: () {
             Navigator.push(
               context,

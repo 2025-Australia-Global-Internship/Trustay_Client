@@ -122,7 +122,7 @@ class _HouseCommPageState extends State<HouseCommPage> {
 
   Widget _buildChatContent() {
     final chatItems = List.generate(
-      10,
+      5,
       (index) => {
         'name': index == 0 ? 'Stella' : 'User ${index + 1}',
         'message': 'Lorem ipsum dolor sit amet. Non at...',
@@ -131,21 +131,19 @@ class _HouseCommPageState extends State<HouseCommPage> {
       },
     );
 
-    return ListView.separated(
+    return ListView.builder(
       padding: EdgeInsets.symmetric(vertical: 8),
       itemCount: chatItems.length,
-      separatorBuilder: (context, index) =>
-          Divider(height: 1, indent: 72, endIndent: 16),
       itemBuilder: (context, index) {
         final item = chatItems[index];
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // 아바타
               CircleAvatar(
-                radius: 28,
+                radius: 26,
                 backgroundColor: Colors.grey[300],
                 child: Text(
                   item['name'].toString()[0],
@@ -156,8 +154,7 @@ class _HouseCommPageState extends State<HouseCommPage> {
                   ),
                 ),
               ),
-              SizedBox(width: 15),
-
+              SizedBox(width: 13),
               // 메시지 영역
               Expanded(
                 child: Column(
@@ -170,35 +167,36 @@ class _HouseCommPageState extends State<HouseCommPage> {
                         Text(
                           item['name'].toString(),
                           style: TextStyle(
-                            fontSize: 15,
+                            fontSize: 14,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
                         Text(
                           item['time'].toString(),
-                          style: TextStyle(fontSize: 10, color: grey04),
+                          style: TextStyle(
+                            fontSize: 9,
+                            color: grey02,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ],
                     ),
-                    SizedBox(height: 6), // 이름과 메시지 간격
-                    // 메시지 + unread badge
+                    SizedBox(height: 7),
                     Row(
                       children: [
-                        // 메시지 미리보기
                         Expanded(
                           child: Text(
                             item['message'].toString(),
-                            style: TextStyle(fontSize: 13, color: grey04),
+                            style: TextStyle(fontSize: 12, color: grey04),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        // 안읽음 표시
                         if ((item['unread'] as int) > 0) ...[
                           SizedBox(width: 6),
                           Container(
-                            width: 24,
-                            height: 24,
+                            width: 22,
+                            height: 22,
                             decoration: BoxDecoration(
                               color: green,
                               shape: BoxShape.circle,
@@ -208,7 +206,7 @@ class _HouseCommPageState extends State<HouseCommPage> {
                                 item['unread'].toString(),
                                 style: TextStyle(
                                   color: yellow,
-                                  fontSize: 11,
+                                  fontSize: 10.5,
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),

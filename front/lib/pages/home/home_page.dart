@@ -169,10 +169,8 @@ class _HomePageState extends State<HomePage> {
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   children: [
-                    _filterChip(
-                      'Filter',
-                      icon: 'assets/icons/filter.svg',
-                    ), // 장식용
+                    _filterChip('Filter', icon: 'assets/icons/filter.svg'),
+                    const SizedBox(width: 6),
                     _filterChip(
                       'All',
                       selected: _selectedFilter == 'ALL',
@@ -320,7 +318,7 @@ class _HomePageState extends State<HomePage> {
           : null,
       child: Container(
         margin: const EdgeInsets.only(right: 5),
-        padding: const EdgeInsets.symmetric(horizontal: 18),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
           color: selected ? green : Colors.white,
           borderRadius: BorderRadius.circular(24),
