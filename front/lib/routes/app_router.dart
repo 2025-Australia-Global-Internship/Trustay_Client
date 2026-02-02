@@ -7,7 +7,7 @@ import '../pages/home/search_page.dart';
 import '../pages/mypage/listing.dart';
 import '../pages/mypage/edit_profile.dart';
 import '../pages/mypage/personal_details.dart';
-import '../pages/mypage/sharehouse_create.dart';
+import '../pages/mypage/sharehouse_create_step1.dart';
 import 'app_routes.dart';
 
 final Map<String, WidgetBuilder> appRouter = {
@@ -19,5 +19,5 @@ final Map<String, WidgetBuilder> appRouter = {
   AppRoutes.listing: (_) => const ListingPage(),
   AppRoutes.editProfile: (_) => const EditProfilePage(),
   AppRoutes.personalDetails: (_) => const PersonalDetailsPage(),
-  AppRoutes.sharehouseCreate: (_) => const SharehouseCreatePage(),
+  AppRoutes.sharehouseCreate: (_) => const SharehouseCreateStep1Page(),
 };

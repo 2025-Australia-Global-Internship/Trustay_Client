@@ -74,30 +74,48 @@ class _SignupPageState extends State<SignupPage> {
             child: Container(color: Colors.black.withOpacity(0.35)),
           ),
 
-          /// 회원가입 UI
+          /// 그라데이션
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                  colors: [
+                    darkgreen,
+                    darkgreen.withOpacity(0.9),
+                    darkgreen.withOpacity(0.0),
+                  ],
+                  stops: const [0.0, 0.55, 1.0],
+                ),
+              ),
+            ),
+          ),
+
+          /// 회원가입 UI (헤더 포함 스크롤 가능)
           SafeArea(
             child: Form(
               key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CustomHeader(
-                    backButtonStyle: BackButtonStyle.dark,
-                    iconSize: 38,
-                    center: const Text(
-                      'Create New Account',
-                      style: TextStyle(
-                        color: yellow,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CustomHeader(
+                      backButtonStyle: BackButtonStyle.dark,
+                      iconSize: 38,
+                      center: const Text(
+                        'Create New Account',
+                        style: TextStyle(
+                          color: yellow,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 10),
 
-                  Expanded(
-                    child: SingleChildScrollView(
+                    Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -132,6 +150,8 @@ class _SignupPageState extends State<SignupPage> {
                                 ? '비밀번호는 최소 8자리 이상이어야 합니다'
                                 : null,
                           ),
+
+                          const SizedBox(height: 14),
 
                           GestureDetector(
                             onTap: () {
@@ -308,8 +328,8 @@ class _SignupPageState extends State<SignupPage> {
                         ],
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

@@ -76,6 +76,24 @@ class _LoginPageState extends State<LoginPage> {
             child: Container(color: Colors.black.withOpacity(0.35)),
           ),
 
+          /// 그라데이션
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                  colors: [
+                    darkgreen, // 아래 단색
+                    darkgreen.withOpacity(0.9), // 여기까지는 단색
+                    darkgreen.withOpacity(0.0), // 위에서만 투명
+                  ],
+                  stops: const [0.0, 0.55, 1.0], // 그라데이션 범위 조절
+                ),
+              ),
+            ),
+          ),
+
           /// UI 영역
           SafeArea(
             child: Column(
@@ -243,7 +261,7 @@ class _LoginPageState extends State<LoginPage> {
                               svgAsset: 'assets/icons/google.svg',
                               backgroundColor: Colors.transparent,
                               size: 52,
-                              iconSize: 22,
+                              iconSize: 20,
                               borderWidth: 1,
                               borderColor: Colors.white,
                               applySvgColor: false,

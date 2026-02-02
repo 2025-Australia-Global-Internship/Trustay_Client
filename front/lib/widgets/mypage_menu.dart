@@ -63,6 +63,7 @@ class MyPageMenuItem extends StatelessWidget {
               style: const TextStyle(
                 color: grey04,
                 fontSize: 10.5,
+                height: 1.3,
                 fontWeight: FontWeight.w400,
               ),
             ),

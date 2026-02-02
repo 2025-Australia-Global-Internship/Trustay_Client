@@ -23,9 +23,9 @@ class HouseCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 15,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.14),
+            blurRadius: 8,
+            offset: Offset(0, 2),
           ),
         ],
       ),

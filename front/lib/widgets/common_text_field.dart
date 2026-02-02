@@ -7,6 +7,7 @@ class CommonTextField extends StatelessWidget {
   final String? hintText;
   final String? suffixText;
   final Widget? suffixIcon;
+  final Widget? prefixIcon;
   final bool obscureText;
   final bool readOnly;
   final TextInputType keyboardType;
@@ -16,6 +17,8 @@ class CommonTextField extends StatelessWidget {
   final VoidCallback? onTap;
   final TextEditingController? controller;
   final int maxLines;
+  final void Function(String)? onChanged;
+  final double bottomPadding;
 
   const CommonTextField({
     super.key,
@@ -23,6 +26,7 @@ class CommonTextField extends StatelessWidget {
     this.hintText,
     this.suffixText,
     this.suffixIcon,
+    this.prefixIcon,
     this.obscureText = false,
     this.readOnly = false,
     this.keyboardType = TextInputType.text,
@@ -32,12 +36,14 @@ class CommonTextField extends StatelessWidget {
     this.onTap,
     this.controller,
     this.maxLines = 1,
+    this.onChanged,
+    this.bottomPadding = 16,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: EdgeInsets.only(bottom: bottomPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -49,7 +55,7 @@ class CommonTextField extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
 
           TextFormField(
             controller: controller,
@@ -60,20 +66,28 @@ class CommonTextField extends StatelessWidget {
             inputFormatters: inputFormatters,
             validator: validator,
             onSaved: onSaved,
+            onChanged: onChanged,
             maxLines: maxLines,
             cursorColor: grey03,
             style: const TextStyle(
               color: dark,
-              fontSize: 13.5,
+              fontSize: 13,
               fontWeight: FontWeight.w700,
             ),
             decoration: InputDecoration(
-              contentPadding: const EdgeInsets.symmetric(
-                vertical: 20,
-                horizontal: 12,
-              ),
+              contentPadding: const EdgeInsets.fromLTRB(16, 20, 12, 20),
               hintText: hintText,
               hintStyle: const TextStyle(color: grey01, fontSize: 14),
+              prefixIcon: prefixIcon != null
+                  ? Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 13, 0),
+                      child: prefixIcon,
+                    )
+                  : null,
+              prefixIconConstraints: const BoxConstraints(
+                minWidth: 20,
+                minHeight: 20,
+              ),
               suffixText: suffixText,
               suffixIcon: suffixIcon != null
                   ? Padding(
@@ -90,8 +104,8 @@ class CommonTextField extends StatelessWidget {
               filled: true,
               fillColor: Colors.white,
 
-              enabledBorder: _border(grey02),
-              focusedBorder: _border(grey03),
+              enabledBorder: _border(grey01),
+              focusedBorder: _border(grey02),
               errorBorder: _border(Colors.redAccent),
               focusedErrorBorder: _border(Colors.redAccent),
             ),
