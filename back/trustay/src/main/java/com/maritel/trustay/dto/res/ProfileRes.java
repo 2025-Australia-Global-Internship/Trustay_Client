@@ -36,7 +36,8 @@ public class ProfileRes {
                 .phone(profile != null ? profile.getPhone() : null)
                 .roles(profile != null ? profile.getRoles() : null)
                 .accountInfo(profile != null ? profile.getAccountInfo() : null)
-                .profileImageUrl(profile != null ? profile.getProfileImageUrl() : null)
+                .profileImageUrl(profile != null && profile.getProfileImage() != null
+                        ? profile.getProfileImage().getImageUrl() : null)
                 .build();
     }
 }

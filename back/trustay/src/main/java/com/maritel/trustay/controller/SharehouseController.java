@@ -149,15 +149,15 @@ public class SharehouseController {
 
     @Operation(summary = "쉐어하우스 목록 조회")
     @GetMapping
-    public ResponseEntity<DataResponse<PageResponse<SharehouseResultRes>>> getSharehouseList(
+    public ResponseEntity<DataResponse<PageResponse<SharehouseRes>>> getSharehouseList(
             @ModelAttribute SharehouseSearchReq req,
             @PageableDefault(size = 10, sort = "viewCount", direction = Sort.Direction.DESC) Pageable pageable) {
 
-        // 1. 서비스에서 Page 객체를 받아옴
-        Page<SharehouseResultRes> resultPage = sharehouseService.getSharehouseList(req, pageable);
+        // 1. 서비스에서 반환하는 타입인 Page<SharehouseRes>에 맞춰 변수 타입 수정
+        Page<SharehouseRes> resultPage = sharehouseService.getSharehouseList(req, pageable);
 
-        // 2. 우리가 만든 깔끔한 PageResponse로 변환!
-        PageResponse<SharehouseResultRes> response = new PageResponse<>(resultPage);
+        // 2. PageResponse의 제네릭 타입도 SharehouseRes로 수정
+        PageResponse<SharehouseRes> response = new PageResponse<>(resultPage);
 
         return ResponseEntity.ok(DataResponse.of(ResponseCode.SUCCESS, response));
     }

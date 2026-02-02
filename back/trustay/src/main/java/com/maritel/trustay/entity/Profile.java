@@ -45,17 +45,18 @@ public class Profile {
     private String accountInfo; // 정산용 계좌 정보
 
     // --- 추가된 필드 ---
-    @Column(length = 500)
-    private String profileImageUrl; // 프로필 사진 URL
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "image_id")
+    private Image profileImage;
 
     @Builder
-    public Profile(Member member, String birth, String phone, Set<Role> roles, String accountInfo, String profileImageUrl) {
+    public Profile(Member member, String birth, String phone, Set<Role> roles, String accountInfo, Image profileImage) {
         this.member = member;
         this.birth = birth;
         this.phone = phone;
         this.roles = roles != null ? roles : new HashSet<>(); // null 방지
         this.accountInfo = accountInfo;
-        this.profileImageUrl = profileImageUrl;
+        this.profileImage = profileImage;
     }
 
     public void updateProfile(String phone, String birth) {
@@ -67,8 +68,8 @@ public class Profile {
         this.accountInfo = accountInfo;
     }
 
-    public void updateProfileImage(String profileImageUrl) {
-        this.profileImageUrl = profileImageUrl;
+    public void updateProfileImage(Image profileImage) {
+        this.profileImage = profileImage;
     }
 
     public void addRole(Role role) {

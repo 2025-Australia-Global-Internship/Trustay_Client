@@ -4,8 +4,10 @@ import com.maritel.trustay.constant.Role;
 import com.maritel.trustay.dto.req.SignupReq;
 import com.maritel.trustay.dto.req.ProfileUpdateReq;
 import com.maritel.trustay.dto.res.ProfileRes;
+import com.maritel.trustay.entity.Image;
 import com.maritel.trustay.entity.Member;
 import com.maritel.trustay.entity.Profile;
+import com.maritel.trustay.repository.ImageRepository;
 import com.maritel.trustay.repository.MemberRepository;
 import com.maritel.trustay.repository.ProfileRepository;
 import com.maritel.trustay.service.FileService;
@@ -29,6 +31,7 @@ public class MemberService {
     private final ProfileRepository profileRepository;
     private final PasswordEncoder passwordEncoder;
     private final FileService fileService;
+    private final ImageRepository imageRepository;
 
     /**
      * 1. 회원가입 (이름, 이메일, 비밀번호만)
@@ -127,14 +130,19 @@ public class MemberService {
 
         try {
             String uploadedUrl = fileService.uploadFile(profileImage);
-            if (uploadedUrl == null) {
-                throw new RuntimeException("지원하지 않는 파일 형식입니다. (jpg, jpeg, png만 가능)");
-            }
-            profile.updateProfileImage(uploadedUrl);
-            log.info("프로필 이미지 업로드 완료: {}", uploadedUrl);
+
+            // 1. Image 엔티티 생성 및 저장 (ImageRepository 필요)
+            Image image = Image.builder()
+                    .imageUrl(uploadedUrl)
+                    .originalName(profileImage.getOriginalFilename())
+                    .build();
+            imageRepository.save(image); // 새 이미지 레코드 생성
+
+            // 2. 프로필에 Image 객체 세팅
+            profile.updateProfileImage(image);
+
         } catch (Exception e) {
-            log.error("프로필 이미지 업로드 실패", e);
-            throw new RuntimeException("프로필 이미지 업로드에 실패했습니다: " + e.getMessage());
+            throw new RuntimeException("프로필 이미지 업데이트 실패", e);
         }
     }
 }

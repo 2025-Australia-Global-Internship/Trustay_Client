@@ -18,16 +18,18 @@ public class PostImage extends BaseEntity {
     @JoinColumn(name = "post_id", nullable = false)
     private Post post;
 
-    @Column(nullable = false, length = 500)
-    private String imageUrl; // 이미지 URL
+    // --- 수정한 필드: String imageUrl 대신 Image 엔티티 참조 ---
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "image_id", nullable = false)
+    private Image image;
 
     @Column(nullable = false)
-    private Integer displayOrder; // 이미지 순서
+    private Integer displayOrder;
 
     @Builder
-    public PostImage(Post post, String imageUrl, Integer displayOrder) {
+    public PostImage(Post post, Image image, Integer displayOrder) {
         this.post = post;
-        this.imageUrl = imageUrl;
+        this.image = image;
         this.displayOrder = displayOrder;
     }
 }

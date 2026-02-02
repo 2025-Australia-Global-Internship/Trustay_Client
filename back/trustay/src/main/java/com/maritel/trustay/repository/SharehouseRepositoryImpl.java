@@ -3,6 +3,7 @@ package com.maritel.trustay.repository;
 import com.maritel.trustay.constant.ApprovalStatus;
 import com.maritel.trustay.constant.HouseType;
 import com.maritel.trustay.dto.req.SharehouseSearchReq;
+import com.maritel.trustay.entity.QSharehouse; // 명시적 임포트 확인
 import com.maritel.trustay.entity.Sharehouse;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
@@ -26,30 +27,29 @@ public class SharehouseRepositoryImpl implements SharehouseRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
 
+    // [수정] 서비스에서 호출하는 이름인 searchSharehouses로 변경
     @Override
-    public Page<Sharehouse> search(SharehouseSearchReq req, Pageable pageable) {
+    public Page<Sharehouse> searchSharehouses(SharehouseSearchReq req, Pageable pageable) {
 
-        // 1. 컨텐츠 조회
         List<Sharehouse> content = queryFactory
                 .selectFrom(sharehouse)
                 .where(
-                        isApproved(), // 기본 조건: 승인된 매물만
+                        isApproved(),
                         containsKeyword(req.getKeyword()),
                         eqHouseType(req.getHouseType()),
                         goeMinPrice(req.getMinPrice()),
                         loeMaxPrice(req.getMaxPrice()),
-                        // 상세 조건
                         goeRoomCount(req.getMinRoomCount()),
                         goeBathroomCount(req.getMinBathroomCount()),
                         eqCurrentResidents(req.getCurrentResidents()),
-                        containsAllOptions(req.getOptions()) // 옵션 필터
+                        containsAllOptions(req.getOptions())
                 )
-                .orderBy(getOrderSpecifier(pageable)) // 동적 정렬 적용
+                .orderBy(getOrderSpecifier(pageable))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        // 2. 카운트 쿼리 (페이징 필수)
+        // [수정] fetchCount()는 deprecated 되었으므로 select(sharehouse.count()) 방식 사용 (이미 잘 작성됨)
         Long total = queryFactory
                 .select(sharehouse.count())
                 .from(sharehouse)
@@ -68,8 +68,6 @@ public class SharehouseRepositoryImpl implements SharehouseRepositoryCustom {
 
         return new PageImpl<>(content, pageable, total != null ? total : 0L);
     }
-
-    // --- [BooleanExpression: 검색 조건들] ---
 
     private BooleanExpression isApproved() {
         return sharehouse.approvalStatus.eq(ApprovalStatus.ACTIVE);
@@ -104,33 +102,31 @@ public class SharehouseRepositoryImpl implements SharehouseRepositoryCustom {
         return count != null ? sharehouse.currentResidents.eq(count) : null;
     }
 
-    // [옵션 검색] 사용자가 선택한 옵션들을 "모두" 가지고 있는지 확인 (AND 조건)
     private BooleanExpression containsAllOptions(List<String> options) {
         if (options == null || options.isEmpty()) return null;
 
-        // DB에 "WIFI,PARKING" 처럼 저장되어 있다고 가정
         BooleanExpression result = null;
         for (String option : options) {
             if (result == null) {
                 result = sharehouse.options.contains(option);
             } else {
-                result = result.and(sharehouse.options.contains(option)); // AND로 연결
+                result = result.and(sharehouse.options.contains(option));
             }
         }
         return result;
     }
 
-    // --- [동적 정렬 처리 메서드] ---
+    // [수정] 제네릭 타입 명시 및 형변환 에러 해결
     private OrderSpecifier<?>[] getOrderSpecifier(Pageable pageable) {
         if (pageable.getSort().isEmpty()) {
-            return new OrderSpecifier[]{sharehouse.viewCount.desc()}; // 기본값: 조회수 내림차순
+            return new OrderSpecifier[]{new OrderSpecifier<>(Order.DESC, sharehouse.viewCount)};
         }
 
         List<OrderSpecifier<?>> orders = new ArrayList<>();
         for (Sort.Order order : pageable.getSort()) {
             Order direction = order.isAscending() ? Order.ASC : Order.DESC;
-            // 동적으로 컬럼명을 매칭시킴
             PathBuilder<Sharehouse> pathBuilder = new PathBuilder<>(sharehouse.getType(), sharehouse.getMetadata());
+            // [수정] OrderSpecifier 생성 시 제네릭과 타입을 명확히 함
             orders.add(new OrderSpecifier(direction, pathBuilder.get(order.getProperty())));
         }
         return orders.toArray(new OrderSpecifier[0]);
