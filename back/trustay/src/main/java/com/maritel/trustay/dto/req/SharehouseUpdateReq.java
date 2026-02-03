@@ -1,7 +1,7 @@
 package com.maritel.trustay.dto.req;
 
 import com.maritel.trustay.constant.HouseType;
-import com.maritel.trustay.constant.BondType;
+import com.maritel.trustay.constant.RoomType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -19,8 +19,8 @@ public class SharehouseUpdateReq {
     private Integer currentResidents;
     private HouseType houseType;
     private Boolean billsIncluded;
-    private String roomType;
-    private BondType bondType;
+    private RoomType roomType;
+    private Integer bondType;
     private Integer minimumStay;
     private String gender;
     private String age;
