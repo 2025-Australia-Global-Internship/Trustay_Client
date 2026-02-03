@@ -4,9 +4,11 @@ import 'package:front/constants/colors.dart';
 import 'package:front/widgets/custom_header.dart';
 import 'package:front/widgets/gradient_layout.dart';
 import 'package:front/models/user_model.dart';
+import 'package:front/models/sharehouse_model.dart';
+import 'package:front/models/house_dummy.dart';
 import 'package:front/services/auth_service.dart';
+import 'package:front/services/sharehouse_service.dart';
 import 'package:front/widgets/circle_icon_button.dart';
-import 'package:front/data/home_dummy_data.dart';
 import 'package:front/widgets/house_card.dart';
 
 class HomePage extends StatefulWidget {
@@ -19,11 +21,13 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   User? user;
   String _selectedFilter = 'ALL'; // 필터 상태: ALL, HOUSE, APARTMENT, UNIT
+  List<SharehouseModel> _houses = [];
 
   @override
   void initState() {
     super.initState();
     _loadProfile();
+    _loadHouses();
   }
 
   Future<void> _loadProfile() async {
@@ -33,22 +37,45 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  Future<void> _loadHouses() async {
+    try {
+      final list = await SharehouseService.getSharehouseList(_selectedFilter);
+      if (!mounted) return;
+      setState(() => _houses = list);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _houses = []);
+    }
+  }
+
+  HouseDummy _toHouseDummy(SharehouseModel s) {
+    const String baseUrl = "https://trustay.digitalbasis.com";
+
+    List<String> fullImageUrls = s.imageUrls.map((url) {
+      if (url.startsWith('https')) {
+        return url;
+      }
+      return url.startsWith('/') ? '$baseUrl$url' : '$baseUrl/$url';
+    }).toList();
+    return HouseDummy(
+      id: s.id,
+      title: s.title,
+      address: s.address,
+      houseType: s.houseType,
+      approvalStatus: 'APPROVED',
+      imageUrls: fullImageUrls,
+      price: s.rentPrice,
+      beds: s.roomCount,
+      baths: s.bathroomCount,
+      people: s.currentResidents,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // 필터 적용된 데이터
-    final filteredPopularHouses = popularHousesDummy
-        .where(
-          (house) =>
-              _selectedFilter == 'ALL' || house.houseType == _selectedFilter,
-        )
-        .toList();
-
-    final filteredGeneralHouses = generalHousesDummy
-        .where(
-          (house) =>
-              _selectedFilter == 'ALL' || house.houseType == _selectedFilter,
-        )
-        .toList();
+    final filteredPopularHouses =
+        _houses.take(4).map(_toHouseDummy).toList();
+    final filteredGeneralHouses = _houses.map(_toHouseDummy).toList();
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -308,12 +335,10 @@ class _HomePageState extends State<HomePage> {
   }) {
     return GestureDetector(
       onTap:
-          type !=
-              null // type이 있는 칩만 클릭 가능
+          type != null
           ? () {
-              setState(() {
-                _selectedFilter = type;
-              });
+              setState(() => _selectedFilter = type!);
+              _loadHouses();
             }
           : null,
       child: Container(

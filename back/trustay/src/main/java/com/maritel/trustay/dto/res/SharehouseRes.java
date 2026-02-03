@@ -3,12 +3,12 @@ package com.maritel.trustay.dto.res;
 import com.maritel.trustay.constant.ApprovalStatus;
 import com.maritel.trustay.constant.HouseType;
 import com.maritel.trustay.entity.Sharehouse;
+import com.maritel.trustay.entity.SharehouseImage; // 추가 필수
 import lombok.Builder;
 import lombok.Getter;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.stream.Collectors; // 추가 필수
 
 @Getter
 @Builder
@@ -16,28 +16,40 @@ public class SharehouseRes {
     private Long id;
     private String title;
     private String address;
+    private Integer rentPrice;
     private Integer viewCount;
+    private Integer wishCount;
+    private Integer roomCount;
+    private Integer bathroomCount;
+    private Integer currentResidents;
     private HouseType houseType;
     private ApprovalStatus approvalStatus;
     private List<String> imageUrls;
+    private Boolean wishedByMe; // 현재 로그인 사용자 찜 여부 (선택)
 
-    public static SharehouseRes from(Sharehouse sharehouse) {
+    // [수정] 메서드 시그니처에 List<SharehouseImage> images 추가
+    public static SharehouseRes from(Sharehouse sharehouse, List<SharehouseImage> images) {
+        return from(sharehouse, images, false);
+    }
+
+    public static SharehouseRes from(Sharehouse sharehouse, List<SharehouseImage> images, boolean wishedByMe) {
         return SharehouseRes.builder()
                 .id(sharehouse.getId())
                 .title(sharehouse.getTitle())
                 .address(sharehouse.getAddress())
+                .rentPrice(sharehouse.getRentPrice())
                 .viewCount(sharehouse.getViewCount())
+                .roomCount(sharehouse.getRoomCount())
+                .bathroomCount(sharehouse.getBathroomCount())
+                .currentResidents(sharehouse.getCurrentResidents())
+                .wishCount(sharehouse.getWishCount() != null ? sharehouse.getWishCount() : 0)
+                .wishedByMe(wishedByMe)
                 .houseType(sharehouse.getHouseType())
                 .approvalStatus(sharehouse.getApprovalStatus())
-                .imageUrls(parseImageUrls(sharehouse.getImageUrls()))
+                // [수정] images 리스트를 스트림으로 변환하여 URL 추출
+                .imageUrls(images != null ? images.stream()
+                        .map(si -> si.getImage().getImageUrl())
+                        .collect(Collectors.toList()) : List.of())
                 .build();
-    }
-
-    private static List<String> parseImageUrls(String raw) {
-        if (raw == null || raw.isBlank()) return List.of();
-        return Arrays.stream(raw.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isBlank())
-                .collect(Collectors.toList());
     }
 }

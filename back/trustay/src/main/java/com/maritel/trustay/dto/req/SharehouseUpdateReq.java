@@ -12,7 +12,6 @@ public class SharehouseUpdateReq {
     private String title;
     private String description;
     private Integer rentPrice;
-    private Integer deposit;
     private String options;
     private Integer roomCount;
     private Integer bathroomCount;

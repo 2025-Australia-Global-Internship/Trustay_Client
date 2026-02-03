@@ -2,6 +2,7 @@ package com.maritel.trustay.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
 
 @Entity
 @Table(name = "TBL_CHAT_ROOM")
@@ -26,10 +27,26 @@ public class ChatRoom extends BaseEntity {
     @JoinColumn(name = "receiver_id") // 받는 사람 (보통 집주인)
     private Member receiver;
 
+    @ColumnDefault("false")
+    private Boolean leftBySender = false;
+
+    @ColumnDefault("false")
+    private Boolean leftByReceiver = false;
+
     @Builder
     public ChatRoom(Sharehouse sharehouse, Member sender, Member receiver) {
         this.sharehouse = sharehouse;
         this.sender = sender;
         this.receiver = receiver;
+        this.leftBySender = false;
+        this.leftByReceiver = false;
+    }
+
+    public void leaveBySender() {
+        this.leftBySender = true;
+    }
+
+    public void leaveByReceiver() {
+        this.leftByReceiver = true;
     }
 }

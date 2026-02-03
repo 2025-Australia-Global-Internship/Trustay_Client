@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:front/constants/colors.dart';
 import 'package:front/models/search_model.dart';
+import 'package:front/models/sharehouse_model.dart';
+import 'package:front/models/house_dummy.dart';
 import 'package:front/services/search_service.dart';
-import 'package:front/data/home_dummy_data.dart';
+import 'package:front/services/sharehouse_service.dart';
 import 'package:front/widgets/house_card.dart';
 import 'package:front/widgets/custom_header.dart';
 
@@ -18,6 +20,7 @@ class _SearchPageState extends State<SearchPage> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocus = FocusNode();
   List<SearchHistory> _searchHistory = [];
+  List<SharehouseModel> _houses = [];
   bool _isSearching = false;
   String _searchQuery = '';
 
@@ -25,6 +28,33 @@ class _SearchPageState extends State<SearchPage> {
   void initState() {
     super.initState();
     _loadSearchHistory();
+    _loadHouses();
+  }
+
+  Future<void> _loadHouses() async {
+    try {
+      final list = await SharehouseService.getSharehouseList('ALL');
+      if (!mounted) return;
+      setState(() => _houses = list);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _houses = []);
+    }
+  }
+
+  HouseDummy _toHouseDummy(SharehouseModel s) {
+    return HouseDummy(
+      id: s.id,
+      title: s.title,
+      address: s.address,
+      houseType: s.houseType,
+      approvalStatus: 'APPROVED',
+      imageUrls: s.imageUrls,
+      price: s.rentPrice,
+      beds: s.roomCount,
+      baths: s.bathroomCount,
+      people: s.currentResidents,
+    );
   }
 
   @override
@@ -69,15 +99,14 @@ class _SearchPageState extends State<SearchPage> {
 
   @override
   Widget build(BuildContext context) {
-    // 검색 결과 필터링 (더미 데이터 사용)
     final searchResults = _isSearching && _searchQuery.isNotEmpty
-        ? [...popularHousesDummy, ...generalHousesDummy].where((house) {
+        ? _houses.where((house) {
             final query = _searchQuery.toLowerCase();
             return house.title.toLowerCase().contains(query) ||
                 house.address.toLowerCase().contains(query) ||
                 house.houseType.toLowerCase().contains(query);
           }).toList()
-        : [];
+        : <SharehouseModel>[];
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -276,11 +305,9 @@ class _SearchPageState extends State<SearchPage> {
                 crossAxisSpacing: 11,
                 childAspectRatio: 0.68,
               ),
-              itemCount: generalHousesDummy.length > 4
-                  ? 4
-                  : generalHousesDummy.length,
+              itemCount: _houses.length > 4 ? 4 : _houses.length,
               itemBuilder: (context, index) =>
-                  HouseCard(house: generalHousesDummy[index], isGrid: true),
+                  HouseCard(house: _toHouseDummy(_houses[index]), isGrid: true),
             ),
           ),
           const SizedBox(height: 24),
@@ -290,7 +317,7 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   // 검색 결과
-  Widget _buildSearchResults(List results) {
+  Widget _buildSearchResults(List<SharehouseModel> results) {
     if (results.isEmpty) {
       return Center(
         child: Column(
@@ -344,7 +371,7 @@ class _SearchPageState extends State<SearchPage> {
           ),
           itemCount: results.length,
           itemBuilder: (context, index) =>
-              HouseCard(house: results[index], isGrid: true),
+              HouseCard(house: _toHouseDummy(results[index]), isGrid: true),
         ),
       ],
     );

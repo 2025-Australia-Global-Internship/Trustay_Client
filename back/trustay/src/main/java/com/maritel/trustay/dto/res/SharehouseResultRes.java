@@ -2,6 +2,7 @@ package com.maritel.trustay.dto.res;
 
 import com.maritel.trustay.entity.Sharehouse;
 import com.maritel.trustay.constant.HouseType;
+import com.maritel.trustay.entity.SharehouseImage;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -18,7 +19,6 @@ public class SharehouseResultRes {
     private String address;
     private HouseType houseType;
     private Integer rentPrice;
-    private Integer deposit;
     private Integer roomCount;
     private Integer bathroomCount;
     private String options;
@@ -29,7 +29,7 @@ public class SharehouseResultRes {
     private List<String> imageUrls;
 
     // Entity -> DTO 변환 메서드
-    public static SharehouseResultRes from(Sharehouse sharehouse) {
+    public static SharehouseResultRes from(Sharehouse sharehouse, List<SharehouseImage> images) {
         return SharehouseResultRes.builder()
                 .id(sharehouse.getId())
                 .title(sharehouse.getTitle())
@@ -37,7 +37,6 @@ public class SharehouseResultRes {
                 .address(sharehouse.getAddress())
                 .houseType(sharehouse.getHouseType())
                 .rentPrice(sharehouse.getRentPrice())
-                .deposit(sharehouse.getDeposit())
                 .roomCount(sharehouse.getRoomCount())
                 .bathroomCount(sharehouse.getBathroomCount())
                 .options(sharehouse.getOptions())
@@ -45,15 +44,11 @@ public class SharehouseResultRes {
                 .hostName(sharehouse.getHost().getName())
                 .lat(sharehouse.getLatitude())
                 .lon(sharehouse.getLongitude())
-                .imageUrls(parseImageUrls(sharehouse.getImageUrls()))
+                // [수정] 리스트 처리
+                .imageUrls(images != null ? images.stream()
+                        .map(si -> si.getImage().getImageUrl())
+                        .collect(Collectors.toList()) : List.of())
                 .build();
     }
 
-    private static List<String> parseImageUrls(String raw) {
-        if (raw == null || raw.isBlank()) return List.of();
-        return Arrays.stream(raw.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isBlank())
-                .collect(Collectors.toList());
-    }
 }

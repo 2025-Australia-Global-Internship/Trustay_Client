@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:intl/intl.dart'; // 숫자 포맷용 (pubspec.yaml에 intl 추가 필요)
+import 'package:intl/intl.dart';
 
+// [경로 확인 필요]
 import '../../constants/colors.dart';
 import '../../models/sharehouse_detail_model.dart';
-import '../../services/listing_service.dart';
+import '../../services/sharehouse_service.dart'; // [변경] 통합된 서비스 import
 import '../../widgets/circle_icon_button.dart';
 
 class SharehouseDetailPage extends StatefulWidget {
@@ -17,7 +18,7 @@ class SharehouseDetailPage extends StatefulWidget {
 }
 
 class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
-  final ListingService _service = ListingService();
+  // Service 인스턴스 생성 불필요
   
   SharehouseDetail? _detail;
   bool _isLoading = true;
@@ -32,12 +33,16 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
 
   Future<void> _fetchDetail() async {
     try {
-      final data = await _service.getSharehouseDetail(widget.houseId);
+      // [변경] SharehouseService 사용
+      final data = await SharehouseService.getSharehouseDetail(widget.houseId);
+      
+      if (!mounted) return;
       setState(() {
         _detail = data;
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _errorMessage = e.toString();
         _isLoading = false;
@@ -45,7 +50,7 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
     }
   }
 
-  // 가격 포맷팅 (예: 1,000,000)
+  // 가격 포맷팅
   String _formatCurrency(int price) {
     return NumberFormat('#,###').format(price);
   }
@@ -71,7 +76,7 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
         children: [
           CustomScrollView(
             slivers: [
-              // 1. 상단 이미지 슬라이더 (SliverAppBar 활용)
+              // 1. 상단 이미지 슬라이더
               SliverAppBar(
                 expandedHeight: 300,
                 pinned: true,
@@ -104,7 +109,6 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
                           );
                         },
                       ),
-                      // 이미지 인디케이터 (1/5)
                       if (data.imageUrls.length > 1)
                         Positioned(
                           bottom: 16,
@@ -126,14 +130,14 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
                 ),
               ),
 
-              // 2. 상세 정보 내용
+              // 2. 상세 정보
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // 카테고리 태그
+                      // 태그
                       Row(
                         children: [
                           _buildTag(data.houseType),
@@ -175,7 +179,7 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
 
                       const SizedBox(height: 24),
 
-                      // 옵션 정보 (아이콘 그리드)
+                      // 옵션
                       _buildSectionTitle("옵션"),
                       data.options.isEmpty
                           ? const Text("등록된 옵션이 없습니다.", style: TextStyle(color: grey02))
@@ -196,7 +200,7 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
                         style: const TextStyle(fontSize: 14, height: 1.6, color: dark),
                       ),
 
-                      const SizedBox(height: 100), // 하단 버튼 공간 확보
+                      const SizedBox(height: 100),
                     ],
                   ),
                 ),
@@ -204,7 +208,7 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
             ],
           ),
 
-          // 하단 고정 버튼 (문의하기 / 수정하기 등)
+          // 하단 버튼
           Positioned(
             bottom: 0,
             left: 0,
@@ -219,7 +223,7 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
                 height: 52,
                 child: ElevatedButton(
                   onPressed: () {
-                    // TODO: 문의하기 또는 수정하기 기능 연결
+                    // 문의하기 기능 연결
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: darkgreen,
@@ -235,7 +239,6 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
     );
   }
 
-  // UI 헬퍼 메서드들
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -268,11 +271,10 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
   }
 
   Widget _buildOptionIcon(String optionName) {
-    // 옵션 이름에 따라 아이콘 매핑 (예시)
-    String iconPath = 'assets/icons/check.svg'; // 기본 아이콘
+    String iconPath = 'assets/icons/check.svg'; 
     if (optionName.contains('WIFI')) iconPath = 'assets/icons/wifi.svg';
     if (optionName.contains('BED')) iconPath = 'assets/icons/bed.svg';
-    // 필요한 만큼 추가...
+    // 필요 아이콘 추가
 
     return Column(
       children: [

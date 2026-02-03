@@ -22,7 +22,7 @@ public class CommunityRes {
                 .id(community.getId())
                 .name(community.getName())
                 .description(community.getDescription())
-                .imageUrl(community.getImageUrl())
+                .imageUrl(community.getCommunityImage() != null ? community.getCommunityImage().getImageUrl() : null)
                 .memberCount(community.getMemberCount())
                 .ownerName(community.getOwner().getName())
                 .regTime(community.getRegTime())

@@ -25,25 +25,26 @@ public class Community extends BaseEntity {
     @Lob
     private String description; // 커뮤니티 설명
 
-    @Column(length = 500)
-    private String imageUrl; // 커뮤니티 대표 이미지
+    @OneToOne(fetch = FetchType.LAZY) // 커뮤니티 대표 이미지 1:1
+    @JoinColumn(name = "image_id")
+    private Image communityImage;
 
     @ColumnDefault("0")
     private Integer memberCount = 0; // 멤버 수
 
     @Builder
-    public Community(Member owner, String name, String description, String imageUrl) {
+    public Community(Member owner, String name, String description, Image communityImage) {
         this.owner = owner;
         this.name = name;
         this.description = description;
-        this.imageUrl = imageUrl;
+        this.communityImage = communityImage;
         this.memberCount = 0;
     }
 
-    public void updateCommunity(String name, String description, String imageUrl) {
+    public void updateCommunity(String name, String description, Image communityImage) {
         this.name = name;
         this.description = description;
-        this.imageUrl = imageUrl;
+        this.communityImage = communityImage;
     }
 
     public void increaseMemberCount() {

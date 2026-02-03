@@ -37,7 +37,8 @@ public class PostRes {
                 .likeCount(post.getLikeCount())
                 .authorName(post.getAuthor().getName())
                 .authorEmail(post.getAuthor().getEmail())
-                .profileImageUrl(post.getAuthor().getProfile() != null ? post.getAuthor().getProfile().getProfileImageUrl() : null)
+                .profileImageUrl(post.getAuthor().getProfile() != null && post.getAuthor().getProfile().getProfileImage() != null
+                        ? post.getAuthor().getProfile().getProfileImage().getImageUrl() : null)
                 .regTime(post.getRegTime())
                 .modTime(post.getModTime())
                 .build();
@@ -55,7 +56,8 @@ public class PostRes {
                 .likeCount(post.getLikeCount())
                 .authorName(post.getAuthor().getName())
                 .authorEmail(post.getAuthor().getEmail())
-                .profileImageUrl(post.getAuthor().getProfile() != null ? post.getAuthor().getProfile().getProfileImageUrl() : null)
+                .profileImageUrl(post.getAuthor().getProfile() != null && post.getAuthor().getProfile().getProfileImage() != null
+                        ? post.getAuthor().getProfile().getProfileImage().getImageUrl() : null)
                 .regTime(post.getRegTime())
                 .modTime(post.getModTime());
 
