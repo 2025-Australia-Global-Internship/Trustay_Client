@@ -30,9 +30,6 @@ public class SharehouseReq {
     @NotNull(message = "월세는 필수입니다.")
     private Integer rentPrice;
 
-    @NotNull(message = "보증금은 필수입니다.")
-    private Integer deposit;
-
     private Integer roomCount;
     private Integer bathroomCount;
     private Integer currentResidents;

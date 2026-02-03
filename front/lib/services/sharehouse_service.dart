@@ -100,7 +100,7 @@ class SharehouseService {
   // ------------------------------------------------------------------------
   // 3. 홈 화면: 쉐어하우스 전체 목록 조회 (GET)
   // ------------------------------------------------------------------------
-  static Future<List<sharehouse_model>> getSharehouseList(String filterType) async {
+  static Future<List<SharehouseModel>> getSharehouseList(String filterType) async {
     try {
       final token = await _getToken();
       
@@ -108,7 +108,6 @@ class SharehouseService {
       Map<String, String> queryParams = {
         'page': '0',
         'size': '10',
-        'sort': 'createdAt,desc', // 최신순
       };
 
       // 필터 적용 ('ALL'이 아닐 경우 houseType 추가)
@@ -130,7 +129,7 @@ class SharehouseService {
         
         // 응답 구조: { "data": { "content": [...] } }
         final List<dynamic> content = jsonResponse['data']['content'];
-        return content.map((e) => sharehouse_model.fromJson(e)).toList();
+        return content.map((e) => SharehouseModel.fromJson(e)).toList();
       } else {
         throw Exception('목록 조회 실패: ${response.statusCode}');
       }

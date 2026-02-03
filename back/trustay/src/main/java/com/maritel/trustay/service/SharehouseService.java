@@ -92,7 +92,6 @@ public class SharehouseService {
                 .longitude(longitude)
                 .houseType(req.getHouseType())
                 .rentPrice(req.getRentPrice())
-                .deposit(req.getDeposit())
                 .roomCount(req.getRoomCount())
                 .bathroomCount(req.getBathroomCount())
                 .currentResidents(req.getCurrentResidents())
@@ -137,8 +136,7 @@ public class SharehouseService {
         }
 
         sharehouse.updateSharehouse(
-                req.getTitle(), req.getDescription(), req.getRentPrice(),
-                req.getDeposit(), req.getOptions(), req.getRoomCount(),
+                req.getTitle(), req.getDescription(), req.getRentPrice(), req.getOptions(), req.getRoomCount(),
                 req.getBathroomCount(), req.getCurrentResidents(), req.getHouseType()
         );
     }

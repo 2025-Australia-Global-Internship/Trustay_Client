@@ -19,7 +19,6 @@ public class SharehouseResultRes {
     private String address;
     private HouseType houseType;
     private Integer rentPrice;
-    private Integer deposit;
     private Integer roomCount;
     private Integer bathroomCount;
     private String options;
@@ -38,7 +37,6 @@ public class SharehouseResultRes {
                 .address(sharehouse.getAddress())
                 .houseType(sharehouse.getHouseType())
                 .rentPrice(sharehouse.getRentPrice())
-                .deposit(sharehouse.getDeposit())
                 .roomCount(sharehouse.getRoomCount())
                 .bathroomCount(sharehouse.getBathroomCount())
                 .options(sharehouse.getOptions())

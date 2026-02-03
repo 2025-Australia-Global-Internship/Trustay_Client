@@ -16,8 +16,12 @@ public class SharehouseRes {
     private Long id;
     private String title;
     private String address;
+    private Integer rentPrice;
     private Integer viewCount;
     private Integer wishCount;
+    private Integer roomCount;
+    private Integer bathroomCount;
+    private Integer currentResidents;
     private HouseType houseType;
     private ApprovalStatus approvalStatus;
     private List<String> imageUrls;
@@ -33,7 +37,11 @@ public class SharehouseRes {
                 .id(sharehouse.getId())
                 .title(sharehouse.getTitle())
                 .address(sharehouse.getAddress())
+                .rentPrice(sharehouse.getRentPrice())
                 .viewCount(sharehouse.getViewCount())
+                .roomCount(sharehouse.getRoomCount())
+                .bathroomCount(sharehouse.getBathroomCount())
+                .currentResidents(sharehouse.getCurrentResidents())
                 .wishCount(sharehouse.getWishCount() != null ? sharehouse.getWishCount() : 0)
                 .wishedByMe(wishedByMe)
                 .houseType(sharehouse.getHouseType())

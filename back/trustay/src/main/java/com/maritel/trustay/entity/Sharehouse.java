@@ -47,7 +47,6 @@ public class Sharehouse extends BaseEntity {
     private HouseType houseType; // APARTMENT, HOUSE, UNIT...
 
     private Integer rentPrice; // 렌트비
-    private Integer deposit;   // 보증금
 
     private Integer roomCount;
     private Integer bathroomCount;
@@ -64,7 +63,7 @@ public class Sharehouse extends BaseEntity {
     @Builder
     public Sharehouse(Member host, String title, String description, String address,
                       Double latitude, Double longitude, HouseType houseType,
-                      Integer rentPrice, Integer deposit, Integer roomCount,
+                      Integer rentPrice, Integer roomCount,
                       Integer bathroomCount, Integer currentResidents,
                       String options, ApprovalStatus approvalStatus) {
         this.host = host;
@@ -75,7 +74,6 @@ public class Sharehouse extends BaseEntity {
         this.longitude = longitude;
         this.houseType = houseType;
         this.rentPrice = rentPrice;
-        this.deposit = deposit;
         this.roomCount = roomCount;
         this.bathroomCount = bathroomCount;
         this.currentResidents = currentResidents;
@@ -96,12 +94,11 @@ public class Sharehouse extends BaseEntity {
     }
 
     public void updateSharehouse(String title, String description, Integer rentPrice,
-                                 Integer deposit, String options, Integer roomCount,
-                                 Integer bathroomCount, Integer currentResidents, HouseType houseType) {
+                                 String options, Integer roomCount, Integer bathroomCount,
+                                 Integer currentResidents, HouseType houseType) {
         this.title = title;
         this.description = description;
         this.rentPrice = rentPrice;
-        this.deposit = deposit;
         this.options = options;
         this.roomCount = roomCount;
         this.bathroomCount = bathroomCount;
