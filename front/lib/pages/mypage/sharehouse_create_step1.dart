@@ -400,7 +400,7 @@ class _SharehouseCreateStep1PageState extends State<SharehouseCreateStep1Page> {
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.05),
-                  blurRadius: 8,
+                  blurRadius: 5,
                   offset: const Offset(0, 2),
                 ),
               ],

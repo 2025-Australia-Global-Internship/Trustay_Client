@@ -130,7 +130,7 @@ class _SearchPageState extends State<SearchPage> {
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.14),
-                      blurRadius: 8,
+                      blurRadius: 5,
                       offset: Offset(0, 2),
                     ),
                   ],
