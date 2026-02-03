@@ -5,8 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 // [중요] 프로젝트에 존재하는 모델 파일들을 모두 import 해주세요.
 import '../models/sharehouse_create_model.dart'; // 등록 요청 모델
-import '../models/sharehouse_model.dart';        // 홈 화면 목록용 모델
-import '../models/listing_model.dart';           // 마이페이지 목록용 모델 (MyListingItem)
+import '../models/sharehouse_model.dart'; // 홈 화면 목록용 모델
+import '../models/listing_model.dart'; // 마이페이지 목록용 모델 (MyListingItem)
 import '../models/sharehouse_detail_model.dart'; // 상세 조회용 모델
 
 class SharehouseService {
@@ -21,8 +21,8 @@ class SharehouseService {
   static Future<String> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
     // 저장된 키 이름이 'token'인지 'accessToken'인지 확인 필요
-    final String? token = prefs.getString('token'); 
-    
+    final String? token = prefs.getString('token');
+
     if (token == null) {
       throw Exception('로그인 정보가 없습니다. 다시 로그인해주세요.');
     }
@@ -54,16 +54,18 @@ class SharehouseService {
       }
 
       // 필요한 경우 토큰 추가 (보안 설정에 따라 다름)
-      // final token = await _getToken();
-      // request.headers['Authorization'] = 'Bearer $token';
+      final token = await _getToken();
+      request.headers['Authorization'] = 'Bearer $token';
 
       final response = await request.send();
       final responseBody = await response.stream.bytesToString();
 
       if (response.statusCode == 200) {
         final data = jsonDecode(responseBody);
-        // 응답 구조: { "data": ["url1", "url2", ...] }
-        return List<String>.from(data['data']);
+
+        // null 체크 후 안전하게 변환
+        final urls = data['data'] as List<dynamic>? ?? [];
+        return urls.whereType<String>().toList(); // null 제거 후 String만 변환
       } else {
         throw Exception('이미지 업로드 실패: ${response.statusCode}');
       }
@@ -100,33 +102,30 @@ class SharehouseService {
   // ------------------------------------------------------------------------
   // 3. 홈 화면: 쉐어하우스 전체 목록 조회 (GET)
   // ------------------------------------------------------------------------
-  static Future<List<SharehouseModel>> getSharehouseList(String filterType) async {
+  static Future<List<SharehouseModel>> getSharehouseList(
+    String filterType,
+  ) async {
     try {
       final token = await _getToken();
-      
+
       // 쿼리 파라미터 설정
-      Map<String, String> queryParams = {
-        'page': '0',
-        'size': '10',
-      };
+      Map<String, String> queryParams = {'page': '0', 'size': '10'};
 
       // 필터 적용 ('ALL'이 아닐 경우 houseType 추가)
       if (filterType != 'ALL') {
         queryParams['houseType'] = filterType;
       }
 
-      final uri = Uri.parse('$_baseUrl/api/trustay/sharehouses')
-          .replace(queryParameters: queryParams);
+      final uri = Uri.parse(
+        '$_baseUrl/api/trustay/sharehouses',
+      ).replace(queryParameters: queryParams);
 
-      final response = await http.get(
-        uri,
-        headers: _getHeaders(token),
-      );
+      final response = await http.get(uri, headers: _getHeaders(token));
 
       if (response.statusCode == 200) {
         final decodedBody = utf8.decode(response.bodyBytes);
         final jsonResponse = json.decode(decodedBody);
-        
+
         // 응답 구조: { "data": { "content": [...] } }
         final List<dynamic> content = jsonResponse['data']['content'];
         return content.map((e) => SharehouseModel.fromJson(e)).toList();
@@ -144,23 +143,17 @@ class SharehouseService {
   static Future<List<MyListingItem>> fetchMyListings() async {
     try {
       final token = await _getToken();
-      
-      final uri = Uri.parse('$_baseUrl/api/trustay/sharehouses/my')
-          .replace(queryParameters: {
-        'page': '0',
-        'size': '10',
-        'sort': 'createdAt,desc'
-      });
 
-      final response = await http.get(
-        uri,
-        headers: _getHeaders(token),
+      final uri = Uri.parse('$_baseUrl/api/trustay/sharehouses/my').replace(
+        queryParameters: {'page': '0', 'size': '10', 'sort': 'createdAt,desc'},
       );
+
+      final response = await http.get(uri, headers: _getHeaders(token));
 
       if (response.statusCode == 200) {
         final decodedBody = utf8.decode(response.bodyBytes);
         final jsonResponse = json.decode(decodedBody);
-        
+
         final List<dynamic> content = jsonResponse['data']['content'];
         return content.map((e) => MyListingItem.fromJson(e)).toList();
       } else {
@@ -179,15 +172,12 @@ class SharehouseService {
       final token = await _getToken();
       final uri = Uri.parse('$_baseUrl/api/trustay/sharehouses/$houseId');
 
-      final response = await http.get(
-        uri,
-        headers: _getHeaders(token),
-      );
+      final response = await http.get(uri, headers: _getHeaders(token));
 
       if (response.statusCode == 200) {
         final decodedBody = utf8.decode(response.bodyBytes);
         final jsonResponse = json.decode(decodedBody);
-        
+
         // 응답 구조: { "data": { ...상세 정보... } }
         return SharehouseDetail.fromJson(jsonResponse['data']);
       } else {
@@ -201,7 +191,10 @@ class SharehouseService {
   // ------------------------------------------------------------------------
   // 6. 쉐어하우스 정보 수정 (PUT)
   // ------------------------------------------------------------------------
-  static Future<bool> updateListing(int houseId, Map<String, dynamic> updateData) async {
+  static Future<bool> updateListing(
+    int houseId,
+    Map<String, dynamic> updateData,
+  ) async {
     try {
       final token = await _getToken();
       final uri = Uri.parse('$_baseUrl/api/trustay/sharehouses/$houseId');
@@ -230,10 +223,7 @@ class SharehouseService {
       final token = await _getToken();
       final uri = Uri.parse('$_baseUrl/api/trustay/sharehouses/$houseId');
 
-      final response = await http.delete(
-        uri,
-        headers: _getHeaders(token),
-      );
+      final response = await http.delete(uri, headers: _getHeaders(token));
 
       if (response.statusCode == 200) {
         return true;

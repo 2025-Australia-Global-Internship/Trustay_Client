@@ -73,8 +73,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredPopularHouses =
-        _houses.take(4).map(_toHouseDummy).toList();
+    final filteredPopularHouses = _houses.take(4).map(_toHouseDummy).toList();
     final filteredGeneralHouses = _houses.map(_toHouseDummy).toList();
 
     return Scaffold(
@@ -114,8 +113,8 @@ class _HomePageState extends State<HomePage> {
                                 color: green,
                               ),
                               const SizedBox(width: 5),
-                              const Text(
-                                'Location',
+                              Text(
+                                (user?.location ?? 'Location'),
                                 style: TextStyle(
                                   color: grey04,
                                   fontSize: 13,
@@ -124,7 +123,7 @@ class _HomePageState extends State<HomePage> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 5),
+                          const SizedBox(height: 6),
                           Text(
                             'Welcome, ${user?.name ?? ''}!',
                             style: const TextStyle(
@@ -334,10 +333,9 @@ class _HomePageState extends State<HomePage> {
     String? type,
   }) {
     return GestureDetector(
-      onTap:
-          type != null
+      onTap: type != null
           ? () {
-              setState(() => _selectedFilter = type!);
+              setState(() => _selectedFilter = type);
               _loadHouses();
             }
           : null,

@@ -311,7 +311,13 @@ class _FinancePageState extends State<FinancePage> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFEEEEEE), width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.14),
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
         ),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
@@ -320,13 +326,14 @@ class _FinancePageState extends State<FinancePage> {
               width: 42,
               height: 42,
               decoration: const BoxDecoration(
-                color: Color(0xFF6BCB77),
+                color: green,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.wallet_outlined,
-                size: 22,
-                color: Colors.white,
+              child: SvgPicture.asset(
+                'assets/icons/wallet.svg',
+                width: 9,
+                height: 9,
+                fit: BoxFit.none,
               ),
             ),
             const SizedBox(width: 14),
@@ -337,14 +344,14 @@ class _FinancePageState extends State<FinancePage> {
                   'Split Bills',
                   style: TextStyle(
                     fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A1A1A),
+                    fontWeight: FontWeight.w700,
+                    color: dark,
                   ),
                 ),
-                SizedBox(height: 2),
+                SizedBox(height: 6),
                 Text(
                   'Splitting bills with roommates made easy.',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF999999)),
+                  style: TextStyle(fontSize: 12, color: grey03),
                 ),
               ],
             ),

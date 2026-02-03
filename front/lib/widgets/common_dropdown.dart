@@ -75,7 +75,7 @@ class CommonDropdown<T> extends StatelessWidget {
               fontWeight: FontWeight.w400,
             ),
             decoration: InputDecoration(
-              contentPadding: const EdgeInsets.fromLTRB(16, 20, 12, 20),
+              contentPadding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
               hintText: hintText,
               hintStyle: const TextStyle(
                 fontFamily: 'NanumSquareNeo', // 힌트 텍스트 폰트

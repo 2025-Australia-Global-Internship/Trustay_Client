@@ -151,8 +151,6 @@ class _SignupPageState extends State<SignupPage> {
                                 : null,
                           ),
 
-                          const SizedBox(height: 14),
-
                           GestureDetector(
                             onTap: () {
                               setState(() {
@@ -267,7 +265,8 @@ class _SignupPageState extends State<SignupPage> {
                                 svgAsset: 'assets/icons/apple.svg',
                                 iconColor: Colors.white,
                                 backgroundColor: Colors.transparent,
-                                size: 54,
+                                size: 52,
+                                iconSize: 24,
                                 borderWidth: 1,
                                 borderColor: Colors.white,
                                 applySvgColor: false,
@@ -277,7 +276,8 @@ class _SignupPageState extends State<SignupPage> {
                               CircleIconButton(
                                 svgAsset: 'assets/icons/google.svg',
                                 backgroundColor: Colors.transparent,
-                                size: 54,
+                                size: 52,
+                                iconSize: 20,
                                 borderWidth: 1,
                                 borderColor: Colors.white,
                                 applySvgColor: false,
@@ -287,7 +287,8 @@ class _SignupPageState extends State<SignupPage> {
                               CircleIconButton(
                                 svgAsset: 'assets/icons/facebook.svg',
                                 backgroundColor: Colors.transparent,
-                                size: 54,
+                                size: 52,
+                                iconSize: 26,
                                 borderWidth: 1,
                                 borderColor: Colors.white,
                                 applySvgColor: false,
