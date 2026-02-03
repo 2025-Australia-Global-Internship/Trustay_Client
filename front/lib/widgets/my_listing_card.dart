@@ -20,18 +20,26 @@ class MyListingCard extends StatelessWidget {
 
   Color _getStatusColor(String status) {
     switch (status) {
-      case 'APPROVED': return green;
-      case 'REJECTED': return Colors.red;
-      case 'WAITING': default: return const Color(0xFFFFA000);
+      case 'APPROVED':
+        return green;
+      case 'REJECTED':
+        return Colors.red;
+      case 'WAITING':
+      default:
+        return const Color(0xFFFFA000);
     }
   }
 
   String _getStatusText(String status) {
     switch (status) {
-      case 'APPROVED': return '승인됨';
-      case 'REJECTED': return '반려됨';
-      case 'WAITING': return '심사중';
-      default: return status;
+      case 'APPROVED':
+        return '승인됨';
+      case 'REJECTED':
+        return '반려됨';
+      case 'WAITING':
+        return '심사중';
+      default:
+        return status;
     }
   }
 
@@ -46,7 +54,7 @@ class MyListingCard extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
+            blurRadius: 5,
             offset: const Offset(0, 4),
           ),
         ],
@@ -75,7 +83,10 @@ class MyListingCard extends StatelessWidget {
                             ? Image.network(
                                 imageUrl,
                                 fit: BoxFit.cover,
-                                errorBuilder: (ctx, err, stack) => const Icon(Icons.broken_image, color: grey02),
+                                errorBuilder: (ctx, err, stack) => const Icon(
+                                  Icons.broken_image,
+                                  color: grey02,
+                                ),
                               )
                             : const Icon(Icons.home, color: grey02),
                       ),
@@ -86,12 +97,19 @@ class MyListingCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
-                              color: _getStatusColor(item.approvalStatus).withOpacity(0.1),
+                              color: _getStatusColor(
+                                item.approvalStatus,
+                              ).withOpacity(0.1),
                               borderRadius: BorderRadius.circular(6),
                               border: Border.all(
-                                color: _getStatusColor(item.approvalStatus).withOpacity(0.5),
+                                color: _getStatusColor(
+                                  item.approvalStatus,
+                                ).withOpacity(0.5),
                                 width: 0.5,
                               ),
                             ),
@@ -120,10 +138,7 @@ class MyListingCard extends StatelessWidget {
                             item.address,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: grey02,
-                            ),
+                            style: const TextStyle(fontSize: 12, color: grey02),
                           ),
                         ],
                       ),
@@ -131,7 +146,7 @@ class MyListingCard extends StatelessWidget {
                   ],
                 ),
               ),
-              
+
               // 하단 버튼 영역 (수정 / 삭제)
               // 여기에는 별도의 InkWell이 있으므로, 이 버튼들을 누르면 onTap(상세이동)은 발생하지 않습니다.
               Container(
@@ -145,13 +160,22 @@ class MyListingCard extends StatelessWidget {
                       child: InkWell(
                         onTap: onEdit,
                         // 하단 모서리 둥글게 처리 (리플 효과용)
-                        borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(16)),
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(16),
+                        ),
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.edit, size: 16, color: grey02),
                             SizedBox(width: 4),
-                            Text('수정', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: dark)),
+                            Text(
+                              '수정',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: dark,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -161,13 +185,26 @@ class MyListingCard extends StatelessWidget {
                       child: InkWell(
                         onTap: onDelete,
                         // 하단 모서리 둥글게 처리 (리플 효과용)
-                        borderRadius: const BorderRadius.only(bottomRight: Radius.circular(16)),
+                        borderRadius: const BorderRadius.only(
+                          bottomRight: Radius.circular(16),
+                        ),
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.delete_outline, size: 16, color: Colors.redAccent),
-                            SizedBox(width: 4), 
-                            Text('삭제', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.redAccent)),
+                            Icon(
+                              Icons.delete_outline,
+                              size: 16,
+                              color: Colors.redAccent,
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              '삭제',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.redAccent,
+                              ),
+                            ),
                           ],
                         ),
                       ),

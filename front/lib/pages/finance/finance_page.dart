@@ -27,10 +27,17 @@ class FinancePage extends StatefulWidget {
 }
 
 class _FinancePageState extends State<FinancePage> {
-  int _selectedDay = DateTime.now().day;
-
+  late DateTime _currentMonth;
+  int? _selectedDay;
   int _selectedFilter = 0;
   final List<String> _filters = ['All splits', 'You paid', 'Mate paid'];
+
+  @override
+  void initState() {
+    super.initState();
+    _currentMonth = DateTime.now();
+    _selectedDay = DateTime.now().day;
+  }
 
   final Map<String, List<TransactionItem>> _transactionsByMonth = {
     'May': [
@@ -75,8 +82,55 @@ class _FinancePageState extends State<FinancePage> {
     ],
   };
 
-  static const int _startDayIndex = 4;
-  static const int _totalDays = 31;
+  // 해당 월의 첫 번째 날의 요일 인덱스 (0=일요일)
+  int _getFirstDayOfMonth(DateTime date) {
+    return DateTime(date.year, date.month, 1).weekday % 7;
+  }
+
+  // 해당 월의 총 일수
+  int _getDaysInMonth(DateTime date) {
+    return DateTime(date.year, date.month + 1, 0).day;
+  }
+
+  // 이전 달의 총 일수
+  int _getDaysInPreviousMonth(DateTime date) {
+    return DateTime(date.year, date.month, 0).day;
+  }
+
+  // 월 이름 가져오기
+  String _getMonthName(DateTime date) {
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    return months[date.month - 1];
+  }
+
+  // 이전 달로 이동
+  void _previousMonth() {
+    setState(() {
+      _currentMonth = DateTime(_currentMonth.year, _currentMonth.month - 1);
+      _selectedDay = null;
+    });
+  }
+
+  // 다음 달로 이동
+  void _nextMonth() {
+    setState(() {
+      _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + 1);
+      _selectedDay = null;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -91,7 +145,7 @@ class _FinancePageState extends State<FinancePage> {
                 showBack: false,
                 toolbarHeight: 56,
                 leading: Padding(
-                  padding: EdgeInsets.only(left: 16),
+                  padding: EdgeInsets.only(left: 20),
                   child: const Text(
                     'House Finances',
                     style: TextStyle(
@@ -121,20 +175,19 @@ class _FinancePageState extends State<FinancePage> {
               ),
             ),
 
-            // ── 본문 ──
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 16),
 
                   // 달력 카드
                   _buildCalendarCard(),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 28),
 
                   // Split Bills 버튼
                   _buildSplitBillsButton(),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 28),
 
                   // 필터 탭
                   _buildFilterTabs(),
@@ -165,45 +218,77 @@ class _FinancePageState extends State<FinancePage> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFEEEEEE), width: 1),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.14),
+            blurRadius: 5,
+            offset: Offset(0, 2),
+          ),
+        ],
       ),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Calendar',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A1A1A),
+              Padding(
+                padding: EdgeInsets.only(left: 8),
+                child: const Text(
+                  'Calendar',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: dark,
+                  ),
                 ),
               ),
+
               Row(
                 children: [
-                  const Icon(
-                    Icons.keyboard_arrow_up,
-                    size: 22,
-                    color: Color(0xFF888888),
+                  GestureDetector(
+                    onTap: _previousMonth,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      child: SvgPicture.asset(
+                        'assets/icons/arrow_back.svg',
+                        width: 14,
+                        height: 14,
+                      ),
+                    ),
                   ),
-                  const SizedBox(width: 6),
-                  const Text(
-                    'May',
-                    style: TextStyle(fontSize: 15, color: Color(0xFF888888)),
+                  const SizedBox(width: 5),
+                  Text(
+                    _getMonthName(_currentMonth),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: dark,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(width: 5),
+                  GestureDetector(
+                    onTap: _nextMonth,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      child: SvgPicture.asset(
+                        'assets/icons/arrow_right.svg',
+                        width: 14,
+                        height: 14,
+                      ),
+                    ),
                   ),
                 ],
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 28),
 
           // 요일 헤더
           _buildDayHeaders(),
-          const SizedBox(height: 4),
+          const SizedBox(height: 24),
 
           // 날짜 그리드
           _buildDayGrid(),
@@ -224,8 +309,8 @@ class _FinancePageState extends State<FinancePage> {
                   d,
                   style: const TextStyle(
                     fontSize: 12,
-                    color: Color(0xFFAAAAAA),
-                    fontWeight: FontWeight.w500,
+                    color: green,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
@@ -236,11 +321,14 @@ class _FinancePageState extends State<FinancePage> {
   }
 
   Widget _buildDayGrid() {
-    const totalCells = 42;
-    final prevDayNumbers = List.generate(
-      _startDayIndex,
-      (i) => 30 - (_startDayIndex - 1 - i),
-    );
+    const totalCells = 38;
+    final firstDayIndex = _getFirstDayOfMonth(_currentMonth);
+    final daysInMonth = _getDaysInMonth(_currentMonth);
+    final daysInPrevMonth = _getDaysInPreviousMonth(_currentMonth);
+
+    final today = DateTime.now();
+    final isCurrentMonth =
+        _currentMonth.year == today.year && _currentMonth.month == today.month;
 
     return GridView.builder(
       shrinkWrap: true,
@@ -248,50 +336,61 @@ class _FinancePageState extends State<FinancePage> {
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 7,
         mainAxisExtent: 36,
+        mainAxisSpacing: 10, // 행 간격
       ),
       itemCount: totalCells,
       itemBuilder: (_, index) {
-        final dayNumber = index - _startDayIndex + 1;
-
-        // 이전달 날짜 (회색)
-        if (index < _startDayIndex) {
+        // 이전 달 날짜
+        if (index < firstDayIndex) {
+          final prevMonthDay = daysInPrevMonth - (firstDayIndex - index - 1);
           return Align(
             alignment: Alignment.center,
             child: Text(
-              '${prevDayNumbers[index]}',
+              '$prevMonthDay',
               style: const TextStyle(fontSize: 13, color: Color(0xFFCCCCCC)),
             ),
           );
         }
 
-        // 범위 밖 (빈 셀)
-        if (dayNumber > _totalDays) return const SizedBox();
+        final dayNumber = index - firstDayIndex + 1;
+
+        // 다음 달 날짜
+        if (dayNumber > daysInMonth) {
+          final nextMonthDay = dayNumber - daysInMonth;
+          return Align(
+            alignment: Alignment.center,
+            child: Text(
+              '$nextMonthDay',
+              style: const TextStyle(fontSize: 13, color: Color(0xFFCCCCCC)),
+            ),
+          );
+        }
 
         final isSelected = dayNumber == _selectedDay;
+        final isToday = isCurrentMonth && dayNumber == today.day;
 
         return GestureDetector(
           onTap: () => setState(() => _selectedDay = dayNumber),
           child: Align(
             alignment: Alignment.center,
             child: Container(
-              width: 30,
-              height: 30,
-              decoration: isSelected
-                  ? const BoxDecoration(
-                      color: Color(0xFFF5F0A0),
-                      shape: BoxShape.circle,
-                    )
-                  : null,
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: isSelected ? yellow : null,
+                shape: BoxShape.circle,
+                border: isToday && !isSelected
+                    ? Border.all(color: grey01, width: 1)
+                    : null,
+              ),
               child: Align(
                 alignment: Alignment.center,
                 child: Text(
                   '$dayNumber',
                   style: TextStyle(
                     fontSize: 13,
-                    color: const Color(0xFF444444),
-                    fontWeight: isSelected
-                        ? FontWeight.bold
-                        : FontWeight.normal,
+                    color: dark,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
@@ -310,16 +409,16 @@ class _FinancePageState extends State<FinancePage> {
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.14),
-              blurRadius: 8,
+              blurRadius: 5,
               offset: Offset(0, 2),
             ),
           ],
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         child: Row(
           children: [
             Container(
@@ -343,15 +442,19 @@ class _FinancePageState extends State<FinancePage> {
                 Text(
                   'Split Bills',
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: 13.5,
                     fontWeight: FontWeight.w700,
                     color: dark,
                   ),
                 ),
-                SizedBox(height: 6),
+                SizedBox(height: 7),
                 Text(
                   'Splitting bills with roommates made easy.',
-                  style: TextStyle(fontSize: 12, color: grey03),
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    color: grey04,
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
               ],
             ),
@@ -363,35 +466,38 @@ class _FinancePageState extends State<FinancePage> {
 
   Widget _buildFilterTabs() {
     return Container(
-      height: 36,
+      height: 48,
+      padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: const Color(0xFFF0F0F0),
-        borderRadius: BorderRadius.circular(18),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.14),
+            blurRadius: 5,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: List.generate(_filters.length, (i) {
-          final isActive = i == _selectedFilter;
+          final isSelected = _selectedFilter == i;
+
           return Expanded(
             child: GestureDetector(
               onTap: () => setState(() => _selectedFilter = i),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                decoration: isActive
-                    ? BoxDecoration(
-                        color: const Color(0xFFF5F0A0),
-                        borderRadius: BorderRadius.circular(18),
-                      )
-                    : null,
-                child: Center(
-                  child: Text(
-                    _filters[i],
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-                      color: isActive
-                          ? const Color(0xFF1A1A1A)
-                          : const Color(0xFF888888),
-                    ),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isSelected ? yellow : Colors.white,
+                  borderRadius: BorderRadius.circular(28),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  _filters[i],
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: dark,
                   ),
                 ),
               ),
@@ -407,8 +513,8 @@ class _FinancePageState extends State<FinancePage> {
       month,
       style: const TextStyle(
         fontSize: 15,
-        fontWeight: FontWeight.bold,
-        color: Color(0xFF1A1A1A),
+        fontWeight: FontWeight.w700,
+        color: dark,
       ),
     );
   }
