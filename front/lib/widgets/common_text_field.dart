@@ -75,9 +75,9 @@ class CommonTextField extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
             decoration: InputDecoration(
-              contentPadding: const EdgeInsets.fromLTRB(16, 20, 12, 20),
+              contentPadding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
               hintText: hintText,
-              hintStyle: const TextStyle(color: grey01, fontSize: 14),
+              hintStyle: const TextStyle(color: grey02, fontSize: 12),
               prefixIcon: prefixIcon != null
                   ? Padding(
                       padding: const EdgeInsets.fromLTRB(20, 0, 13, 0),
@@ -89,6 +89,11 @@ class CommonTextField extends StatelessWidget {
                 minHeight: 20,
               ),
               suffixText: suffixText,
+              suffixStyle: const TextStyle(
+                color: dark,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
               suffixIcon: suffixIcon != null
                   ? Padding(
                       padding: const EdgeInsets.only(right: 20),

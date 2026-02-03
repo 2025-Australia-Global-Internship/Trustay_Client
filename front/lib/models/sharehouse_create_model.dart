@@ -1,54 +1,102 @@
+// ─── Request ─────────────────────────────────────────────────────────────────
 class SharehouseCreateRequest {
   final String title;
-  final String shortDescription;
+  final String description;
   final String address;
-  final String detailedAddress;
-  final String propertyType; // HOUSE, APARTMENT, UNIT, TOWNHOUSE
-  final String billsIncluded; // YES, NO, PARTIALLY
-  final String roomType; // PRIVATE_ROOM, SHARED_ROOM
-  final bool isEntirePlace;
-  final int rentPerWeek;
-  final int bond; // weeks
-  final int minimumStay; // weeks
-  final List<String>
-  homeRules; // NO_SMOKING, NO_PARTIES, PETS_ALLOWED, GUESTS_ALLOWED
-  final List<String> features; // DOUBLE_BED, QUEEN_BED, BED_SIDE_TABLE, etc.
+  final String houseType; // APARTMENT, HOUSE, UNIT, TOWNHOUSE
+  final int rentPrice;
+  final int roomCount;
+  final int bathroomCount;
+  final int currentResidents;
+  final List<String> options;
   final List<String> imageUrls;
-  final String gender; // MALE, FEMALE, ANY
 
   SharehouseCreateRequest({
     required this.title,
-    required this.shortDescription,
+    required this.description,
     required this.address,
-    required this.detailedAddress,
-    required this.propertyType,
-    required this.billsIncluded,
-    required this.roomType,
-    required this.isEntirePlace,
-    required this.rentPerWeek,
-    required this.bond,
-    required this.minimumStay,
-    required this.homeRules,
-    required this.features,
+    required this.houseType,
+    required this.rentPrice,
+    required this.roomCount,
+    required this.bathroomCount,
+    required this.currentResidents,
+    required this.options,
     required this.imageUrls,
-    required this.gender,
   });
 
   Map<String, dynamic> toJson() => {
     'title': title,
-    'shortDescription': shortDescription,
+    'description': description,
     'address': address,
-    'detailedAddress': detailedAddress,
-    'propertyType': propertyType,
-    'billsIncluded': billsIncluded,
-    'roomType': roomType,
-    'isEntirePlace': isEntirePlace,
-    'rentPerWeek': rentPerWeek,
-    'bond': bond,
-    'minimumStay': minimumStay,
-    'homeRules': homeRules,
-    'features': features,
+    'houseType': houseType,
+    'rentPrice': rentPrice,
+    'roomCount': roomCount,
+    'bathroomCount': bathroomCount,
+    'currentResidents': currentResidents,
+    'options': options,
     'imageUrls': imageUrls,
-    'gender': gender,
   };
+}
+
+// ─── Response ────────────────────────────────────────────────────────────────
+class SharehouseCreateResponse {
+  final String dateTime;
+  final String version;
+  final int code;
+  final String message;
+  final SharehouseCreatedData data;
+
+  SharehouseCreateResponse({
+    required this.dateTime,
+    required this.version,
+    required this.code,
+    required this.message,
+    required this.data,
+  });
+
+  factory SharehouseCreateResponse.fromJson(Map<String, dynamic> json) =>
+      SharehouseCreateResponse(
+        dateTime: json['dateTime'],
+        version: json['version'],
+        code: json['code'],
+        message: json['message'],
+        data: SharehouseCreatedData.fromJson(json['data']),
+      );
+}
+
+class SharehouseCreatedData {
+  final int id;
+  final String title;
+  final String address;
+  final int viewCount;
+  final int wishCount;
+  final String houseType; // APARTMENT, HOUSE, UNIT, TOWNHOUSE
+  final String approvalStatus; // PENDING, ...
+  final List<String> imageUrls;
+  final bool wishedByMe;
+
+  SharehouseCreatedData({
+    required this.id,
+    required this.title,
+    required this.address,
+    required this.viewCount,
+    required this.wishCount,
+    required this.houseType,
+    required this.approvalStatus,
+    required this.imageUrls,
+    required this.wishedByMe,
+  });
+
+  factory SharehouseCreatedData.fromJson(Map<String, dynamic> json) =>
+      SharehouseCreatedData(
+        id: json['id'],
+        title: json['title'],
+        address: json['address'],
+        viewCount: json['viewCount'],
+        wishCount: json['wishCount'],
+        houseType: json['houseType'],
+        approvalStatus: json['approvalStatus'],
+        imageUrls: List<String>.from(json['imageUrls']),
+        wishedByMe: json['wishedByMe'],
+      );
 }

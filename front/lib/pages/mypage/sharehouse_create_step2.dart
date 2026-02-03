@@ -3,8 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:front/constants/colors.dart';
 import 'package:front/widgets/custom_header.dart';
 import 'package:front/widgets/gradient_layout.dart';
+import 'package:front/widgets/primary_button.dart';
 import 'package:front/models/sharehouse_create_model.dart';
 import 'package:front/services/sharehouse_service.dart';
+import 'package:front/routes/navigation_type.dart';
+import 'package:front/widgets/common_text_field.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter/services.dart';
 
 class SharehouseCreateStep2Page extends StatefulWidget {
   final List<File> images;
@@ -28,8 +33,10 @@ class SharehouseCreateStep2Page extends StatefulWidget {
 }
 
 class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
   // Property Type
-  String _selectedPropertyType = 'HOUSE';
+  String? _selectedPropertyType;
   final List<String> _propertyTypes = [
     'House',
     'Apartment',
@@ -38,17 +45,13 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
   ];
 
   // Bills Included
-  String _selectedBillsIncluded = 'YES';
+  String? _selectedBillsIncluded;
 
   // Room Type
-  String _selectedRoomType = 'PRIVATE_ROOM';
-
-  // Entire Place
-  bool _isEntirePlace = false;
+  String? _selectedRoomType;
 
   // Rent
   final TextEditingController _rentController = TextEditingController();
-  String _rentPeriod = 'week';
 
   // Bond
   int _bondWeeks = 2;
@@ -57,7 +60,7 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
   final TextEditingController _customBondController = TextEditingController();
 
   // Minimum Stay
-  String _minimumStay = 'No minimum stay';
+  String? _minimumStay;
   int? _customMinimumStay;
   final TextEditingController _customStayController = TextEditingController();
 
@@ -77,19 +80,39 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
     'Queen bed': 'QUEEN_BED',
     'Bed side table': 'BED_SIDE_TABLE',
     'Wardrobe': 'WARDROBE',
-    'Desk': 'DESK',
+    'Door lock': 'DOOR_LOCK',
+    'Couch': 'COUCH',
     'Chair': 'CHAIR',
+    'Desk': 'DESK',
     'Lamp': 'LAMP',
     'Kitchenette': 'KITCHENETTE',
-    'Guests allowed': 'GUESTS_ALLOWED',
-    'Couch': 'COUCH',
-    'Desk lock': 'DESK_LOCK',
+    'Mirror': 'MIRROR',
+    'Fan': 'FAN',
+    'Air Conditioner': 'AIR_CONDITIONER',
+    'Heater': 'HEATER',
+    'Washing Machine': 'WASHING_MACHINE',
+    'Iron': 'IRON',
+    'Dining Table': 'DINING_TABLE',
+    'Dining Chairs': 'DINING_CHAIRS',
+    'Oven': 'OVEN',
+    'Microwave': 'MICROWAVE',
+    'Refrigerator': 'REFRIGERATOR',
+    'Stove': 'STOVE',
+    'Dishwasher': 'DISHWASHER',
+    'Kettle': 'KETTLE',
+    'Toaster': 'TOASTER',
+    'Coffee Maker': 'COFFEE_MAKER',
   };
 
-  // Gender
-  String _selectedGender = 'ANY';
+  // Bedroom / Bathroom / Resident 카운터
+  int _roomCount = 0;
+  int _bathroomCount = 0;
+  int _currentResidents = 0;
 
-  bool _isSubmitting = false;
+  // Gender
+  String? _selectedGender;
+
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -99,61 +122,108 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
     super.dispose();
   }
 
-  Future<void> _submitListing() async {
-    // Validation
+  // ─── 카운터 공통 증감 ─────────────────────────────────────────
+  void _increment(int type) {
+    setState(() {
+      switch (type) {
+        case 0:
+          _roomCount++;
+          break;
+        case 1:
+          _bathroomCount++;
+          break;
+        case 2:
+          _currentResidents++;
+          break;
+      }
+    });
+  }
+
+  void _decrement(int type) {
+    setState(() {
+      switch (type) {
+        case 0:
+          if (_roomCount > 0) _roomCount--;
+          break;
+        case 1:
+          if (_bathroomCount > 0) _bathroomCount--;
+          break;
+        case 2:
+          if (_currentResidents > 0) _currentResidents--;
+          break;
+      }
+    });
+  }
+
+  Future<bool> _submitListing() async {
     if (_rentController.text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('임대료를 입력해주세요.')));
-      return;
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('임대료를 입력해주세요.')));
+      }
+      return false;
     }
 
     setState(() {
-      _isSubmitting = true;
+      _isLoading = true;
     });
 
     try {
       // 1. 이미지 업로드
       final imageUrls = await SharehouseService.uploadImages(widget.images);
 
-      // 2. 매물 등록
+      // 2. rentPrice 파싱
+      final int rentPrice = int.parse(_rentController.text);
+
+      // 3. options 리스트 구성: homeRules + features 합침
+      final List<String> options = [
+        ..._selectedHomeRules,
+        ..._selectedFeatures,
+      ];
+
+      // 4. Request 생성
       final request = SharehouseCreateRequest(
         title: widget.title,
-        shortDescription: widget.description,
+        description: widget.description,
         address: widget.address,
-        detailedAddress: widget.detailedAddress,
-        propertyType: _selectedPropertyType,
-        billsIncluded: _selectedBillsIncluded,
-        roomType: _selectedRoomType,
-        isEntirePlace: _isEntirePlace,
-        rentPerWeek: int.parse(_rentController.text),
-        bond: _customBondWeeks ?? _bondWeeks,
-        minimumStay: _customMinimumStay ?? 0,
-        homeRules: _selectedHomeRules.toList(),
-        features: _selectedFeatures.toList(),
+        houseType: (_selectedPropertyType ?? '').toUpperCase(),
+        rentPrice: rentPrice,
+        roomCount: _roomCount,
+        bathroomCount: _bathroomCount,
+        currentResidents: _currentResidents,
+        options: options,
         imageUrls: imageUrls,
-        gender: _selectedGender,
       );
 
+      // 5. API 호출
       final success = await SharehouseService.createSharehouse(request);
 
-      if (success) {
-        if (!mounted) return;
+      if (success && mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('매물이 등록되었습니다!')));
-        // 리스팅 페이지로 돌아가기
         Navigator.of(context).popUntil((route) => route.isFirst);
+        return true;
       }
+
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('등록 실패: 알 수 없는 오류')));
+      }
+      return false;
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('등록 실패: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('등록 실패: $e')));
+      }
+      return false;
     } finally {
       if (mounted) {
         setState(() {
-          _isSubmitting = false;
+          _isLoading = false;
         });
       }
     }
@@ -164,113 +234,70 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: GradientLayout(
-        child: Stack(
+        child: Column(
           children: [
-            Column(
-              children: [
-                CustomHeader(
-                  center: const Text(
-                    'Add Property',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: dark,
-                    ),
-                  ),
-                  showBack: true,
+            CustomHeader(
+              center: const Text(
+                'Add Property',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: dark,
                 ),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(20, 30, 20, 100),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Property Type
-                        _buildPropertyType(),
-                        const SizedBox(height: 24),
-
-                        // Bills Included
-                        _buildBillsIncluded(),
-                        const SizedBox(height: 24),
-
-                        // Room Type
-                        _buildRoomType(),
-                        const SizedBox(height: 24),
-
-                        // Entire Place
-                        _buildEntirePlace(),
-                        const SizedBox(height: 24),
-
-                        // Rent
-                        _buildRent(),
-                        const SizedBox(height: 24),
-
-                        // Bond
-                        _buildBond(),
-                        const SizedBox(height: 24),
-
-                        // Minimum Stay
-                        _buildMinimumStay(),
-                        const SizedBox(height: 24),
-
-                        // Home Rules
-                        _buildHomeRules(),
-                        const SizedBox(height: 24),
-
-                        // Features
-                        _buildFeatures(),
-                        const SizedBox(height: 24),
-
-                        // Gender
-                        _buildGender(),
-                        const SizedBox(height: 32),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+              ),
+              showBack: true,
             ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildPropertyType(),
+                      const SizedBox(height: 26),
 
-            // Submit Button
-            Positioned(
-              bottom: 20,
-              left: 20,
-              right: 20,
-              child: SizedBox(
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : _submitListing,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: green,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    elevation: 3,
+                      _buildBillsIncluded(),
+                      const SizedBox(height: 26),
+
+                      _buildRoomType(),
+                      const SizedBox(height: 26),
+
+                      _buildRent(),
+                      const SizedBox(height: 26),
+
+                      _buildBond(),
+                      const SizedBox(height: 26),
+
+                      _buildMinimumStay(),
+                      const SizedBox(height: 26),
+
+                      _buildHomeRules(),
+                      const SizedBox(height: 26),
+
+                      _buildFeatures(),
+                      const SizedBox(height: 26),
+
+                      // Bedroom / Bathroom / Resident 카운터
+                      _buildCounters(),
+                      const SizedBox(height: 26),
+
+                      _buildGender(),
+                      const SizedBox(height: 42),
+
+                      PrimaryButton(
+                        formKey: _formKey,
+                        text: 'Publish',
+                        isLoading: _isLoading,
+                        onAction: _submitListing,
+                        successMessage: '매물이 등록되었습니다!',
+                        failMessage: '등록 실패',
+                        navigationType: NavigationType.clearStack,
+                        enabled: true,
+                      ),
+                    ],
                   ),
-                  child: _isSubmitting
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Icon(Icons.add, color: Colors.white, size: 20),
-                            SizedBox(width: 8),
-                            Text(
-                              'Create',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
                 ),
               ),
             ),
@@ -280,6 +307,7 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
     );
   }
 
+  // ─── Section Title ───────────────────────────────────────────
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
@@ -291,6 +319,7 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
     );
   }
 
+  // ─── Property Type ───────────────────────────────────────────
   Widget _buildPropertyType() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -298,7 +327,7 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
         _buildSectionTitle('Property Type'),
         const SizedBox(height: 16),
         Wrap(
-          spacing: 8,
+          spacing: 6,
           runSpacing: 8,
           children: _propertyTypes.map((type) {
             final key = type.toUpperCase().replaceAll(' ', '_');
@@ -318,41 +347,32 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
     );
   }
 
+  // ─── Bills Included ──────────────────────────────────────────
   Widget _buildBillsIncluded() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionTitle('Bills Included'),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         Wrap(
-          spacing: 8,
+          spacing: 6,
+          runSpacing: 8,
           children: [
             _buildChoiceChip(
               label: 'Yes',
               selected: _selectedBillsIncluded == 'YES',
-              onSelected: () {
-                setState(() {
-                  _selectedBillsIncluded = 'YES';
-                });
-              },
+              onSelected: () => setState(() => _selectedBillsIncluded = 'YES'),
             ),
             _buildChoiceChip(
               label: 'No',
               selected: _selectedBillsIncluded == 'NO',
-              onSelected: () {
-                setState(() {
-                  _selectedBillsIncluded = 'NO';
-                });
-              },
+              onSelected: () => setState(() => _selectedBillsIncluded = 'NO'),
             ),
             _buildChoiceChip(
               label: 'Partially',
               selected: _selectedBillsIncluded == 'PARTIALLY',
-              onSelected: () {
-                setState(() {
-                  _selectedBillsIncluded = 'PARTIALLY';
-                });
-              },
+              onSelected: () =>
+                  setState(() => _selectedBillsIncluded = 'PARTIALLY'),
             ),
           ],
         ),
@@ -360,32 +380,34 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
     );
   }
 
+  // ─── Room Type ───────────────────────────────────────────────
   Widget _buildRoomType() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionTitle('Room Type'),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         Wrap(
-          spacing: 8,
+          spacing: 6,
+          runSpacing: 8,
           children: [
             _buildChoiceChip(
               label: 'Private room',
               selected: _selectedRoomType == 'PRIVATE_ROOM',
-              onSelected: () {
-                setState(() {
-                  _selectedRoomType = 'PRIVATE_ROOM';
-                });
-              },
+              onSelected: () =>
+                  setState(() => _selectedRoomType = 'PRIVATE_ROOM'),
             ),
             _buildChoiceChip(
               label: 'Shared room',
               selected: _selectedRoomType == 'SHARED_ROOM',
-              onSelected: () {
-                setState(() {
-                  _selectedRoomType = 'SHARED_ROOM';
-                });
-              },
+              onSelected: () =>
+                  setState(() => _selectedRoomType = 'SHARED_ROOM'),
+            ),
+            _buildChoiceChip(
+              label: 'Entire place',
+              selected: _selectedRoomType == 'ENTIRE_PLACE',
+              onSelected: () =>
+                  setState(() => _selectedRoomType = 'ENTIRE_PLACE'),
             ),
           ],
         ),
@@ -393,85 +415,34 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
     );
   }
 
-  Widget _buildEntirePlace() {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            'Entire place',
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: dark,
-            ),
-          ),
-        ),
-        Switch(
-          value: _isEntirePlace,
-          onChanged: (value) {
-            setState(() {
-              _isEntirePlace = value;
-            });
-          },
-          activeColor: green,
-        ),
-      ],
-    );
-  }
-
+  // ─── Rent ────────────────────────────────────────────────────
   Widget _buildRent() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionTitle('Rent'),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: TextFormField(
-                controller: _rentController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  prefixText: '\$ ',
-                  hintText: '0',
-                  filled: true,
-                  fillColor: grey01,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                color: grey01,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: const [
-                  Text('week', style: TextStyle(fontSize: 14, color: dark)),
-                  SizedBox(width: 4),
-                  Icon(Icons.arrow_drop_down, color: dark),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ],
+    return CommonTextField(
+      label: 'Rent',
+      controller: _rentController,
+      keyboardType: TextInputType.number,
+      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+      prefixIcon: SvgPicture.asset(
+        'assets/icons/dollar.svg',
+        width: 16,
+        height: 16,
+        color: dark,
+      ),
+      suffixText: 'week',
+      hintText: '0',
+      bottomPadding: 0,
     );
   }
 
+  // ─── Bond ────────────────────────────────────────────────────
   Widget _buildBond() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionTitle('Bond'),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         Wrap(
-          spacing: 8,
+          spacing: 6,
           runSpacing: 8,
           children: [
             ..._bondOptions.map((weeks) {
@@ -490,11 +461,11 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
               );
             }).toList(),
             _buildChoiceChip(
-              label: 'Custom',
+              label: _customBondWeeks != null
+                  ? '${_customBondWeeks} weeks'
+                  : 'Custom',
               selected: _customBondWeeks != null,
-              onSelected: () {
-                _showCustomBondDialog();
-              },
+              onSelected: _showCustomBondDialog,
             ),
           ],
         ),
@@ -502,14 +473,15 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
     );
   }
 
+  // ─── Minimum Stay ────────────────────────────────────────────
   Widget _buildMinimumStay() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionTitle('Minimum Stay'),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         Wrap(
-          spacing: 8,
+          spacing: 6,
           runSpacing: 8,
           children: [
             _buildChoiceChip(
@@ -526,11 +498,11 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
               },
             ),
             _buildChoiceChip(
-              label: 'Custom',
+              label: _customMinimumStay != null
+                  ? '${_customMinimumStay} weeks'
+                  : 'Custom',
               selected: _customMinimumStay != null,
-              onSelected: () {
-                _showCustomStayDialog();
-              },
+              onSelected: _showCustomStayDialog,
             ),
           ],
         ),
@@ -538,107 +510,229 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
     );
   }
 
+  // ─── Home Rules ──────────────────────────────────────────────
   Widget _buildHomeRules() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionTitle('Home Rules'),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: _homeRulesMap.entries.map((entry) {
-            final isSelected = _selectedHomeRules.contains(entry.value);
-            return _buildChoiceChip(
-              label: entry.key,
-              selected: isSelected,
-              onSelected: () {
-                setState(() {
-                  if (isSelected) {
-                    _selectedHomeRules.remove(entry.value);
-                  } else {
-                    _selectedHomeRules.add(entry.value);
-                  }
-                });
-              },
-            );
-          }).toList(),
+        const SizedBox(height: 13),
+        Padding(
+          padding: const EdgeInsets.all(8),
+          child: Wrap(
+            spacing: 5,
+            runSpacing: 16,
+            children: _homeRulesMap.entries.map((entry) {
+              final isSelected = _selectedHomeRules.contains(entry.value);
+              return SizedBox(
+                width: (MediaQuery.of(context).size.width - 64) / 2,
+                child: _buildCheckboxTile(
+                  label: entry.key,
+                  value: isSelected,
+                  onChanged: (checked) {
+                    setState(() {
+                      if (checked == true) {
+                        _selectedHomeRules.add(entry.value);
+                      } else {
+                        _selectedHomeRules.remove(entry.value);
+                      }
+                    });
+                  },
+                ),
+              );
+            }).toList(),
+          ),
         ),
       ],
     );
   }
 
+  // ─── Features ────────────────────────────────────────────────
   Widget _buildFeatures() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionTitle('Features'),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: _featuresMap.entries.map((entry) {
-            final isSelected = _selectedFeatures.contains(entry.value);
-            return _buildChoiceChip(
-              label: entry.key,
-              selected: isSelected,
-              onSelected: () {
-                setState(() {
-                  if (isSelected) {
-                    _selectedFeatures.remove(entry.value);
-                  } else {
-                    _selectedFeatures.add(entry.value);
-                  }
-                });
-              },
-            );
-          }).toList(),
+        const SizedBox(height: 13),
+        Padding(
+          padding: const EdgeInsets.all(8),
+          child: Wrap(
+            spacing: 5,
+            runSpacing: 16,
+            children: _featuresMap.entries.map((entry) {
+              final isSelected = _selectedFeatures.contains(entry.value);
+              return SizedBox(
+                width: (MediaQuery.of(context).size.width - 64) / 2,
+                child: _buildCheckboxTile(
+                  label: entry.key,
+                  value: isSelected,
+                  onChanged: (checked) {
+                    setState(() {
+                      if (checked == true) {
+                        _selectedFeatures.add(entry.value);
+                      } else {
+                        _selectedFeatures.remove(entry.value);
+                      }
+                    });
+                  },
+                ),
+              );
+            }).toList(),
+          ),
         ),
       ],
     );
   }
 
+  // ─── Bedroom / Bathroom / Resident 카운터 ────────────────────
+  Widget _buildCounters() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildCounterRow(
+          icon: SvgPicture.asset(
+            'assets/icons/bed.svg',
+            width: 22,
+            height: 22,
+            color: dark,
+          ),
+          label: 'Bedroom',
+          value: _roomCount,
+          onIncrement: () => _increment(0),
+          onDecrement: () => _decrement(0),
+        ),
+        const SizedBox(height: 12),
+        _buildCounterRow(
+          icon: SvgPicture.asset(
+            'assets/icons/bathroom.svg',
+            width: 18,
+            height: 18,
+            color: dark,
+          ),
+          label: 'Bathroom',
+          value: _bathroomCount,
+          onIncrement: () => _increment(1),
+          onDecrement: () => _decrement(1),
+        ),
+        const SizedBox(height: 12),
+        _buildCounterRow(
+          icon: SvgPicture.asset(
+            'assets/icons/profile.svg',
+            width: 24,
+            height: 24,
+            color: dark,
+          ),
+          label: 'Resident',
+          value: _currentResidents,
+          onIncrement: () => _increment(2),
+          onDecrement: () => _decrement(2),
+        ),
+      ],
+    );
+  }
+
+  // ─── CounterRow ───────────────────────────────────────────
+  Widget _buildCounterRow({
+    required Widget icon,
+    required String label,
+    required int value,
+    required VoidCallback onIncrement,
+    required VoidCallback onDecrement,
+  }) {
+    return Container(
+      height: 56,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(36),
+        border: Border.all(color: grey01, width: 1.2),
+      ),
+      child: Row(
+        children: [
+          const SizedBox(width: 18),
+          icon,
+          const SizedBox(width: 12),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: dark,
+            ),
+          ),
+          const Spacer(),
+          // - button
+          GestureDetector(
+            onTap: onDecrement,
+            child: Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                border: Border.all(color: green, width: 1.2),
+              ),
+              child: const Icon(Icons.remove, color: green, size: 20),
+            ),
+          ),
+          const SizedBox(width: 10),
+          SizedBox(
+            width: 24,
+            child: Text(
+              '$value',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                color: dark,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          // + button
+          GestureDetector(
+            onTap: onIncrement,
+            child: Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                border: Border.all(color: green, width: 1.2),
+              ),
+              child: const Icon(Icons.add, color: green, size: 20),
+            ),
+          ),
+          const SizedBox(width: 4),
+        ],
+      ),
+    );
+  }
+
+  // ─── Gender ──────────────────────────────────────────────────
   Widget _buildGender() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            const Icon(Icons.wc, color: grey02, size: 20),
-            const SizedBox(width: 8),
-            _buildSectionTitle('Gender'),
-          ],
-        ),
-        const SizedBox(height: 12),
+        _buildSectionTitle('Gender'),
+        const SizedBox(height: 16),
         Wrap(
-          spacing: 8,
+          spacing: 6,
+          runSpacing: 8,
           children: [
             _buildChoiceChip(
               label: 'Male',
               selected: _selectedGender == 'MALE',
-              onSelected: () {
-                setState(() {
-                  _selectedGender = 'MALE';
-                });
-              },
+              onSelected: () => setState(() => _selectedGender = 'MALE'),
             ),
             _buildChoiceChip(
               label: 'Female',
               selected: _selectedGender == 'FEMALE',
-              onSelected: () {
-                setState(() {
-                  _selectedGender = 'FEMALE';
-                });
-              },
+              onSelected: () => setState(() => _selectedGender = 'FEMALE'),
             ),
             _buildChoiceChip(
               label: 'Any',
               selected: _selectedGender == 'ANY',
-              onSelected: () {
-                setState(() {
-                  _selectedGender = 'ANY';
-                });
-              },
+              onSelected: () => setState(() => _selectedGender = 'ANY'),
             ),
           ],
         ),
@@ -646,6 +740,46 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
     );
   }
 
+  // ─── Reusable Checkbox Tile ──────────────────────────────────
+  Widget _buildCheckboxTile({
+    required String label,
+    required bool value,
+    required void Function(bool?) onChanged,
+  }) {
+    return GestureDetector(
+      onTap: () => onChanged(!value),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 22,
+            height: 22,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: value ? green : grey01, width: 1.2),
+              color: value ? green : Colors.transparent,
+            ),
+            child: value
+                ? const Icon(Icons.check, size: 16, color: Colors.white)
+                : null,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: dark,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Reusable Choice Chip ────────────────────────────────────
   Widget _buildChoiceChip({
     required String label,
     required bool selected,
@@ -654,17 +788,17 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
     return GestureDetector(
       onTap: onSelected,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
         decoration: BoxDecoration(
           color: selected ? green : Colors.white,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: selected ? green : grey01, width: 1.5),
+          border: Border.all(color: selected ? green : grey01, width: 1.2),
         ),
         child: Text(
           label,
           style: TextStyle(
             fontSize: 13,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
             color: selected ? Colors.white : dark,
           ),
         ),
@@ -672,6 +806,7 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
     );
   }
 
+  // ─── Custom Bond Dialog ──────────────────────────────────────
   void _showCustomBondDialog() {
     showDialog(
       context: context,
@@ -706,6 +841,7 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
     );
   }
 
+  // ─── Custom Minimum Stay Dialog ──────────────────────────────
   void _showCustomStayDialog() {
     showDialog(
       context: context,
