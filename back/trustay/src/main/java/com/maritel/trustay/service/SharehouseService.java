@@ -96,7 +96,14 @@ public class SharehouseService {
                 .bathroomCount(req.getBathroomCount())
                 .currentResidents(req.getCurrentResidents())
                 .options(optionsString)
-                // .imageUrls(imageUrlsString) <- 엔티티에서 삭제했으므로 제거
+                .billsIncluded(req.getBillsIncluded())
+                .roomType(req.getRoomType())
+                .bondType(req.getBondType())
+                .minimumStay(req.getMinimumStay())
+                .gender(req.getGender())
+                .age(req.getAge())
+                .religion(req.getReligion())
+                .dietaryPreference(req.getDietaryPreference())
                 .approvalStatus(ApprovalStatus.PENDING)
                 .build();
 
@@ -137,7 +144,9 @@ public class SharehouseService {
 
         sharehouse.updateSharehouse(
                 req.getTitle(), req.getDescription(), req.getRentPrice(), req.getOptions(), req.getRoomCount(),
-                req.getBathroomCount(), req.getCurrentResidents(), req.getHouseType()
+                req.getBathroomCount(), req.getCurrentResidents(), req.getHouseType(),
+                req.getBillsIncluded(), req.getRoomType(), req.getBondType(), req.getMinimumStay(),
+                req.getGender(), req.getAge(), req.getReligion(), req.getDietaryPreference()
         );
     }
 

@@ -1,12 +1,12 @@
 package com.maritel.trustay.dto.res;
 
 import com.maritel.trustay.entity.Sharehouse;
+import com.maritel.trustay.constant.BondType;
 import com.maritel.trustay.constant.HouseType;
 import com.maritel.trustay.entity.SharehouseImage;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,6 +28,15 @@ public class SharehouseResultRes {
     private Double lon;
     private List<String> imageUrls;
 
+    private Boolean billsIncluded;
+    private String roomType;
+    private BondType bondType;
+    private Integer minimumStay;
+    private String gender;
+    private String age;
+    private String religion;
+    private String dietaryPreference;
+
     // Entity -> DTO 변환 메서드
     public static SharehouseResultRes from(Sharehouse sharehouse, List<SharehouseImage> images) {
         return SharehouseResultRes.builder()
@@ -44,10 +53,17 @@ public class SharehouseResultRes {
                 .hostName(sharehouse.getHost().getName())
                 .lat(sharehouse.getLatitude())
                 .lon(sharehouse.getLongitude())
-                // [수정] 리스트 처리
                 .imageUrls(images != null ? images.stream()
                         .map(si -> si.getImage().getImageUrl())
                         .collect(Collectors.toList()) : List.of())
+                .billsIncluded(sharehouse.getBillsIncluded())
+                .roomType(sharehouse.getRoomType())
+                .bondType(sharehouse.getBondType())
+                .minimumStay(sharehouse.getMinimumStay())
+                .gender(sharehouse.getGender())
+                .age(sharehouse.getAge())
+                .religion(sharehouse.getReligion())
+                .dietaryPreference(sharehouse.getDietaryPreference())
                 .build();
     }
 
