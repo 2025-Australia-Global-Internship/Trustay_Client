@@ -1,8 +1,8 @@
 package com.maritel.trustay.dto.res;
 
+import com.maritel.trustay.constant.RoomType;
 import com.maritel.trustay.entity.Sharehouse;
 import com.maritel.trustay.constant.HouseType;
-import com.maritel.trustay.constant.BondType;
 import com.maritel.trustay.entity.SharehouseImage;
 import lombok.Builder;
 import lombok.Getter;
@@ -29,8 +29,8 @@ public class SharehouseResultRes {
     private Double lon;
     private List<String> imageUrls;
     private Boolean billsIncluded;
-    private String roomType;
-    private BondType bondType;
+    private RoomType roomType;
+    private Integer bondType;
     private Integer minimumStay;
     private String gender;
     private String age;
@@ -65,7 +65,6 @@ public class SharehouseResultRes {
                 .age(sharehouse.getAge())
                 .religion(sharehouse.getReligion())
                 .dietaryPreference(sharehouse.getDietaryPreference())
-                .build();
                 .build();
     }
 

@@ -2,6 +2,7 @@ package com.maritel.trustay.entity;
 
 import com.maritel.trustay.constant.ApprovalStatus;
 import com.maritel.trustay.constant.HouseType;
+import com.maritel.trustay.constant.RoomType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
@@ -52,6 +53,33 @@ public class Sharehouse extends BaseEntity {
     private Integer bathroomCount;
     private Integer currentResidents; // 현재 거주 인원
 
+    @Column(name = "bills_included")
+    private Boolean billsIncluded; // Bills Included
+
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "room_type")
+    private RoomType roomType; // Room Type (e.g. Single, Double)
+
+    @Column(name = "bond_type")
+    private Integer bondType; // 2weeks, 4weeks, custom
+
+    @Column(name = "minimum_stay")
+    private Integer minimumStay; // Minimum Stay (e.g. weeks)
+
+    @Column(length = 50)
+    private String gender; // 선호 성별
+
+    @Column(length = 50)
+    private String age; // 선호 연령
+
+    @Column(length = 100)
+    private String religion; // 종교 (선택)
+
+    @Column(name = "dietary_preference", length = 200)
+    private String dietaryPreference; // 식이 선호 (선택)
+
+
     // 옵션 (JSON 문자열 또는 콤마 구분)
     @Column(columnDefinition = "TEXT")
     private String options;
@@ -65,7 +93,9 @@ public class Sharehouse extends BaseEntity {
                       Double latitude, Double longitude, HouseType houseType,
                       Integer rentPrice, Integer roomCount,
                       Integer bathroomCount, Integer currentResidents,
-                      String options, ApprovalStatus approvalStatus) {
+                      String options, Boolean billsIncluded, RoomType roomType,
+                      Integer bondType, Integer minimumStay, String gender, String age,
+                      String religion, String dietaryPreference, ApprovalStatus approvalStatus) {
         this.host = host;
         this.title = title;
         this.description = description;
@@ -78,6 +108,14 @@ public class Sharehouse extends BaseEntity {
         this.bathroomCount = bathroomCount;
         this.currentResidents = currentResidents;
         this.options = options;
+        this.billsIncluded = billsIncluded;
+        this.roomType = roomType;
+        this.bondType = bondType;
+        this.minimumStay = minimumStay;
+        this.gender = gender;
+        this.age = age;
+        this.religion = religion;
+        this.dietaryPreference = dietaryPreference;
         this.approvalStatus = approvalStatus;
         this.viewCount = 0;
         this.wishCount = 0;
@@ -95,7 +133,10 @@ public class Sharehouse extends BaseEntity {
 
     public void updateSharehouse(String title, String description, Integer rentPrice,
                                  String options, Integer roomCount, Integer bathroomCount,
-                                 Integer currentResidents, HouseType houseType) {
+                                 Integer currentResidents, HouseType houseType,
+                                 Boolean billsIncluded, RoomType roomType, Integer bondType,
+                                 Integer minimumStay, String gender, String age,
+                                 String religion, String dietaryPreference) {
         this.title = title;
         this.description = description;
         this.rentPrice = rentPrice;
@@ -104,6 +145,14 @@ public class Sharehouse extends BaseEntity {
         this.bathroomCount = bathroomCount;
         this.currentResidents = currentResidents;
         this.houseType = houseType;
+        this.billsIncluded = billsIncluded;
+        this.roomType = roomType;
+        this.bondType = bondType;
+        this.minimumStay = minimumStay;
+        this.gender = gender;
+        this.age = age;
+        this.religion = religion;
+        this.dietaryPreference = dietaryPreference;
     }
 
     // --- 승인 상태 변경 메서드 ---
