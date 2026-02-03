@@ -1,89 +1,247 @@
 import 'dart:io';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:front/models/sharehouse_create_model.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:mime/mime.dart'; // MIME 타입 확인
-import 'package:http_parser/http_parser.dart'; // MediaType 사용
+
+// [중요] 프로젝트에 존재하는 모델 파일들을 모두 import 해주세요.
+import '../models/sharehouse_create_model.dart'; // 등록 요청 모델
+import '../models/sharehouse_model.dart';        // 홈 화면 목록용 모델
+import '../models/listing_model.dart';           // 마이페이지 목록용 모델 (MyListingItem)
+import '../models/sharehouse_detail_model.dart'; // 상세 조회용 모델
 
 class SharehouseService {
-  static const String baseUrl = 'https://trustay.digitalbasis.com/api/trustay';
+  // API 기본 주소
+  static const String _baseUrl = 'https://trustay.digitalbasis.com';
 
-  // 이미지 업로드
+  // ------------------------------------------------------------------------
+  // [공통] 내부 헬퍼 메서드
+  // ------------------------------------------------------------------------
+
+  // 토큰 가져오기
+  static Future<String> _getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    // 저장된 키 이름이 'token'인지 'accessToken'인지 확인 필요
+    final String? token = prefs.getString('token'); 
+    
+    if (token == null) {
+      throw Exception('로그인 정보가 없습니다. 다시 로그인해주세요.');
+    }
+    return token;
+  }
+
+  // 기본 헤더 생성 (JSON Content-Type + Auth Token)
+  static Map<String, String> _getHeaders(String token) {
+    return {
+      'accept': '*/*',
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    };
+  }
+
+  // ------------------------------------------------------------------------
+  // 1. 이미지 업로드 (Multipart/form-data)
+  // ------------------------------------------------------------------------
   static Future<List<String>> uploadImages(List<File> imageFiles) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token');
+      final uri = Uri.parse('$_baseUrl/api/trustay/sharehouses/images');
+      var request = http.MultipartRequest('POST', uri);
 
-      if (token == null) {
-        throw Exception('로그인 필요: 토큰 없음');
-      }
-
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('$baseUrl/sharehouses/images'),
-      );
-
-      // 이미지 파일들 추가 (Mime 타입 지정)
+      // 이미지 파일 추가
       for (var imageFile in imageFiles) {
-        final mimeType = lookupMimeType(imageFile.path); // e.g. "image/jpeg"
         request.files.add(
-          await http.MultipartFile.fromPath(
-            'images',
-            imageFile.path,
-            contentType: mimeType != null ? MediaType.parse(mimeType) : null,
-          ),
+          await http.MultipartFile.fromPath('images', imageFile.path),
         );
       }
 
-      request.headers['Authorization'] = 'Bearer $token';
-      request.headers['Accept'] = 'application/json';
+      // 필요한 경우 토큰 추가 (보안 설정에 따라 다름)
+      // final token = await _getToken();
+      // request.headers['Authorization'] = 'Bearer $token';
 
       final response = await request.send();
       final responseBody = await response.stream.bytesToString();
 
-      print('Status: ${response.statusCode}');
-      print('Body: $responseBody');
-
       if (response.statusCode == 200) {
         final data = jsonDecode(responseBody);
-        final images = data['data'] as List<dynamic>?;
-        if (images == null) return [];
-        return images.map((e) => e.toString()).toList();
+        // 응답 구조: { "data": ["url1", "url2", ...] }
+        return List<String>.from(data['data']);
       } else {
-        throw Exception('이미지 업로드 실패: ${response.statusCode} - $responseBody');
+        throw Exception('이미지 업로드 실패: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('이미지 업로드 중 오류 발생: $e');
+      throw Exception('이미지 업로드 중 오류: $e');
     }
   }
 
-  // 쉐어하우스 매물 등록
+  // ------------------------------------------------------------------------
+  // 2. 쉐어하우스 매물 등록 (POST)
+  // ------------------------------------------------------------------------
   static Future<bool> createSharehouse(SharehouseCreateRequest request) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token');
-
-      if (token == null) {
-        throw Exception('로그인 필요: 토큰 없음');
-      }
+      final token = await _getToken();
+      final uri = Uri.parse('$_baseUrl/api/trustay/sharehouses');
 
       final response = await http.post(
-        Uri.parse('$baseUrl/api/trustay/sharehouses'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        uri,
+        headers: _getHeaders(token),
         body: jsonEncode(request.toJson()),
       );
 
       if (response.statusCode == 200) {
         return true;
       } else {
-        throw Exception('매물 등록 실패: ${response.statusCode} - ${response.body}');
+        final decodedBody = utf8.decode(response.bodyBytes);
+        throw Exception('매물 등록 실패: $decodedBody');
       }
     } catch (e) {
-      throw Exception('매물 등록 중 오류 발생: $e');
+      throw Exception('매물 등록 중 오류: $e');
+    }
+  }
+
+  // ------------------------------------------------------------------------
+  // 3. 홈 화면: 쉐어하우스 전체 목록 조회 (GET)
+  // ------------------------------------------------------------------------
+  static Future<List<SharehouseModel>> getSharehouseList(String filterType) async {
+    try {
+      final token = await _getToken();
+      
+      // 쿼리 파라미터 설정
+      Map<String, String> queryParams = {
+        'page': '0',
+        'size': '10',
+      };
+
+      // 필터 적용 ('ALL'이 아닐 경우 houseType 추가)
+      if (filterType != 'ALL') {
+        queryParams['houseType'] = filterType;
+      }
+
+      final uri = Uri.parse('$_baseUrl/api/trustay/sharehouses')
+          .replace(queryParameters: queryParams);
+
+      final response = await http.get(
+        uri,
+        headers: _getHeaders(token),
+      );
+
+      if (response.statusCode == 200) {
+        final decodedBody = utf8.decode(response.bodyBytes);
+        final jsonResponse = json.decode(decodedBody);
+        
+        // 응답 구조: { "data": { "content": [...] } }
+        final List<dynamic> content = jsonResponse['data']['content'];
+        return content.map((e) => SharehouseModel.fromJson(e)).toList();
+      } else {
+        throw Exception('목록 조회 실패: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('홈 데이터 로드 중 오류: $e');
+    }
+  }
+
+  // ------------------------------------------------------------------------
+  // 4. 마이페이지: 내가 등록한 매물 목록 조회 (GET)
+  // ------------------------------------------------------------------------
+  static Future<List<MyListingItem>> fetchMyListings() async {
+    try {
+      final token = await _getToken();
+      
+      final uri = Uri.parse('$_baseUrl/api/trustay/sharehouses/my')
+          .replace(queryParameters: {
+        'page': '0',
+        'size': '10',
+        'sort': 'createdAt,desc'
+      });
+
+      final response = await http.get(
+        uri,
+        headers: _getHeaders(token),
+      );
+
+      if (response.statusCode == 200) {
+        final decodedBody = utf8.decode(response.bodyBytes);
+        final jsonResponse = json.decode(decodedBody);
+        
+        final List<dynamic> content = jsonResponse['data']['content'];
+        return content.map((e) => MyListingItem.fromJson(e)).toList();
+      } else {
+        throw Exception('내 매물 조회 실패: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('내 매물 로드 중 오류: $e');
+    }
+  }
+
+  // ------------------------------------------------------------------------
+  // 5. 쉐어하우스 상세 정보 조회 (GET)
+  // ------------------------------------------------------------------------
+  static Future<SharehouseDetail> getSharehouseDetail(int houseId) async {
+    try {
+      final token = await _getToken();
+      final uri = Uri.parse('$_baseUrl/api/trustay/sharehouses/$houseId');
+
+      final response = await http.get(
+        uri,
+        headers: _getHeaders(token),
+      );
+
+      if (response.statusCode == 200) {
+        final decodedBody = utf8.decode(response.bodyBytes);
+        final jsonResponse = json.decode(decodedBody);
+        
+        // 응답 구조: { "data": { ...상세 정보... } }
+        return SharehouseDetail.fromJson(jsonResponse['data']);
+      } else {
+        throw Exception('상세 정보 조회 실패: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('상세 정보 로드 중 오류: $e');
+    }
+  }
+
+  // ------------------------------------------------------------------------
+  // 6. 쉐어하우스 정보 수정 (PUT)
+  // ------------------------------------------------------------------------
+  static Future<bool> updateListing(int houseId, Map<String, dynamic> updateData) async {
+    try {
+      final token = await _getToken();
+      final uri = Uri.parse('$_baseUrl/api/trustay/sharehouses/$houseId');
+
+      final response = await http.put(
+        uri,
+        headers: _getHeaders(token),
+        body: jsonEncode(updateData),
+      );
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        throw Exception('수정 실패: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('수정 중 오류: $e');
+    }
+  }
+
+  // ------------------------------------------------------------------------
+  // 7. 쉐어하우스 삭제 (DELETE)
+  // ------------------------------------------------------------------------
+  static Future<bool> deleteListing(int houseId) async {
+    try {
+      final token = await _getToken();
+      final uri = Uri.parse('$_baseUrl/api/trustay/sharehouses/$houseId');
+
+      final response = await http.delete(
+        uri,
+        headers: _getHeaders(token),
+      );
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        throw Exception('삭제 실패: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('삭제 중 오류: $e');
     }
   }
 }
