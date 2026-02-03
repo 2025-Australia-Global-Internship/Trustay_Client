@@ -7,6 +7,8 @@ import 'package:front/widgets/gradient_layout.dart';
 import 'package:front/widgets/primary_button.dart';
 import 'package:front/widgets/common_dropdown.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:front/models/user_model.dart';
+import 'package:flutter/cupertino.dart';
 
 class CountryPhone {
   final String name;
@@ -16,9 +18,11 @@ class CountryPhone {
 }
 
 final List<CountryPhone> phoneCountries = [
-  CountryPhone(name: '🇰🇷 KR', hint: '010 XXXX XXXX'),
-  CountryPhone(name: '🇦🇺 AU', hint: '04XX XXX XXX'),
+  CountryPhone(name: 'KR', hint: '010 XXXX XXXX'),
+  CountryPhone(name: 'AU', hint: '04XX XXX XXX'),
 ];
+
+final Map<String, String> countryFlags = {'KR': '🇰🇷', 'AU': '🇦🇺'};
 
 class PersonalDetailsPage extends StatefulWidget {
   const PersonalDetailsPage({super.key});
@@ -29,6 +33,7 @@ class PersonalDetailsPage extends StatefulWidget {
 
 class _PersonalDetailsPage extends State<PersonalDetailsPage> {
   final _formKey = GlobalKey<FormState>();
+  User? user;
 
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
@@ -81,20 +86,57 @@ class _PersonalDetailsPage extends State<PersonalDetailsPage> {
                           height: 25,
                         ),
                         onTap: () async {
-                          final DateTime? picked = await showDatePicker(
-                            context: context,
-                            initialDate: DateTime.now(),
-                            firstDate: DateTime(1900),
-                            lastDate: DateTime(2100),
-                            locale: const Locale('en', 'AU'),
-                          );
+                          DateTime selectedDate = DateTime.now();
 
-                          if (picked != null) {
-                            _dateController.text =
-                                '${picked.day.toString().padLeft(2, '0')}/'
-                                '${picked.month.toString().padLeft(2, '0')}/'
-                                '${picked.year}';
-                          }
+                          await showModalBottomSheet(
+                            context: context,
+                            backgroundColor: Colors.transparent,
+                            builder: (context) {
+                              return Container(
+                                height: 250,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.vertical(
+                                    top: Radius.circular(20),
+                                  ),
+                                ),
+                                child: Column(
+                                  children: [
+                                    // Done 버튼
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                          _dateController.text =
+                                              '${selectedDate.day.toString().padLeft(2, '0')}/'
+                                              '${selectedDate.month.toString().padLeft(2, '0')}/'
+                                              '${selectedDate.year}';
+                                        },
+                                        child: Text(
+                                          'Done',
+                                          style: TextStyle(color: green),
+                                        ),
+                                      ),
+                                    ),
+
+                                    // CupertinoDatePicker
+                                    Expanded(
+                                      child: CupertinoDatePicker(
+                                        initialDateTime: DateTime(2000),
+                                        minimumDate: DateTime(1900),
+                                        maximumDate: DateTime(2100),
+                                        mode: CupertinoDatePickerMode.date,
+                                        onDateTimeChanged: (DateTime newDate) {
+                                          selectedDate = newDate;
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          );
                         },
                       ),
 
@@ -156,7 +198,7 @@ class _PersonalDetailsPage extends State<PersonalDetailsPage> {
                                   flex: 3,
                                   child: Padding(
                                     padding: const EdgeInsetsGeometry.only(
-                                      right: 10,
+                                      right: 15,
                                     ),
                                     child:
                                         DropdownButtonFormField<CountryPhone>(
@@ -165,7 +207,15 @@ class _PersonalDetailsPage extends State<PersonalDetailsPage> {
                                               .map(
                                                 (c) => DropdownMenuItem(
                                                   value: c,
-                                                  child: Text(c.name),
+                                                  child: Center(
+                                                    child: Text(
+                                                      countryFlags[c.name] ??
+                                                          c.name, // 국기만 보여줌
+                                                      style: const TextStyle(
+                                                        fontSize: 20,
+                                                      ),
+                                                    ),
+                                                  ),
                                                 ),
                                               )
                                               .toList(),
@@ -189,11 +239,12 @@ class _PersonalDetailsPage extends State<PersonalDetailsPage> {
                                           iconSize: 0,
                                           decoration: const InputDecoration(
                                             border: InputBorder.none,
-                                            contentPadding:
-                                                EdgeInsets.symmetric(
-                                                  horizontal: 18,
-                                                  vertical: 18,
-                                                ),
+                                            contentPadding: EdgeInsets.only(
+                                              left: 28,
+                                              right: 6,
+                                              top: 18,
+                                              bottom: 18,
+                                            ),
                                           ),
                                         ),
                                   ),
@@ -204,22 +255,30 @@ class _PersonalDetailsPage extends State<PersonalDetailsPage> {
                                   flex: 7,
                                   child: TextFormField(
                                     controller: _phoneController,
+                                    cursorColor: grey03,
                                     keyboardType: TextInputType.phone,
                                     inputFormatters: [
                                       FilteringTextInputFormatter.digitsOnly,
                                     ],
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 13,
+                                      color: dark,
+                                    ),
                                     decoration: InputDecoration(
                                       border: InputBorder.none,
                                       hintText: selectedPhoneCountry.hint,
                                       hintStyle: const TextStyle(
                                         color: grey01,
-                                        fontSize: 15,
+                                        fontSize: 13,
                                       ),
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 18,
-                                          ),
+
+                                      contentPadding: const EdgeInsets.fromLTRB(
+                                        16,
+                                        20,
+                                        16,
+                                        20,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -236,10 +295,20 @@ class _PersonalDetailsPage extends State<PersonalDetailsPage> {
                         formKey: _formKey,
                         text: 'Save',
                         isLoading: false,
-                        successMessage: '저장 되었습니다.(임시)',
+                        successMessage: 'Success to Save',
                         failMessage: '',
-                        nextRoute: null,
-                        onAction: () async => true,
+                        nextRoute: '',
+                        onAction: () async {
+                          // 폼 유효성 검사
+                          if (!_formKey.currentState!.validate()) return false;
+
+                          // 현재 선택된 Location을 User 객체에 저장
+                          user?.location = country ?? "Location";
+
+                          Navigator.pop(context);
+
+                          return true; // 성공 시 true 반환
+                        },
                       ),
                     ],
                   ),

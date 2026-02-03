@@ -104,7 +104,7 @@ class _MyPageState extends State<MyPage> {
                           color: dark,
                         ),
                       ),
-                      const SizedBox(height: 5),
+                      const SizedBox(height: 6),
 
                       Row(
                         children: [

@@ -5,8 +5,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:front/constants/colors.dart';
 import 'package:front/widgets/custom_header.dart';
 import 'package:front/widgets/gradient_layout.dart';
-import 'package:front/models/sharehouse_create_model.dart';
-import 'package:front/services/sharehouse_service.dart';
 import 'sharehouse_create_step2.dart';
 import 'package:front/widgets/primary_button.dart';
 import 'package:front/widgets/common_text_field.dart';
@@ -83,17 +81,19 @@ class _SharehouseCreateStep1PageState extends State<SharehouseCreateStep1Page> {
       setState(() {
         _addressSuggestions = [];
         _isSearchingAddress = false;
+        _selectedAddressIndex = -1; // 텍스트 바뀌면 선택 초기화
       });
       return;
     }
 
     setState(() {
       _isSearchingAddress = true;
+      _selectedAddressIndex = -1; // 새로 검색하면 기존 선택 초기화
     });
 
     // TODO: 실제 주소 검색 API 연동
-    // 현재는 더미 데이터
     Future.delayed(const Duration(milliseconds: 300), () {
+      if (!mounted) return;
       setState(() {
         _addressSuggestions =
             [
@@ -120,39 +120,49 @@ class _SharehouseCreateStep1PageState extends State<SharehouseCreateStep1Page> {
     });
   }
 
-  // 다음 단계로
-  void _continueToNextStep() {
+  // 다음 단계로 — 검증 포함, bool 반환
+  Future<bool> _continueToNextStep() async {
+    // 폼 내 validator (title, description, detailedAddress 등)
     if (!_formKey.currentState!.validate()) {
-      return;
+      return false;
     }
 
+    // 폼 validator 밖의 추가 검증
     if (_selectedImages.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('최소 1개 이상의 이미지를 선택해주세요.')));
-      return;
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('최소 1개 이상의 이미지를 선택해주세요.')));
+      }
+      return false;
     }
 
     if (_selectedAddressIndex == -1) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('주소를 선택해주세요.')));
-      return;
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('주소를 선택해주세요.')));
+      }
+      return false;
     }
 
-    // Step 2로 데이터 전달
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => SharehouseCreateStep2Page(
-          images: _selectedImages,
-          title: _titleController.text,
-          description: _descriptionController.text,
-          address: _addressController.text,
-          detailedAddress: _detailedAddressController.text,
+    // 검증 통과 → Step2로 이동
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SharehouseCreateStep2Page(
+            images: _selectedImages,
+            title: _titleController.text,
+            description: _descriptionController.text,
+            address: _addressController.text,
+            detailedAddress: _detailedAddressController.text,
+          ),
         ),
-      ),
-    );
+      );
+    }
+
+    return true;
   }
 
   @override
@@ -233,8 +243,15 @@ class _SharehouseCreateStep1PageState extends State<SharehouseCreateStep1Page> {
 
                       const SizedBox(height: 32),
 
-                      // 다음 버튼
-                      _buildContinueButton(),
+                      // 다음 버튼 — _formKey를 그대로 전달, onAction에서 검증 수행
+                      PrimaryButton(
+                        formKey: _formKey,
+                        text: 'Continue to Details',
+                        onAction: _continueToNextStep,
+                        successMessage: '',
+                        failMessage: '',
+                        enabled: true,
+                      ),
                       const SizedBox(height: 20),
                     ],
                   ),
@@ -353,7 +370,7 @@ class _SharehouseCreateStep1PageState extends State<SharehouseCreateStep1Page> {
           label: '',
           bottomPadding: 0,
           controller: _addressController,
-          onChanged: _searchAddress, // 입력 시 검색
+          onChanged: _searchAddress,
           prefixIcon: SvgPicture.asset(
             'assets/icons/pin.svg',
             width: 25,
@@ -373,13 +390,13 @@ class _SharehouseCreateStep1PageState extends State<SharehouseCreateStep1Page> {
           },
         ),
 
-        // 주소 검색 결과 더미 리스트
+        // 주소 검색 결과 리스트
         if (_addressSuggestions.isNotEmpty)
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: grey01, width: 1.2), // 아웃라인 보더 추가
+              border: Border.all(color: grey01, width: 1.2),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.05),
@@ -400,7 +417,7 @@ class _SharehouseCreateStep1PageState extends State<SharehouseCreateStep1Page> {
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 12,
-                  ), // 아이템 간격 넓히기
+                  ),
                   leading: Padding(
                     padding: const EdgeInsets.only(left: 10),
                     child: SvgPicture.asset(
@@ -423,20 +440,6 @@ class _SharehouseCreateStep1PageState extends State<SharehouseCreateStep1Page> {
             ),
           ),
       ],
-    );
-  }
-
-  Widget _buildContinueButton() {
-    return PrimaryButton(
-      formKey: GlobalKey<FormState>(), // 폼 검증 필요 없으면 새 key 사용
-      text: 'Continue to Details',
-      onAction: () async {
-        _continueToNextStep();
-        return true; // 성공 처리
-      },
-      successMessage: '',
-      failMessage: '',
-      enabled: true,
     );
   }
 }
