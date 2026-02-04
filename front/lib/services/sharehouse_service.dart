@@ -167,7 +167,7 @@ class SharehouseService {
   // ------------------------------------------------------------------------
   // 5. 쉐어하우스 상세 정보 조회 (GET)
   // ------------------------------------------------------------------------
-  static Future<SharehouseDetail> getSharehouseDetail(int houseId) async {
+  static Future<SharehouseDetailModel> getSharehouseDetail(int houseId) async {
     try {
       final token = await _getToken();
       final uri = Uri.parse('$_baseUrl/api/trustay/sharehouses/$houseId');
@@ -179,7 +179,7 @@ class SharehouseService {
         final jsonResponse = json.decode(decodedBody);
 
         // 응답 구조: { "data": { ...상세 정보... } }
-        return SharehouseDetail.fromJson(jsonResponse['data']);
+        return SharehouseDetailModel.fromJson(jsonResponse['data']);
       } else {
         throw Exception('상세 정보 조회 실패: ${response.statusCode}');
       }
@@ -188,6 +188,29 @@ class SharehouseService {
     }
   }
 
+
+ static Future<bool> toggleWish(int houseId) async {
+  try {
+    final token = await _getToken();
+    final uri = Uri.parse('$_baseUrl/api/trustay/sharehouses/$houseId/wish');
+
+    final response = await http.post(
+      uri,
+      headers: _getHeaders(token),
+    );
+
+    if (response.statusCode == 200) {
+      final decodedData = jsonDecode(response.body);
+      // 보내주신 JSON 구조: { "data": { "wished": true ... } }
+      // 따라서 ['data']['wished']를 리턴해야 합니다.
+      return decodedData['data']['wished'] ?? false;
+    } else {
+      throw Exception('찜하기 요청 실패');
+    }
+  } catch (e) {
+    throw Exception('찜하기 오류: $e');
+  }
+}
   // ------------------------------------------------------------------------
   // 6. 쉐어하우스 정보 수정 (PUT)
   // ------------------------------------------------------------------------

@@ -10,6 +10,8 @@ import 'package:front/services/auth_service.dart';
 import 'package:front/services/sharehouse_service.dart';
 import 'package:front/widgets/circle_icon_button.dart';
 import 'package:front/widgets/house_card.dart';
+// 상세 페이지 이동을 위해 import 추가
+import '../../pages/mypage/sharehouse_detail_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -73,8 +75,10 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredPopularHouses = _houses.take(4).map(_toHouseDummy).toList();
-    final filteredGeneralHouses = _houses.map(_toHouseDummy).toList();
+    // Navigator에서 원본 모델의 id를 사용하기 위해 맵핑 시기를 조절하거나 
+    // 리스트 자체를 유지한 채 빌드 시점에 변환합니다.
+    final popularList = _houses.take(4).toList();
+    final generalList = _houses;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -115,7 +119,7 @@ class _HomePageState extends State<HomePage> {
                               const SizedBox(width: 5),
                               Text(
                                 (user?.location ?? 'Location'),
-                                style: TextStyle(
+                                style: const TextStyle(
                                   color: grey04,
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
@@ -253,18 +257,31 @@ class _HomePageState extends State<HomePage> {
 
             const SliverToBoxAdapter(child: SizedBox(height: 14)),
 
-            // Popular horizontal list
+            // Popular horizontal list (수정됨: 클릭 시 상세페이지 이동)
             SliverToBoxAdapter(
               child: SizedBox(
                 height: 270,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  itemCount: filteredPopularHouses.length,
+                  itemCount: popularList.length,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemBuilder: (context, index) => HouseCard(
-                    house: filteredPopularHouses[index],
-                    isGrid: false,
-                  ),
+                  itemBuilder: (context, index) {
+                    final item = popularList[index];
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => SharehouseDetailPage(houseId: item.id),
+                          ),
+                        );
+                      },
+                      child: HouseCard(
+                        house: _toHouseDummy(item),
+                        isGrid: false,
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
@@ -300,15 +317,29 @@ class _HomePageState extends State<HomePage> {
 
             const SliverToBoxAdapter(child: SizedBox(height: 14)),
 
+            // Personalized Grid (수정됨: 클릭 시 상세페이지 이동)
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               sliver: SliverGrid(
                 delegate: SliverChildBuilderDelegate(
-                  (context, index) => HouseCard(
-                    house: filteredGeneralHouses[index],
-                    isGrid: true,
-                  ),
-                  childCount: filteredGeneralHouses.length,
+                  (context, index) {
+                    final item = generalList[index];
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => SharehouseDetailPage(houseId: item.id),
+                          ),
+                        );
+                      },
+                      child: HouseCard(
+                        house: _toHouseDummy(item),
+                        isGrid: true,
+                      ),
+                    );
+                  },
+                  childCount: generalList.length,
                 ),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
