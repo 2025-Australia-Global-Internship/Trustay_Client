@@ -35,7 +35,9 @@ public class SharehouseReq {
     private Integer bathroomCount;
     private Integer currentResidents;
 
-    private List<String> options;
+    private List<String> homeRules;
+
+    private List<String> features;
 
     // [변경] 파일 객체 대신, 업로드된 이미지 URL 리스트를 받습니다.
     @NotEmpty(message = "이미지는 최소 1장 이상 등록해야 합니다.")

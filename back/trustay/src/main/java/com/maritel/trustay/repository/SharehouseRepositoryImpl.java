@@ -42,7 +42,8 @@ public class SharehouseRepositoryImpl implements SharehouseRepositoryCustom {
                         goeRoomCount(req.getMinRoomCount()),
                         goeBathroomCount(req.getMinBathroomCount()),
                         eqCurrentResidents(req.getCurrentResidents()),
-                        containsAllOptions(req.getOptions())
+                        containsAllHomeRules(req.getHomeRules()),
+                        containsAllFeatures(req.getFeatures())
                 )
                 .orderBy(getOrderSpecifier(pageable))
                 .offset(pageable.getOffset())
@@ -62,7 +63,8 @@ public class SharehouseRepositoryImpl implements SharehouseRepositoryCustom {
                         goeRoomCount(req.getMinRoomCount()),
                         goeBathroomCount(req.getMinBathroomCount()),
                         eqCurrentResidents(req.getCurrentResidents()),
-                        containsAllOptions(req.getOptions())
+                        containsAllHomeRules(req.getHomeRules()),
+                        containsAllFeatures(req.getFeatures())
                 )
                 .fetchOne();
 
@@ -102,15 +104,29 @@ public class SharehouseRepositoryImpl implements SharehouseRepositoryCustom {
         return count != null ? sharehouse.currentResidents.eq(count) : null;
     }
 
-    private BooleanExpression containsAllOptions(List<String> options) {
-        if (options == null || options.isEmpty()) return null;
+    private BooleanExpression containsAllHomeRules(List<String> homeRules) {
+        if (homeRules == null || homeRules.isEmpty()) return null;
 
         BooleanExpression result = null;
-        for (String option : options) {
+        for (String homeRule : homeRules) {
             if (result == null) {
-                result = sharehouse.options.contains(option);
+                result = sharehouse.homeRules.contains(homeRule);
             } else {
-                result = result.and(sharehouse.options.contains(option));
+                result = result.and(sharehouse.homeRules.contains(homeRule));
+            }
+        }
+        return result;
+    }
+
+    private BooleanExpression containsAllFeatures(List<String> features) {
+        if (features == null || features.isEmpty()) return null;
+
+        BooleanExpression result = null;
+        for (String feature : features) {
+            if (result == null) {
+                result = sharehouse.features.contains(feature);
+            } else {
+                result = result.and(sharehouse.features.contains(feature));
             }
         }
         return result;
