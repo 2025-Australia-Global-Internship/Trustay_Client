@@ -4,12 +4,17 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+
 import 'package:front/constants/colors.dart';
 import 'package:front/models/sharehouse_detail_model.dart';
 import 'package:front/services/sharehouse_service.dart';
 import 'package:front/widgets/custom_header.dart';
 import 'package:front/widgets/circle_icon_button.dart';
 import 'package:front/widgets/primary_button.dart';
+
+import 'package:front/services/auth_service.dart';
+import 'package:front/services/chat_service.dart';
+import 'package:front/pages/community/chat_room_page.dart'; // 경로 확인
 
 class SharehouseDetailPage extends StatefulWidget {
   final int houseId;
@@ -27,18 +32,6 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
   bool _isLoadingLocation = false;
   int _currentImageIndex = 0;
 
-  String _formatRoomType(dynamic roomType) {
-    final type = roomType.toString().split('.').last.toLowerCase();
-    if (type == 'sharedroom') return 'Shared room';
-    if (type == 'privateroom') return 'Private room';
-    return _capitalize(type);
-  }
-
-  String _capitalize(String text) {
-    if (text.isEmpty) return text;
-    return text[0].toUpperCase() + text.substring(1).toLowerCase();
-  }
-
   @override
   void initState() {
     super.initState();
@@ -48,35 +41,30 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
   Future<void> _loadDetail() async {
     try {
       final data = await SharehouseService.getSharehouseDetail(widget.houseId);
-      setState(() {
-        _house = data;
-        _isLoading = false;
-      });
-
-      // 주소가 있으면 geocoding 실행
+      if (mounted) {
+        setState(() {
+          _house = data;
+          _isLoading = false;
+        });
+      }
       if (data.address != null && data.address!.isNotEmpty) {
         _geocodeAddress(data.address!);
       }
     } catch (e) {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  // Nominatim API를 사용한 Geocoding
   Future<void> _geocodeAddress(String address) async {
     setState(() => _isLoadingLocation = true);
-
     try {
       final encodedAddress = Uri.encodeComponent(address);
       final url = Uri.parse(
         'https://nominatim.openstreetmap.org/search?q=$encodedAddress&format=json&limit=1',
       );
-
       final response = await http.get(
         url,
-        headers: {
-          'User-Agent': 'ShareHouseApp/1.0', // Nominatim requires User-Agent
-        },
+        headers: {'User-Agent': 'ShareHouseApp/1.0'},
       );
 
       if (response.statusCode == 200) {
@@ -84,18 +72,18 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
         if (results.isNotEmpty) {
           final lat = double.parse(results[0]['lat']);
           final lon = double.parse(results[0]['lon']);
-          setState(() {
-            _location = LatLng(lat, lon);
-            _isLoadingLocation = false;
-          });
+          if (mounted) {
+            setState(() {
+              _location = LatLng(lat, lon);
+              _isLoadingLocation = false;
+            });
+          }
         } else {
-          setState(() => _isLoadingLocation = false);
-          debugPrint('No location found for address: $address');
+          if (mounted) setState(() => _isLoadingLocation = false);
         }
       }
     } catch (e) {
-      setState(() => _isLoadingLocation = false);
-      debugPrint('Geocoding error: $e');
+      if (mounted) setState(() => _isLoadingLocation = false);
     }
   }
 
@@ -104,34 +92,72 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
       final bool currentStatus = await SharehouseService.toggleWish(
         widget.houseId,
       );
-
-      setState(() {
-        _isWished = currentStatus;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            _isWished ? "Added to Wishlist." : "Removed from Wishlist.",
+      setState(() => _isWished = currentStatus);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              _isWished ? "Added to Wishlist." : "Removed from Wishlist.",
+            ),
+            duration: const Duration(seconds: 1),
           ),
-          duration: const Duration(seconds: 1),
-        ),
-      );
+        );
+      }
     } catch (e) {
-      debugPrint("Wish Error: $e");
+      print("Wish Error: $e");
     }
   }
 
+  // [수정된 채팅방 생성 로직]
+  Future<bool> _handleCreateChat() async {
+    print("🚀 Chatting Now Clicked");
+    try {
+      // 1. 내 정보 가져오기
+      final user = await AuthService.fetchProfile();
+      print(" - My ID: ${user.memberId}");
+
+      // 2. 채팅방 생성 요청 (hostId 제거, houseId와 내 ID만 전송)
+      final int roomId = await ChatService.createOrGetChatRoom(
+        widget.houseId,
+        user.memberId,
+      );
+
+      print("✅ Room Created: $roomId");
+
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ChatRoomPage(
+              roomId: roomId,
+              // 상대방 이름은 현재 페이지의 호스트 이름으로 표시
+              roomName: _house?.hostName ?? "Host",
+              myMemberId: user.memberId,
+            ),
+          ),
+        );
+      }
+      return true;
+    } catch (e) {
+      print("❌ Chat Error: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("로그인이 필요하거나 오류가 발생했습니다.")));
+      }
+      return false;
+    }
+  }
+
+  // --- UI PART ---
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
+    if (_isLoading)
       return const Scaffold(
         body: Center(child: CircularProgressIndicator(color: green)),
       );
-    }
-    if (_house == null) {
+    if (_house == null)
       return const Scaffold(body: Center(child: Text("Data not found")));
-    }
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -141,7 +167,7 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildTopImage(_house!, context, _house!.imageUrls),
+                _buildTopImage(context, _house!.imageUrls),
                 Padding(
                   padding: const EdgeInsets.all(20.0),
                   child: Column(
@@ -157,9 +183,9 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
                       ],
                       _buildHostSection(_house!),
                       const SizedBox(height: 40),
-                      Text(
+                      const Text(
                         'Description',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: dark,
                           fontWeight: FontWeight.w700,
                           fontSize: 15,
@@ -172,6 +198,18 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
                       ),
                       const SizedBox(height: 35),
                       _buildPropertyDetails(_house!),
+                      const SizedBox(height: 36),
+                      if (_house!.homeRules != null)
+                        _buildChipSection(
+                          title: 'Home Rules',
+                          commaSeparatedItems: _house!.homeRules,
+                        ),
+                      const SizedBox(height: 36),
+                      if (_house!.features != null)
+                        _buildChipSection(
+                          title: 'Features',
+                          commaSeparatedItems: _house!.features,
+                        ),
                       const SizedBox(height: 100),
                     ],
                   ),
@@ -185,131 +223,36 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
     );
   }
 
-  Widget _buildLocationSection(SharehouseDetailModel house) {
-    final MapController mapController = MapController();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 주소 + 리로드 버튼
-        Row(
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(left: 5),
-              child: SvgPicture.asset(
-                'assets/icons/pin.svg',
-                width: 24,
-                height: 24,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                house.address,
-                style: const TextStyle(
-                  height: 1.4,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: dark,
-                  decoration: TextDecoration.underline,
-                ),
-              ),
-            ),
-            IconButton(
-              onPressed: () {
-                if (_location != null) {
-                  mapController.move(_location!, 15);
-                }
-              },
-              icon: SvgPicture.asset(
-                'assets/icons/reset.svg',
-                width: 19,
-                height: 19,
-                color: grey03,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-
-        // 지도
-        Container(
-          height: 160,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey.shade300, width: 1),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: _isLoadingLocation
-              ? const Center(child: CircularProgressIndicator(color: green))
-              : FlutterMap(
-                  mapController: mapController,
-                  options: MapOptions(
-                    initialCenter: _location ?? LatLng(0, 0),
-                    initialZoom: 15.0,
-                  ),
-                  children: [
-                    TileLayer(
-                      urlTemplate:
-                          "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
-                      userAgentPackageName: 'com.example.app',
-                    ),
-                    if (_location != null)
-                      MarkerLayer(
-                        markers: [
-                          Marker(
-                            point: _location!,
-                            width: 50,
-                            height: 50,
-                            child: SvgPicture.asset(
-                              'assets/icons/house-pin.svg',
-                            ),
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
-        ),
-      ],
-    );
+  // UI Helper Widgets (그대로 유지)
+  String _formatRoomType(dynamic roomType) {
+    final type = roomType.toString().split('.').last.toLowerCase();
+    if (type == 'sharedroom') return 'Shared room';
+    if (type == 'privateroom') return 'Private room';
+    return _capitalize(type);
   }
 
-  Widget _buildTopImage(
-    SharehouseDetailModel house,
-    BuildContext context,
-    List<String> images,
-  ) {
+  String _capitalize(String text) {
+    if (text.isEmpty) return text;
+    return text[0].toUpperCase() + text.substring(1).toLowerCase();
+  }
+
+  Widget _buildTopImage(BuildContext context, List<String> images) {
     final imageList = images.isNotEmpty
         ? images
         : ['https://via.placeholder.com/600x400'];
-
     return Stack(
       children: [
-        // 이미지 슬라이더
         SizedBox(
           height: 280,
           width: double.infinity,
           child: PageView.builder(
             itemCount: imageList.length,
-            onPageChanged: (index) {
-              setState(() {
-                _currentImageIndex = index;
-              });
-            },
-            itemBuilder: (context, index) {
-              return Image.network(
-                imageList[index],
-                width: double.infinity,
-                fit: BoxFit.cover,
-              );
-            },
+            onPageChanged: (idx) => setState(() => _currentImageIndex = idx),
+            itemBuilder: (context, index) =>
+                Image.network(imageList[index], fit: BoxFit.cover),
           ),
         ),
-
-        // 뒤로가기
         CustomHeader(showBack: true, backButtonStyle: BackButtonStyle.light),
-
-        // 우측 버튼
         Positioned(
           top: 24,
           right: 16,
@@ -327,8 +270,6 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
             ],
           ),
         ),
-
-        // 뷰 카운트 및 하단 점 인디케이터
         Positioned(
           bottom: 13,
           left: 16,
@@ -336,7 +277,6 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              // 왼쪽에 뷰카운트
               Align(
                 alignment: Alignment.centerLeft,
                 child: Container(
@@ -359,7 +299,7 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
                       ),
                       const SizedBox(width: 5),
                       Text(
-                        "${house.viewCount}",
+                        "${_house?.viewCount ?? 0}",
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
@@ -370,10 +310,8 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
                   ),
                 ),
               ),
-
-              // 센터에 점 인디케이터
               Row(
-                mainAxisSize: MainAxisSize.min, // 가로 사이즈 최소화
+                mainAxisSize: MainAxisSize.min,
                 children: List.generate(
                   imageList.length,
                   (index) => AnimatedContainer(
@@ -418,9 +356,9 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
                 color: dark,
               ),
             ),
-            Text(
+            const Text(
               "/week",
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w900,
                 color: dark,
@@ -512,6 +450,87 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
     );
   }
 
+  Widget _buildLocationSection(SharehouseDetailModel house) {
+    final MapController mapController = MapController();
+    return Column(
+      children: [
+        Row(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 5),
+              child: SvgPicture.asset(
+                'assets/icons/pin.svg',
+                width: 24,
+                height: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                house.address!,
+                style: const TextStyle(
+                  height: 1.4,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: dark,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+            IconButton(
+              onPressed: () {
+                if (_location != null) mapController.move(_location!, 15);
+              },
+              icon: SvgPicture.asset(
+                'assets/icons/reset.svg',
+                width: 19,
+                height: 19,
+                color: grey03,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Container(
+          height: 160,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade300, width: 1),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: _isLoadingLocation
+              ? const Center(child: CircularProgressIndicator(color: green))
+              : FlutterMap(
+                  mapController: mapController,
+                  options: MapOptions(
+                    initialCenter: _location ?? LatLng(0, 0),
+                    initialZoom: 15.0,
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                          "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+                    ),
+                    if (_location != null)
+                      MarkerLayer(
+                        markers: [
+                          Marker(
+                            point: _location!,
+                            width: 50,
+                            height: 50,
+                            child: SvgPicture.asset(
+                              'assets/icons/house-pin.svg',
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildHostSection(SharehouseDetailModel house) {
     return Row(
       children: [
@@ -530,9 +549,7 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
 
   Widget _buildPropertyDetails(SharehouseDetailModel house) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Property Type & Bills Included
         Row(
           children: [
             Expanded(
@@ -551,8 +568,6 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
           ],
         ),
         const SizedBox(height: 20),
-
-        // Room Type & Bond
         Row(
           children: [
             Expanded(
@@ -568,8 +583,6 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
           ],
         ),
         const SizedBox(height: 20),
-
-        // Minimum Stay & Gender
         Row(
           children: [
             Expanded(
@@ -585,8 +598,6 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
           ],
         ),
         const SizedBox(height: 20),
-
-        // Age & Religion
         Row(
           children: [
             Expanded(
@@ -605,21 +616,6 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
               ),
             ),
           ],
-        ),
-        const SizedBox(height: 36),
-
-        // Home Rules
-        _buildChipSection(
-          title: 'Home Rules',
-          commaSeparatedItems: house.homeRules,
-        ),
-
-        const SizedBox(height: 36),
-
-        // Features
-        _buildChipSection(
-          title: 'Features',
-          commaSeparatedItems: house.features,
         ),
       ],
     );
@@ -667,7 +663,6 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
     required String title,
     required String? commaSeparatedItems,
   }) {
-    // DB에서 가져온 문자열 → 리스트
     final items =
         commaSeparatedItems
             ?.split(',')
@@ -675,7 +670,6 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
             .where((e) => e.isNotEmpty)
             .toList() ??
         [];
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -699,9 +693,8 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
 
   Widget _buildCheckChip(String text) {
     return SizedBox(
-      width: (MediaQuery.of(context).size.width - 96) / 2, // 한 줄에 2개
+      width: (MediaQuery.of(context).size.width - 96) / 2,
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
             width: 22,
@@ -737,9 +730,9 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
       child: PrimaryButton(
         formKey: GlobalKey<FormState>(),
         text: "Chatting now",
-        onAction: () async => true,
-        successMessage: "채팅을 시작합니다.",
-        failMessage: "실패",
+        onAction: () async => await _handleCreateChat(),
+        successMessage: "",
+        failMessage: "채팅방 생성 실패",
       ),
     );
   }
