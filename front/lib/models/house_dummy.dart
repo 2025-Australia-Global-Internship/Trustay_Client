@@ -8,7 +8,7 @@ class HouseDummy {
   final int price;
   final int beds;
   final int baths;
-  final int people;
+  final int currentResidents;
 
   HouseDummy({
     required this.id,
@@ -20,6 +20,6 @@ class HouseDummy {
     required this.price,
     required this.beds,
     required this.baths,
-    required this.people,
+    required this.currentResidents,
   });
 }

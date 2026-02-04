@@ -69,7 +69,7 @@ class _HomePageState extends State<HomePage> {
       price: s.rentPrice,
       beds: s.roomCount,
       baths: s.bathroomCount,
-      people: s.currentResidents,
+      currentResidents: s.currentResidents,
     );
   }
 

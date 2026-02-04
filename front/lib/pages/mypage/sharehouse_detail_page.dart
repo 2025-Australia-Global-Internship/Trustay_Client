@@ -25,6 +25,19 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
   bool _isWished = false;
   LatLng? _location;
   bool _isLoadingLocation = false;
+  int _currentImageIndex = 0;
+
+  String _formatRoomType(dynamic roomType) {
+    final type = roomType.toString().split('.').last.toLowerCase();
+    if (type == 'sharedroom') return 'Shared room';
+    if (type == 'privateroom') return 'Private room';
+    return _capitalize(type);
+  }
+
+  String _capitalize(String text) {
+    if (text.isEmpty) return text;
+    return text[0].toUpperCase() + text.substring(1).toLowerCase();
+  }
 
   @override
   void initState() {
@@ -128,7 +141,7 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildTopImage(context, _house!.imageUrls),
+                _buildTopImage(_house!, context, _house!.imageUrls),
                 Padding(
                   padding: const EdgeInsets.all(20.0),
                   child: Column(
@@ -138,25 +151,28 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
                       const SizedBox(height: 20),
                       _buildFeatureIcons(_house!),
                       const SizedBox(height: 24),
-                      // 주소와 지도 섹션 추가
                       if (_house!.address != null) ...[
                         _buildLocationSection(_house!),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 40),
                       ],
                       _buildHostSection(_house!),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 40),
+                      Text(
+                        'Description',
+                        style: const TextStyle(
+                          color: dark,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
                       Text(
                         _house!.description,
                         style: const TextStyle(color: grey04, height: 1.5),
                       ),
-                      const SizedBox(height: 30),
-                      if (_house!.homeRules != null)
-                        _buildInfoSection("Home Rules", _house!.homeRules!),
-                      if (_house!.features != null)
-                        _buildInfoSection("Features", _house!.features!),
-                      const SizedBox(height: 30),
-                      _buildDetailGrid(_house!),
-                      const SizedBox(height: 120),
+                      const SizedBox(height: 35),
+                      _buildPropertyDetails(_house!),
+                      const SizedBox(height: 100),
                     ],
                   ),
                 ),
@@ -170,19 +186,21 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
   }
 
   Widget _buildLocationSection(SharehouseDetailModel house) {
+    final MapController mapController = MapController();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 주소 텍스트
+        // 주소 + 리로드 버튼
         Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: green.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
+            Padding(
+              padding: const EdgeInsets.only(left: 5),
+              child: SvgPicture.asset(
+                'assets/icons/pin.svg',
+                width: 24,
+                height: 24,
               ),
-              child: const Icon(Icons.location_on, color: green, size: 20),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -197,28 +215,38 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
                 ),
               ),
             ),
+            IconButton(
+              onPressed: () {
+                if (_location != null) {
+                  mapController.move(_location!, 15);
+                }
+              },
+              icon: SvgPicture.asset(
+                'assets/icons/reset.svg',
+                width: 19,
+                height: 19,
+                color: grey03,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 16),
 
         // 지도
         Container(
-          height: 200,
+          height: 160,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: grey01, width: 1),
+            border: Border.all(color: Colors.grey.shade300, width: 1),
           ),
           clipBehavior: Clip.antiAlias,
           child: _isLoadingLocation
               ? const Center(child: CircularProgressIndicator(color: green))
-              : _location != null
-              ? FlutterMap(
+              : FlutterMap(
+                  mapController: mapController,
                   options: MapOptions(
-                    initialCenter: _location!,
+                    initialCenter: _location ?? LatLng(0, 0),
                     initialZoom: 15.0,
-                    interactionOptions: const InteractionOptions(
-                      flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
-                    ),
                   ),
                   children: [
                     TileLayer(
@@ -226,71 +254,66 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
                           "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
                       userAgentPackageName: 'com.example.app',
                     ),
-                    MarkerLayer(
-                      markers: [
-                        Marker(
-                          point: _location!,
-                          width: 50,
-                          height: 50,
-                          child: Container(
-                            clipBehavior: Clip.none, // <-- 확대해도 잘리지 않음
-                            decoration: BoxDecoration(
-                              color: green,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: green.withOpacity(0.5),
-                                  blurRadius: 10,
-                                  spreadRadius: 2,
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.home,
-                              color: Colors.white,
-                              size: 24,
+                    if (_location != null)
+                      MarkerLayer(
+                        markers: [
+                          Marker(
+                            point: _location!,
+                            width: 50,
+                            height: 50,
+                            child: SvgPicture.asset(
+                              'assets/icons/house-pin.svg',
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
-                )
-              : Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.location_off, color: grey02, size: 40),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Location not available',
-                        style: TextStyle(color: grey03, fontSize: 14),
+                        ],
                       ),
-                    ],
-                  ),
+                  ],
                 ),
         ),
       ],
     );
   }
 
-  Widget _buildTopImage(BuildContext context, List<String> images) {
+  Widget _buildTopImage(
+    SharehouseDetailModel house,
+    BuildContext context,
+    List<String> images,
+  ) {
+    final imageList = images.isNotEmpty
+        ? images
+        : ['https://via.placeholder.com/600x400'];
+
     return Stack(
       children: [
-        Image.network(
-          images.isNotEmpty
-              ? images.first
-              : 'https://via.placeholder.com/600x400',
+        // 이미지 슬라이더
+        SizedBox(
           height: 280,
           width: double.infinity,
-          fit: BoxFit.cover,
+          child: PageView.builder(
+            itemCount: imageList.length,
+            onPageChanged: (index) {
+              setState(() {
+                _currentImageIndex = index;
+              });
+            },
+            itemBuilder: (context, index) {
+              return Image.network(
+                imageList[index],
+                width: double.infinity,
+                fit: BoxFit.cover,
+              );
+            },
+          ),
         ),
+
+        // 뒤로가기
         CustomHeader(showBack: true, backButtonStyle: BackButtonStyle.light),
+
+        // 우측 버튼
         Positioned(
           top: 24,
           right: 16,
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             children: [
               CircleIconButton(
                 svgAsset: _isWished
@@ -301,6 +324,73 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
               ),
               const SizedBox(height: 8),
               CircleIconButton(icon: Icons.share_outlined, onPressed: () {}),
+            ],
+          ),
+        ),
+
+        // 뷰 카운트 및 하단 점 인디케이터
+        Positioned(
+          bottom: 13,
+          left: 16,
+          right: 16,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // 왼쪽에 뷰카운트
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.35),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SvgPicture.asset(
+                        'assets/icons/view.svg',
+                        width: 15,
+                        height: 15,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        "${house.viewCount}",
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // 센터에 점 인디케이터
+              Row(
+                mainAxisSize: MainAxisSize.min, // 가로 사이즈 최소화
+                children: List.generate(
+                  imageList.length,
+                  (index) => AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeOut,
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    width: _currentImageIndex == index ? 20 : 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      color: _currentImageIndex == index
+                          ? yellow
+                          : Colors.white.withOpacity(0.65),
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -377,7 +467,7 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
                 height: 26,
                 color: dark,
               ),
-              "${house.viewCount} Resident",
+              "${house.currentResidents} Resident",
             ),
           ],
         ),
@@ -422,68 +512,6 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
     );
   }
 
-  Widget _buildInfoSection(String title, String content) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Text(content, style: const TextStyle(color: grey04)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDetailGrid(SharehouseDetailModel house) {
-    final list = [
-      {"label": "Room", "value": house.roomType.toString().split('.').last},
-      {"label": "Min. Stay", "value": "${house.minimumStay} months"},
-      {"label": "Gender", "value": house.gender},
-      {
-        "label": "Bills",
-        "value": house.billsIncluded ? "Included" : "Excluded",
-      },
-    ];
-    return Wrap(
-      spacing: 16,
-      runSpacing: 16,
-      children: list
-          .map(
-            (i) => SizedBox(
-              width: 150,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    i['label']!,
-                    style: const TextStyle(color: grey02, fontSize: 12),
-                  ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: grey01),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      i['value']!,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          )
-          .toList(),
-    );
-  }
-
   Widget _buildHostSection(SharehouseDetailModel house) {
     return Row(
       children: [
@@ -497,6 +525,207 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
       ],
+    );
+  }
+
+  Widget _buildPropertyDetails(SharehouseDetailModel house) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Property Type & Bills Included
+        Row(
+          children: [
+            Expanded(
+              child: _buildDetailItem(
+                'Property Type',
+                house.houseType.toString().split('.').last.toLowerCase(),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildDetailItem(
+                'Bills Included',
+                house.billsIncluded ? 'Yes' : 'No',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+
+        // Room Type & Bond
+        Row(
+          children: [
+            Expanded(
+              child: _buildDetailItem(
+                'Room Type',
+                _formatRoomType(house.roomType),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildDetailItem('Bond', '${house.bondType} weeks'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+
+        // Minimum Stay & Gender
+        Row(
+          children: [
+            Expanded(
+              child: _buildDetailItem(
+                'Minimum Stay',
+                house.minimumStay == 0
+                    ? 'No minimum stay'
+                    : '${house.minimumStay} months',
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(child: _buildDetailItem('Gender', house.gender)),
+          ],
+        ),
+        const SizedBox(height: 20),
+
+        // Age & Religion
+        Row(
+          children: [
+            Expanded(
+              child: _buildDetailItem(
+                'Age',
+                house.age != 'No age rejection'
+                    ? 'Minimum ${house.age}'
+                    : house.age,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildDetailItem(
+                'Religion',
+                house.religion != '' ? house.religion : 'Any',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 36),
+
+        // Home Rules
+        _buildChipSection(
+          title: 'Home Rules',
+          commaSeparatedItems: house.homeRules,
+        ),
+
+        const SizedBox(height: 36),
+
+        // Features
+        _buildChipSection(
+          title: 'Features',
+          commaSeparatedItems: house.features,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDetailItem(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: dark,
+          ),
+        ),
+        const SizedBox(height: 14),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
+              decoration: BoxDecoration(
+                border: Border.all(color: grey01, width: 1.2),
+                borderRadius: BorderRadius.circular(24),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                _capitalize(value),
+                style: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                  color: dark,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildChipSection({
+    required String title,
+    required String? commaSeparatedItems,
+  }) {
+    // DB에서 가져온 문자열 → 리스트
+    final items =
+        commaSeparatedItems
+            ?.split(',')
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toList() ??
+        [];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: dark,
+          ),
+        ),
+        const SizedBox(height: 20),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: items.map((e) => _buildCheckChip(e)).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCheckChip(String text) {
+    return SizedBox(
+      width: (MediaQuery.of(context).size.width - 96) / 2, // 한 줄에 2개
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 22,
+            height: 22,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: green, width: 1.2),
+              color: green,
+            ),
+            child: const Icon(Icons.check, size: 16, color: Colors.white),
+          ),
+          const SizedBox(width: 10),
+          Flexible(
+            child: Text(
+              text,
+              style: const TextStyle(
+                color: dark,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
