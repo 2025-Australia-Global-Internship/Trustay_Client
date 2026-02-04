@@ -212,7 +212,7 @@ class _ListingPage extends State<ListingPage> {
               style: TextStyle(
                 fontSize: 14,
                 color: grey02,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w400,
               ),
             ),
             const SizedBox(height: 6),

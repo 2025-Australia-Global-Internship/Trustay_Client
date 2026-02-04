@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:front/constants/colors.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:intl/intl.dart'; 
+import 'package:intl/intl.dart';
 
 // [중요] MyPage처럼 AuthService와 모델을 import 합니다.
 import 'package:front/services/auth_service.dart';
@@ -19,7 +19,7 @@ class HouseCommPage extends StatefulWidget {
 
 class _HouseCommPageState extends State<HouseCommPage> {
   int _houseSubTabIndex = 0; // 0: Notice, 1: Chat
-  
+
   final ChatService _chatService = ChatService();
   List<ChatRoomListModel> _chatRooms = [];
   bool _isLoading = false;
@@ -32,22 +32,25 @@ class _HouseCommPageState extends State<HouseCommPage> {
       _loadUserAndChats();
     }
   }
-  
+
   String _formatTime(String? timeString) {
     if (timeString == null || timeString.isEmpty) return '';
     try {
       // 1. 서버가 보내준 시간(23:24)을 UTC로 인식하도록 'Z'를 붙입니다.
       // (서버 시간: 23:24, 한국: 08:24, 호주: 10:24 or 11:24)
-      String utcString = timeString.endsWith('Z') ? timeString : '${timeString}Z';
-      
+      String utcString = timeString.endsWith('Z')
+          ? timeString
+          : '${timeString}Z';
+
       // 2. UTC 시간을 내 폰의 시간대(호주)로 변환합니다.
       DateTime localDate = DateTime.parse(utcString).toLocal();
 
       // 3. 오늘인지 확인 후 포맷팅
       final DateTime now = DateTime.now();
-      final bool isToday = localDate.year == now.year && 
-                           localDate.month == now.month && 
-                           localDate.day == now.day;
+      final bool isToday =
+          localDate.year == now.year &&
+          localDate.month == now.month &&
+          localDate.day == now.day;
 
       if (isToday) {
         // 오늘이면 시간 표시 (예: 10:24 AM)
@@ -71,10 +74,10 @@ class _HouseCommPageState extends State<HouseCommPage> {
     try {
       // 1. AuthService를 통해 내 프로필 정보 가져오기 (mypage_page.dart와 동일 방식)
       User user = await AuthService.fetchProfile();
-      
+
       // 2. 가져온 user의 memberId로 채팅 목록 API 호출
       final rooms = await _chatService.getMyChatRooms(user.memberId);
-      
+
       if (mounted) {
         setState(() {
           _chatRooms = rooms;
@@ -182,16 +185,29 @@ class _HouseCommPageState extends State<HouseCommPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.edit_note, size: 64, color: Colors.grey[300]),
+          SvgPicture.asset(
+            'assets/icons/edit-note.svg',
+            color: grey01,
+            width: 72,
+            height: 72,
+          ),
           SizedBox(height: 16),
           Text(
             'No notices yet',
-            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            style: TextStyle(
+              fontSize: 14,
+              color: grey02,
+              fontWeight: FontWeight.w400,
+            ),
           ),
-          SizedBox(height: 8),
+          SizedBox(height: 6),
           Text(
             'Check back later for updates',
-            style: TextStyle(fontSize: 14, color: Colors.grey[400]),
+            style: TextStyle(
+              fontSize: 14,
+              color: grey02,
+              fontWeight: FontWeight.w400,
+            ),
           ),
         ],
       ),
@@ -202,12 +218,16 @@ class _HouseCommPageState extends State<HouseCommPage> {
     if (_isLoading) {
       return Center(child: CircularProgressIndicator(color: green));
     }
-    
+
     if (_chatRooms.isEmpty) {
       return Center(
         child: Text(
           'No active chats.',
-          style: TextStyle(fontSize: 14, color: Colors.grey[400]),
+          style: TextStyle(
+            fontSize: 14,
+            color: grey02,
+            fontWeight: FontWeight.w400,
+          ),
         ),
       );
     }
@@ -223,7 +243,7 @@ class _HouseCommPageState extends State<HouseCommPage> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
           child: InkWell(
             onTap: () {
-               // TODO: Navigate to chat room detail (pass item.roomId)
+              // TODO: Navigate to chat room detail (pass item.roomId)
             },
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -231,13 +251,17 @@ class _HouseCommPageState extends State<HouseCommPage> {
                 CircleAvatar(
                   radius: 26,
                   backgroundColor: Colors.grey[300],
-                  backgroundImage: (item.profileImageUrl != null && item.profileImageUrl!.isNotEmpty)
+                  backgroundImage:
+                      (item.profileImageUrl != null &&
+                          item.profileImageUrl!.isNotEmpty)
                       ? NetworkImage(item.profileImageUrl!)
                       : null,
-                  child: (item.profileImageUrl == null || item.profileImageUrl!.isEmpty)
+                  child:
+                      (item.profileImageUrl == null ||
+                          item.profileImageUrl!.isEmpty)
                       ? Text(
-                          item.otherMemberName.isNotEmpty 
-                              ? item.otherMemberName[0].toUpperCase() 
+                          item.otherMemberName.isNotEmpty
+                              ? item.otherMemberName[0].toUpperCase()
                               : '?',
                           style: TextStyle(
                             fontSize: 18,
