@@ -13,4 +13,6 @@ public class ChatRoomListRes {
     private String lastMessage;     // 마지막 메시지 내용
     private String lastSenderName;  // 마지막 메시지를 보낸 사람
     private String lastMessageTime; // 마지막 메시지 전송 시간
+    private String profileImageUrl;
+
 }
