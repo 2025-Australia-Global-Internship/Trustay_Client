@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:front/constants/colors.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:intl/intl.dart'; 
+
+// [중요] MyPage처럼 AuthService와 모델을 import 합니다.
+import 'package:front/services/auth_service.dart';
+import 'package:front/models/user_model.dart';
+
+import '../../models/chat_room_list_model.dart';
+import '../../services/chat_service.dart';
 
 class HouseCommPage extends StatefulWidget {
   const HouseCommPage({super.key});
@@ -11,6 +19,73 @@ class HouseCommPage extends StatefulWidget {
 
 class _HouseCommPageState extends State<HouseCommPage> {
   int _houseSubTabIndex = 0; // 0: Notice, 1: Chat
+  
+  final ChatService _chatService = ChatService();
+  List<ChatRoomListModel> _chatRooms = [];
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // 채팅 탭이 기본이라면 여기서 로드, 아니라면 탭 전환 시 로드
+    if (_houseSubTabIndex == 1) {
+      _loadUserAndChats();
+    }
+  }
+  
+  String _formatTime(String? timeString) {
+    if (timeString == null || timeString.isEmpty) return '';
+    try {
+      // 1. 서버가 보내준 시간(23:24)을 UTC로 인식하도록 'Z'를 붙입니다.
+      // (서버 시간: 23:24, 한국: 08:24, 호주: 10:24 or 11:24)
+      String utcString = timeString.endsWith('Z') ? timeString : '${timeString}Z';
+      
+      // 2. UTC 시간을 내 폰의 시간대(호주)로 변환합니다.
+      DateTime localDate = DateTime.parse(utcString).toLocal();
+
+      // 3. 오늘인지 확인 후 포맷팅
+      final DateTime now = DateTime.now();
+      final bool isToday = localDate.year == now.year && 
+                           localDate.month == now.month && 
+                           localDate.day == now.day;
+
+      if (isToday) {
+        // 오늘이면 시간 표시 (예: 10:24 AM)
+        return DateFormat('hh:mm a').format(localDate);
+      } else {
+        // 오늘이 아니면 날짜 표시 (예: 02/03)
+        return DateFormat('MM/dd').format(localDate);
+      }
+    } catch (e) {
+      // 에러 시 원본 문자열 반환
+      return timeString;
+    }
+  }
+
+  // [수정] MyPage 패턴 적용: AuthService로 유저 정보 가져온 뒤 채팅 목록 요청
+  Future<void> _loadUserAndChats() async {
+    if (_isLoading) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      // 1. AuthService를 통해 내 프로필 정보 가져오기 (mypage_page.dart와 동일 방식)
+      User user = await AuthService.fetchProfile();
+      
+      // 2. 가져온 user의 memberId로 채팅 목록 API 호출
+      final rooms = await _chatService.getMyChatRooms(user.memberId);
+      
+      if (mounted) {
+        setState(() {
+          _chatRooms = rooms;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print("Error loading data: $e");
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +98,7 @@ class _HouseCommPageState extends State<HouseCommPage> {
         body: _buildContent(),
       ),
       floatingActionButton: _houseSubTabIndex == 0
-          ? _buildFloatingButton() // Notice일 때만 표시
+          ? _buildFloatingButton()
           : null,
     );
   }
@@ -56,6 +131,9 @@ class _HouseCommPageState extends State<HouseCommPage> {
         setState(() {
           _houseSubTabIndex = index;
         });
+        if (index == 1) {
+          _loadUserAndChats(); // 탭 전환 시 데이터 로드
+        }
       },
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -107,12 +185,12 @@ class _HouseCommPageState extends State<HouseCommPage> {
           Icon(Icons.edit_note, size: 64, color: Colors.grey[300]),
           SizedBox(height: 16),
           Text(
-            '아직 공지사항이 없습니다',
+            'No notices yet',
             style: TextStyle(fontSize: 16, color: Colors.grey[600]),
           ),
           SizedBox(height: 8),
           Text(
-            '새로운 공지사항을 작성해보세요',
+            'Check back later for updates',
             style: TextStyle(fontSize: 14, color: Colors.grey[400]),
           ),
         ],
@@ -121,104 +199,118 @@ class _HouseCommPageState extends State<HouseCommPage> {
   }
 
   Widget _buildChatContent() {
-    final chatItems = List.generate(
-      5,
-      (index) => {
-        'name': index == 0 ? 'Stella' : 'User ${index + 1}',
-        'message': 'Lorem ipsum dolor sit amet. Non at...',
-        'time': index == 0 ? '12:40 AM' : '${9 + index}:30 AM',
-        'unread': index == 0 ? 2 : 0,
-      },
-    );
+    if (_isLoading) {
+      return Center(child: CircularProgressIndicator(color: green));
+    }
+    
+    if (_chatRooms.isEmpty) {
+      return Center(
+        child: Text(
+          'No active chats.',
+          style: TextStyle(fontSize: 14, color: Colors.grey[400]),
+        ),
+      );
+    }
 
     return ListView.builder(
       padding: EdgeInsets.symmetric(vertical: 8),
-      itemCount: chatItems.length,
+      itemCount: _chatRooms.length,
       itemBuilder: (context, index) {
-        final item = chatItems[index];
+        final item = _chatRooms[index];
+        final unreadCount = 0;
+
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // 아바타
-              CircleAvatar(
-                radius: 26,
-                backgroundColor: Colors.grey[300],
-                child: Text(
-                  item['name'].toString()[0],
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: grey03,
-                  ),
+          child: InkWell(
+            onTap: () {
+               // TODO: Navigate to chat room detail (pass item.roomId)
+            },
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                CircleAvatar(
+                  radius: 26,
+                  backgroundColor: Colors.grey[300],
+                  backgroundImage: (item.profileImageUrl != null && item.profileImageUrl!.isNotEmpty)
+                      ? NetworkImage(item.profileImageUrl!)
+                      : null,
+                  child: (item.profileImageUrl == null || item.profileImageUrl!.isEmpty)
+                      ? Text(
+                          item.otherMemberName.isNotEmpty 
+                              ? item.otherMemberName[0].toUpperCase() 
+                              : '?',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: grey03,
+                          ),
+                        )
+                      : null,
                 ),
-              ),
-              SizedBox(width: 13),
-              // 메시지 영역
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 이름 + 시간
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          item['name'].toString(),
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        Text(
-                          item['time'].toString(),
-                          style: TextStyle(
-                            fontSize: 9,
-                            color: grey02,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 7),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            item['message'].toString(),
-                            style: TextStyle(fontSize: 12, color: grey04),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if ((item['unread'] as int) > 0) ...[
-                          SizedBox(width: 6),
-                          Container(
-                            width: 22,
-                            height: 22,
-                            decoration: BoxDecoration(
-                              color: green,
-                              shape: BoxShape.circle,
+                SizedBox(width: 13),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            item.otherMemberName,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
                             ),
-                            child: Center(
-                              child: Text(
-                                item['unread'].toString(),
-                                style: TextStyle(
-                                  color: yellow,
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
+                          ),
+                          Text(
+                            _formatTime(item.lastMessageTime),
+                            style: TextStyle(
+                              fontSize: 9,
+                              color: grey02,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
                         ],
-                      ],
-                    ),
-                  ],
+                      ),
+                      SizedBox(height: 7),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item.lastMessage,
+                              style: TextStyle(fontSize: 12, color: grey04),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (unreadCount > 0) ...[
+                            SizedBox(width: 6),
+                            Container(
+                              width: 22,
+                              height: 22,
+                              decoration: BoxDecoration(
+                                color: green,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  unreadCount.toString(),
+                                  style: TextStyle(
+                                    color: yellow,
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
