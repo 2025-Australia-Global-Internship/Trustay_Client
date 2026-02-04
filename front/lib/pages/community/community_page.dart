@@ -42,7 +42,7 @@ class _CommunityPageState extends State<CommunityPage> {
       child: CustomHeader(
         toolbarHeight: 60, // 원하는 높이
         leading: Container(
-          padding: EdgeInsets.all(3),
+          padding: EdgeInsets.all(4),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(24),
@@ -76,7 +76,7 @@ class _CommunityPageState extends State<CommunityPage> {
               ),
             CircleIconButton(
               svgAsset: 'assets/icons/bell.svg',
-              iconSize: 22,
+              iconSize: 21.5,
               iconColor: dark,
               padding: const EdgeInsets.only(right: 8),
               onPressed: () {},
