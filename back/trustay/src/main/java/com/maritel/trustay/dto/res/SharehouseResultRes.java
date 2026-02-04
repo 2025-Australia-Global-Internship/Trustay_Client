@@ -22,6 +22,7 @@ public class SharehouseResultRes {
     private Integer rentPrice;
     private Integer roomCount;
     private Integer bathroomCount;
+    private Integer currentResidents;
     private String homeRulse;
     private String features;
     private Integer viewCount;
@@ -49,6 +50,7 @@ public class SharehouseResultRes {
                 .rentPrice(sharehouse.getRentPrice())
                 .roomCount(sharehouse.getRoomCount())
                 .bathroomCount(sharehouse.getBathroomCount())
+                .currentResidents(sharehouse.getCurrentResidents())
                 .homeRulse(sharehouse.getHomeRules())
                 .features(sharehouse.getFeatures())
                 .viewCount(sharehouse.getViewCount())

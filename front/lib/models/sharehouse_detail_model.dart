@@ -12,6 +12,7 @@ class SharehouseDetailModel {
   final String? features;
   final int viewCount;
   final String hostName;
+  final int hostId; // [추가] 집주인 ID
   final double? lat;
   final double? lon;
   final List<String> imageUrls;
@@ -37,7 +38,8 @@ class SharehouseDetailModel {
     this.homeRules,
     this.features,
     required this.viewCount,
-    required this.hostName,
+    required this.hostId, // [추가]
+    required this.hostName,    
     this.lat,
     this.lon,
     required this.imageUrls,
@@ -66,7 +68,8 @@ class SharehouseDetailModel {
       currentResidents: d['currentResidents'] ?? 0,
       features: d['features'],
       viewCount: d['viewCount'] ?? 0,
-      hostName: d['hostName'] ?? 'Unknown',
+      hostId: json['hostId'] ?? 0, 
+      hostName: json['hostName'] ?? 'Host',
       lat: (d['lat'] as num?)?.toDouble(),
       lon: (d['lon'] as num?)?.toDouble(),
       imageUrls: d['imageUrls'] != null

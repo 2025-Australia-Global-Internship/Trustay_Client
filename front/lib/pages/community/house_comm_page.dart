@@ -19,8 +19,6 @@ class HouseCommPage extends StatefulWidget {
 
 class _HouseCommPageState extends State<HouseCommPage> {
   int _houseSubTabIndex = 0; // 0: Notice, 1: Chat
-  
-  final ChatService _chatService = ChatService();
   List<ChatRoomListModel> _chatRooms = [];
   bool _isLoading = false;
 
@@ -73,7 +71,7 @@ class _HouseCommPageState extends State<HouseCommPage> {
       User user = await AuthService.fetchProfile();
       
       // 2. 가져온 user의 memberId로 채팅 목록 API 호출
-      final rooms = await _chatService.getMyChatRooms(user.memberId);
+      final rooms = await ChatService.getMyChatRooms(user.memberId);
       
       if (mounted) {
         setState(() {
