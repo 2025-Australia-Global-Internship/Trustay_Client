@@ -168,7 +168,7 @@ class _SearchPageState extends State<SearchPage> {
                               'assets/icons/search.svg',
                               width: 20,
                               height: 20,
-                              color: dark,
+                              color: grey03,
                             ),
                           ),
                   ),

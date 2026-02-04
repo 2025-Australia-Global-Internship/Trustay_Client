@@ -70,7 +70,7 @@ class _CommunityPageState extends State<CommunityPage> {
               CircleIconButton(
                 svgAsset: 'assets/icons/search.svg',
                 iconSize: 23,
-                iconColor: const Color.fromRGBO(58, 58, 58, 1),
+                iconColor: dark,
                 padding: const EdgeInsets.only(right: 8),
                 onPressed: () {},
               ),
@@ -103,7 +103,7 @@ class _CommunityPageState extends State<CommunityPage> {
         });
       },
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 11),
         decoration: BoxDecoration(
           color: isSelected ? yellow : Colors.white,
           borderRadius: BorderRadius.circular(28),
