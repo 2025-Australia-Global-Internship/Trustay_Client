@@ -139,7 +139,7 @@ class HouseCard extends StatelessWidget {
                     ),
                     _iconChip(
                       svg: 'assets/icons/profile.svg',
-                      text: '${house.people}',
+                      text: '${house.currentResidents}',
                       isGrid: isGrid,
                     ),
                   ],

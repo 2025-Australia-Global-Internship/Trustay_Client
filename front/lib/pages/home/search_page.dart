@@ -53,7 +53,7 @@ class _SearchPageState extends State<SearchPage> {
       price: s.rentPrice,
       beds: s.roomCount,
       baths: s.bathroomCount,
-      people: s.currentResidents,
+      currentResidents: s.currentResidents,
     );
   }
 

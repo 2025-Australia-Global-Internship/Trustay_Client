@@ -7,7 +7,8 @@ class SharehouseDetailModel {
   final int rentPrice;
   final int roomCount;
   final int bathroomCount;
-  final String? homeRules; // Java의 homeRulse 반영
+  final int currentResidents;
+  final String? homeRules; // Java의 homeRules 반영
   final String? features;
   final int viewCount;
   final String hostName;
@@ -24,13 +25,29 @@ class SharehouseDetailModel {
   final String dietaryPreference;
 
   SharehouseDetailModel({
-    required this.id, required this.title, required this.description,
-    required this.address, required this.houseType, required this.rentPrice,
-    required this.roomCount, required this.bathroomCount, this.homeRules,
-    this.features, required this.viewCount, required this.hostName,
-    this.lat, this.lon, required this.imageUrls, required this.billsIncluded,
-    required this.roomType, required this.bondType, required this.minimumStay,
-    required this.gender, required this.age, required this.religion,
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.address,
+    required this.houseType,
+    required this.currentResidents,
+    required this.rentPrice,
+    required this.roomCount,
+    required this.bathroomCount,
+    this.homeRules,
+    this.features,
+    required this.viewCount,
+    required this.hostName,
+    this.lat,
+    this.lon,
+    required this.imageUrls,
+    required this.billsIncluded,
+    required this.roomType,
+    required this.bondType,
+    required this.minimumStay,
+    required this.gender,
+    required this.age,
+    required this.religion,
     required this.dietaryPreference,
   });
 
@@ -46,12 +63,15 @@ class SharehouseDetailModel {
       roomCount: d['roomCount'] ?? 0,
       bathroomCount: d['bathroomCount'] ?? 0,
       homeRules: d['homeRulse'], // 백엔드 필드명 유지
+      currentResidents: d['currentResidents'] ?? 0,
       features: d['features'],
       viewCount: d['viewCount'] ?? 0,
       hostName: d['hostName'] ?? 'Unknown',
       lat: (d['lat'] as num?)?.toDouble(),
       lon: (d['lon'] as num?)?.toDouble(),
-      imageUrls: d['imageUrls'] != null ? List<String>.from(d['imageUrls']) : [],
+      imageUrls: d['imageUrls'] != null
+          ? List<String>.from(d['imageUrls'])
+          : [],
       billsIncluded: d['billsIncluded'] ?? false,
       roomType: d['roomType']?.toString() ?? '',
       bondType: d['bondType'] ?? 0,
