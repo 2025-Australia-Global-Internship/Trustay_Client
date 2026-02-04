@@ -82,7 +82,10 @@ public class Sharehouse extends BaseEntity {
 
     // 옵션 (JSON 문자열 또는 콤마 구분)
     @Column(columnDefinition = "TEXT")
-    private String options;
+    private String homeRules;
+
+    @Column(columnDefinition = "TEXT")
+    private String features;
 
     // --- 관리 정보 ---
     @Enumerated(EnumType.STRING)
@@ -93,7 +96,7 @@ public class Sharehouse extends BaseEntity {
                       Double latitude, Double longitude, HouseType houseType,
                       Integer rentPrice, Integer roomCount,
                       Integer bathroomCount, Integer currentResidents,
-                      String options, Boolean billsIncluded, RoomType roomType,
+                      String homeRules, String features, Boolean billsIncluded, RoomType roomType,
                       Integer bondType, Integer minimumStay, String gender, String age,
                       String religion, String dietaryPreference, ApprovalStatus approvalStatus) {
         this.host = host;
@@ -107,7 +110,8 @@ public class Sharehouse extends BaseEntity {
         this.roomCount = roomCount;
         this.bathroomCount = bathroomCount;
         this.currentResidents = currentResidents;
-        this.options = options;
+        this.homeRules = homeRules;
+        this.features = features;
         this.billsIncluded = billsIncluded;
         this.roomType = roomType;
         this.bondType = bondType;
@@ -131,8 +135,8 @@ public class Sharehouse extends BaseEntity {
         }
     }
 
-    public void updateSharehouse(String title, String description, Integer rentPrice,
-                                 String options, Integer roomCount, Integer bathroomCount,
+    public void updateSharehouse(String title, String description, Integer rentPrice, String homeRules,
+                                 String features, Integer roomCount, Integer bathroomCount,
                                  Integer currentResidents, HouseType houseType,
                                  Boolean billsIncluded, RoomType roomType, Integer bondType,
                                  Integer minimumStay, String gender, String age,
@@ -140,7 +144,8 @@ public class Sharehouse extends BaseEntity {
         this.title = title;
         this.description = description;
         this.rentPrice = rentPrice;
-        this.options = options;
+        this.homeRules = homeRules;
+        this.features = features;
         this.roomCount = roomCount;
         this.bathroomCount = bathroomCount;
         this.currentResidents = currentResidents;

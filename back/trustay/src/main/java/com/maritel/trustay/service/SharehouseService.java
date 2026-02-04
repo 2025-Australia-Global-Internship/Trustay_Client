@@ -81,7 +81,8 @@ public class SharehouseService {
         Double longitude = (coords != null) ? coords.get("lon") : 0.0;
 
         // [변경] 더 이상 String imageUrls를 쓰지 않음
-        String optionsString = (req.getOptions() != null) ? String.join(",", req.getOptions()) : "";
+        String homeRulesString = (req.getHomeRules() != null) ? String.join(",", req.getHomeRules()) : "";
+        String featuresString = (req.getFeatures() != null) ? String.join(",", req.getFeatures()) : "";
 
         Sharehouse sharehouse = Sharehouse.builder()
                 .host(host)
@@ -95,7 +96,8 @@ public class SharehouseService {
                 .roomCount(req.getRoomCount())
                 .bathroomCount(req.getBathroomCount())
                 .currentResidents(req.getCurrentResidents())
-                .options(optionsString)
+                .homeRules(homeRulesString)
+                .features(featuresString)
                 .billsIncluded(req.getBillsIncluded())
                 .roomType(req.getRoomType())
                 .bondType(req.getBondType())
@@ -143,7 +145,7 @@ public class SharehouseService {
         }
 
         sharehouse.updateSharehouse(
-                req.getTitle(), req.getDescription(), req.getRentPrice(), req.getOptions(), req.getRoomCount(),
+                req.getTitle(), req.getDescription(), req.getRentPrice(), req.getHomeRules(),req.getFeatures(), req.getRoomCount(),
                  req.getBathroomCount(), req.getCurrentResidents(), req.getHouseType(),
                 req.getBillsIncluded(), req.getRoomType(), req.getBondType(), req.getMinimumStay(),
                 req.getGender(), req.getAge(), req.getReligion(), req.getDietaryPreference()

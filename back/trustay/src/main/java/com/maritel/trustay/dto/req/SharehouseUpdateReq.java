@@ -13,7 +13,8 @@ public class SharehouseUpdateReq {
     private String title;
     private String description;
     private Integer rentPrice;
-    private String options;
+    private String homeRules;
+    private String features;
     private Integer roomCount;
     private Integer bathroomCount;
     private Integer currentResidents;

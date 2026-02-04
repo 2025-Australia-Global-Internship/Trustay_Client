@@ -26,5 +26,6 @@ public class SharehouseSearchReq {
     private Integer currentResidents;  // 현재 거주 인원 (정확히 n명)
 
     // 4. 옵션 (예: ["WIFI", "PARKING"])
-    private List<String> options;
+    private List<String> homeRules;
+    private List<String> features;
 }

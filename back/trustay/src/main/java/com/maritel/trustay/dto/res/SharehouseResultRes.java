@@ -22,7 +22,8 @@ public class SharehouseResultRes {
     private Integer rentPrice;
     private Integer roomCount;
     private Integer bathroomCount;
-    private String options;
+    private String homeRulse;
+    private String features;
     private Integer viewCount;
     private String hostName; // 집주인 이름 표시
     private Double lat;
@@ -48,7 +49,8 @@ public class SharehouseResultRes {
                 .rentPrice(sharehouse.getRentPrice())
                 .roomCount(sharehouse.getRoomCount())
                 .bathroomCount(sharehouse.getBathroomCount())
-                .options(sharehouse.getOptions())
+                .homeRulse(sharehouse.getHomeRules())
+                .features(sharehouse.getFeatures())
                 .viewCount(sharehouse.getViewCount())
                 .hostName(sharehouse.getHost().getName())
                 .lat(sharehouse.getLatitude())
