@@ -40,43 +40,44 @@ class _FinancePageState extends State<FinancePage> {
   }
 
   final Map<String, List<TransactionItem>> _transactionsByMonth = {
-    'May': [
+    'Feb': [
+      const TransactionItem(
+        title: 'Split Bills',
+        subtitle: 'Emma → My wallet',
+        date: '2/4 · 03:28PM',
+        amount: 51,
+      ),
       const TransactionItem(
         title: 'Rent Due',
-        subtitle: 'My wallet → Stella',
-        date: '5/9 · 09:40AM',
-        amount: -320,
-      ),
-      const TransactionItem(
-        title: 'Split Bills',
-        subtitle: 'Olivia → My wallet',
-        date: '5/4 · 03:28PM',
-        amount: -320,
-      ),
-      const TransactionItem(
-        title: 'Split Bills',
         subtitle: 'My wallet → Olivia',
-        date: '5/2 · 08:07PM',
+        date: '2/2 · 09:40AM',
         amount: -320,
+      ),
+      const TransactionItem(
+        title: 'Split Bills',
+        subtitle: 'My wallet → Rio',
+        date: '2/1 · 08:07PM',
+        amount: -13,
       ),
     ],
-    'April': [
+    'Jan': [
+      const TransactionItem(
+        title: 'Split Bills',
+        subtitle: 'Rio → My wallet',
+        date: '1/21 · 03:28PM',
+        amount: 50,
+      ),
+      const TransactionItem(
+        title: 'Split Bills',
+        subtitle: 'My wallet → Emma',
+        date: '1/9 · 09:40AM',
+        amount: -24,
+      ),
+
       const TransactionItem(
         title: 'Rent Due',
-        subtitle: 'My wallet → Stella',
-        date: '4/9 · 09:40AM',
-        amount: -320,
-      ),
-      const TransactionItem(
-        title: 'Split Bills',
-        subtitle: 'Olivia → My wallet',
-        date: '4/4 · 03:28PM',
-        amount: -320,
-      ),
-      const TransactionItem(
-        title: 'Split Bills',
         subtitle: 'My wallet → Olivia',
-        date: '4/2 · 08:07PM',
+        date: '1/2 · 08:07AM',
         amount: -320,
       ),
     ],
@@ -191,7 +192,7 @@ class _FinancePageState extends State<FinancePage> {
 
                   // 필터 탭
                   _buildFilterTabs(),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 40),
 
                   // 월별 거래 목록
                   ..._transactionsByMonth.entries.map(
@@ -199,7 +200,7 @@ class _FinancePageState extends State<FinancePage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildMonthLabel(entry.key),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 16),
                         _buildTransactionList(entry.value),
                         const SizedBox(height: 20),
                       ],
@@ -418,7 +419,7 @@ class _FinancePageState extends State<FinancePage> {
             ),
           ],
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
         child: Row(
           children: [
             Container(
@@ -443,11 +444,11 @@ class _FinancePageState extends State<FinancePage> {
                   'Split Bills',
                   style: TextStyle(
                     fontSize: 13.5,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                     color: dark,
                   ),
                 ),
-                SizedBox(height: 7),
+                SizedBox(height: 9),
                 Text(
                   'Splitting bills with roommates made easy.',
                   style: TextStyle(
@@ -509,22 +510,35 @@ class _FinancePageState extends State<FinancePage> {
   }
 
   Widget _buildMonthLabel(String month) {
-    return Text(
-      month,
-      style: const TextStyle(
-        fontSize: 15,
-        fontWeight: FontWeight.w700,
-        color: dark,
+    return Padding(
+      padding: EdgeInsets.only(left: 6),
+      child: Text(
+        month,
+        style: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w800,
+          color: dark,
+        ),
       ),
     );
   }
 
   Widget _buildTransactionList(List<TransactionItem> items) {
     return Container(
+      padding: const EdgeInsets.symmetric(
+        vertical: 16,
+        horizontal: 14,
+      ), // 리스트 안쪽 여유
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFEEEEEE), width: 1),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.14),
+            blurRadius: 5,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         children: List.generate(items.length, (i) {
@@ -532,7 +546,7 @@ class _FinancePageState extends State<FinancePage> {
             children: [
               _buildTransactionRow(items[i]),
               if (i < items.length - 1)
-                const Divider(height: 1, color: Color(0xFFF0F0F0)),
+                const SizedBox(height: 2), // 아이템끼리 간격 좁게
             ],
           );
         }),
@@ -541,67 +555,63 @@ class _FinancePageState extends State<FinancePage> {
   }
 
   Widget _buildTransactionRow(TransactionItem item) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      child: Row(
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 2,
+      ), // 아이템끼리 좁게
+      leading: Container(
+        width: 42,
+        height: 42,
+        decoration: const BoxDecoration(color: green, shape: BoxShape.circle),
+        alignment: Alignment.center,
+        child: SvgPicture.asset(
+          'assets/icons/coin-fill.svg',
+          width: 30,
+          height: 30,
+          fit: BoxFit.contain,
+        ),
+      ),
+      title: Text(
+        item.title,
+        style: const TextStyle(
+          fontSize: 13.5,
+          fontWeight: FontWeight.w800,
+          color: dark,
+        ),
+      ),
+      subtitle: Text(
+        item.subtitle,
+        style: const TextStyle(
+          fontSize: 10.5,
+          color: grey03,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      trailing: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: const BoxDecoration(
-              color: Color(0xFF6BCB77),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.attach_money,
-              size: 20,
-              color: Colors.white,
+          Text(
+            '${item.amount >= 0 ? '+' : '-'} \$${item.amount.abs().toInt()}',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              color: dark,
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A1A1A),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  item.subtitle,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF999999),
-                  ),
-                ),
-              ],
+          const SizedBox(height: 6),
+          Text(
+            item.date,
+            style: const TextStyle(
+              fontSize: 9.5,
+              color: grey03,
+              fontWeight: FontWeight.w700,
             ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '- \$${item.amount.abs().toInt()}',
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A1A1A),
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                item.date,
-                style: const TextStyle(fontSize: 11, color: Color(0xFF999999)),
-              ),
-            ],
           ),
         ],
       ),
+      dense: true,
     );
   }
 }
