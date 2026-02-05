@@ -158,7 +158,7 @@ class SocialCommPage extends StatelessWidget {
                     '1k',
                   ),
 
-                  const SizedBox(height: 80),
+                  const SizedBox(height: 18),
                 ],
               ),
             ),

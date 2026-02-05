@@ -20,6 +20,11 @@ class CommonTextField extends StatelessWidget {
   final void Function(String)? onChanged;
   final double bottomPadding;
 
+  final FontWeight labelFontWeight;
+  final double labelFontSize;
+  final EdgeInsetsGeometry prefixIconPadding;
+  final EdgeInsetsGeometry suffixIconPadding;
+
   const CommonTextField({
     super.key,
     required this.label,
@@ -38,6 +43,10 @@ class CommonTextField extends StatelessWidget {
     this.maxLines = 1,
     this.onChanged,
     this.bottomPadding = 16,
+    this.labelFontWeight = FontWeight.w700,
+    this.labelFontSize = 14,
+    this.prefixIconPadding = const EdgeInsets.fromLTRB(20, 0, 13, 0),
+    this.suffixIconPadding = const EdgeInsets.only(right: 20),
   });
 
   @override
@@ -47,15 +56,17 @@ class CommonTextField extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: const TextStyle(
-              color: dark,
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
+          if (label.isNotEmpty) ...[
+            Text(
+              label,
+              style: TextStyle(
+                color: dark,
+                fontSize: labelFontSize,
+                fontWeight: labelFontWeight,
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
+            const SizedBox(height: 12),
+          ],
 
           TextFormField(
             controller: controller,
@@ -79,10 +90,7 @@ class CommonTextField extends StatelessWidget {
               hintText: hintText,
               hintStyle: const TextStyle(color: grey02, fontSize: 12),
               prefixIcon: prefixIcon != null
-                  ? Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 13, 0),
-                      child: prefixIcon,
-                    )
+                  ? Padding(padding: prefixIconPadding, child: prefixIcon)
                   : null,
               prefixIconConstraints: const BoxConstraints(
                 minWidth: 20,
@@ -95,20 +103,14 @@ class CommonTextField extends StatelessWidget {
                 fontWeight: FontWeight.w700,
               ),
               suffixIcon: suffixIcon != null
-                  ? Padding(
-                      padding: const EdgeInsets.only(right: 20),
-                      child: suffixIcon,
-                    )
+                  ? Padding(padding: suffixIconPadding, child: suffixIcon)
                   : null,
-
               suffixIconConstraints: const BoxConstraints(
                 minWidth: 20,
                 minHeight: 20,
               ),
-
               filled: true,
               fillColor: Colors.white,
-
               enabledBorder: _border(grey01),
               focusedBorder: _border(grey02),
               errorBorder: _border(Colors.redAccent),

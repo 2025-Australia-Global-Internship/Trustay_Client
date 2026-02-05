@@ -221,6 +221,11 @@ class _HomePageState extends State<HomePage> {
                       selected: _selectedFilter == 'UNIT',
                       type: 'UNIT',
                     ),
+                    _filterChip(
+                      'Townhouse',
+                      selected: _selectedFilter == 'TOWNHOUSE',
+                      type: 'TOWNHOUSE',
+                    ),
                   ],
                 ),
               ),

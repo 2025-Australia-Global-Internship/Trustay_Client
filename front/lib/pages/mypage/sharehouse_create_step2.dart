@@ -10,6 +10,7 @@ import 'package:front/routes/navigation_type.dart';
 import 'package:front/widgets/common_text_field.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/services.dart';
+import 'package:front/pages/mypage/post_pending_approval.dart';
 
 class SharehouseCreateStep2Page extends StatefulWidget {
   final List<File> images;
@@ -54,7 +55,7 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
   final TextEditingController _rentController = TextEditingController();
 
   // Bond
-  int _bondWeeks = 2;
+  int? _bondWeeks;
   final List<int> _bondOptions = [2, 4];
   int? _customBondWeeks;
   final TextEditingController _customBondController = TextEditingController();
@@ -67,41 +68,41 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
   // Home Rules
   final Set<String> _selectedHomeRules = {};
   final Map<String, String> _homeRulesMap = {
-    'No smoking': 'NO_SMOKING',
-    'No parties': 'NO_PARTIES',
-    'Pets allowed': 'PETS_ALLOWED',
-    'Guests allowed': 'GUESTS_ALLOWED',
+    'No smoking': 'No smoking',
+    'No parties': 'No parties',
+    'Pets allowed': 'Pets allowed',
+    'Guests allowed': 'Guests allowed',
   };
 
   // Features
   final Set<String> _selectedFeatures = {};
   final Map<String, String> _featuresMap = {
-    'Double bed': 'DOUBLE_BED',
-    'Queen bed': 'QUEEN_BED',
-    'Bed side table': 'BED_SIDE_TABLE',
-    'Wardrobe': 'WARDROBE',
-    'Door lock': 'DOOR_LOCK',
-    'Couch': 'COUCH',
-    'Chair': 'CHAIR',
-    'Desk': 'DESK',
-    'Lamp': 'LAMP',
-    'Kitchenette': 'KITCHENETTE',
-    'Mirror': 'MIRROR',
-    'Fan': 'FAN',
-    'Air Conditioner': 'AIR_CONDITIONER',
-    'Heater': 'HEATER',
-    'Washing Machine': 'WASHING_MACHINE',
-    'Iron': 'IRON',
-    'Dining Table': 'DINING_TABLE',
-    'Dining Chairs': 'DINING_CHAIRS',
-    'Oven': 'OVEN',
-    'Microwave': 'MICROWAVE',
-    'Refrigerator': 'REFRIGERATOR',
-    'Stove': 'STOVE',
-    'Dishwasher': 'DISHWASHER',
-    'Kettle': 'KETTLE',
-    'Toaster': 'TOASTER',
-    'Coffee Maker': 'COFFEE_MAKER',
+    'Double bed': 'Double bed',
+    'Queen bed': 'Queen bed',
+    'Bed side table': 'Bed side table',
+    'Wardrobe': 'Wardrobe',
+    'Door lock': 'Door lock',
+    'Couch': 'Couch',
+    'Chair': 'Chair',
+    'Desk': 'Desk',
+    'Lamp': 'Lamp',
+    'Kitchenette': 'Kitchenette',
+    'Mirror': 'Mirror',
+    'Fan': 'Fan',
+    'Air Conditioner': 'Air Conditioner',
+    'Heater': 'Heater',
+    'Washing Machine': 'Washing Machine',
+    'Iron': 'Iron',
+    'Dining Table': 'Dining Table',
+    'Dining Chairs': 'Dining Chairs',
+    'Oven': 'Oven',
+    'Microwave': 'Microwave',
+    'Refrigerator': 'Refrigerator',
+    'Stove': 'Stove',
+    'Dishwasher': 'Dishwasher',
+    'Kettle': 'Kettle',
+    'Toaster': 'Toaster',
+    'Coffee Maker': 'Coffee Maker',
   };
 
   // Bedroom / Bathroom / Resident 카운터
@@ -284,13 +285,27 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
                       const SizedBox(height: 26),
 
                       _buildGender(),
+                      const SizedBox(height: 26),
+
+                      _buildAge(),
+                      const SizedBox(height: 26),
+
+                      _buildReligion(),
                       const SizedBox(height: 42),
 
                       PrimaryButton(
                         formKey: _formKey,
                         text: 'Publish',
-                        isLoading: _isLoading,
-                        onAction: _submitListing,
+                        isLoading: false, // 로딩 없이
+                        onAction: () {
+                          // 바로 확인 페이지로 이동
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const PostPendingApprovalPage(),
+                            ),
+                          );
+                        },
                         successMessage: '매물이 등록되었습니다!',
                         failMessage: '등록 실패',
                         navigationType: NavigationType.clearStack,
@@ -419,6 +434,8 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
   Widget _buildRent() {
     return CommonTextField(
       label: 'Rent',
+      labelFontWeight: FontWeight.w800,
+      labelFontSize: 15,
       controller: _rentController,
       keyboardType: TextInputType.number,
       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -464,8 +481,37 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
               label: _customBondWeeks != null
                   ? '${_customBondWeeks} weeks'
                   : 'Custom',
-              selected: _customBondWeeks != null,
-              onSelected: _showCustomBondDialog,
+              selected: _bondWeeks == null && _customBondWeeks != null,
+              onSelected: () {
+                setState(() {
+                  _bondWeeks = null;
+                });
+              },
+            ),
+            CommonTextField(
+              label: '',
+              controller: _customBondController,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              prefixIcon: SvgPicture.asset(
+                'assets/icons/coin.svg',
+                width: 20,
+                height: 20,
+                color: dark,
+              ),
+              prefixIconPadding: const EdgeInsets.fromLTRB(14, 0, 9, 0),
+              suffixText: 'week',
+              hintText: '0',
+              bottomPadding: 0,
+              readOnly: false,
+              onChanged: (value) {
+                setState(() {
+                  _customBondWeeks = int.tryParse(value);
+                  if (_customBondWeeks != null) {
+                    _bondWeeks = null;
+                  }
+                });
+              },
             ),
           ],
         ),
@@ -473,7 +519,6 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
     );
   }
 
-  // ─── Minimum Stay ────────────────────────────────────────────
   Widget _buildMinimumStay() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -498,11 +543,36 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
               },
             ),
             _buildChoiceChip(
-              label: _customMinimumStay != null
-                  ? '${_customMinimumStay} weeks'
-                  : 'Custom',
-              selected: _customMinimumStay != null,
-              onSelected: _showCustomStayDialog,
+              label: 'Custom',
+              selected: _minimumStay == 'Custom', // 이 부분 수정!
+              onSelected: () {
+                setState(() {
+                  _minimumStay = 'Custom';
+                });
+              },
+            ),
+            CommonTextField(
+              label: '',
+              controller: _customStayController,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              prefixIcon: SvgPicture.asset(
+                'assets/icons/home.svg',
+                width: 16,
+                height: 16,
+                color: dark,
+              ),
+              prefixIconPadding: const EdgeInsets.fromLTRB(16, 0, 10, 0),
+              suffixText: 'week',
+              hintText: '0',
+              bottomPadding: 0,
+              readOnly: _minimumStay != 'Custom',
+              onChanged: (value) {
+                setState(() {
+                  _customMinimumStay = int.tryParse(value);
+                  if (_customMinimumStay != null) _minimumStay = 'Custom';
+                });
+              },
             ),
           ],
         ),
@@ -740,6 +810,78 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
     );
   }
 
+  // ─── Age ──────────────────────────────────────────────────
+  Widget _buildAge() {
+    // TODO: 아직 보이기만 해요
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTitle('Age'),
+        const SizedBox(height: 16),
+        Wrap(
+          spacing: 6,
+          runSpacing: 8,
+          children: [
+            _buildChoiceChip(
+              label: 'No age rejection',
+              selected:
+                  _minimumStay == 'No minimum stay' &&
+                  _customMinimumStay == null,
+              onSelected: () {
+                setState(() {
+                  _minimumStay = 'No minimum stay';
+                  _customMinimumStay = null;
+                  _customStayController.clear();
+                });
+              },
+            ),
+            _buildChoiceChip(
+              label: 'Specify minimum age',
+              selected: _minimumStay == 'Specify minimum age',
+              onSelected: () {
+                setState(() {
+                  _minimumStay = 'Specify minimum age';
+                });
+              },
+            ),
+            CommonTextField(
+              label: '',
+              controller: _customStayController,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              prefixIcon: SvgPicture.asset(
+                'assets/icons/social.svg',
+                width: 16,
+                height: 16,
+                color: dark,
+              ),
+              prefixIconPadding: const EdgeInsets.fromLTRB(16, 0, 10, 0),
+              suffixText: 'Age',
+              hintText: '0',
+              bottomPadding: 0,
+              readOnly: _minimumStay != 'Specify minimum age',
+              onChanged: (value) {
+                setState(() {
+                  _customMinimumStay = int.tryParse(value);
+                  if (_customMinimumStay != null) _minimumStay = 'Custom';
+                });
+              },
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildReligion() {
+    return CommonTextField(
+      label: 'Religion',
+      labelFontWeight: FontWeight.w800,
+      labelFontSize: 15,
+      bottomPadding: 0,
+    );
+  }
+
   // ─── Reusable Checkbox Tile ──────────────────────────────────
   Widget _buildCheckboxTile({
     required String label,
@@ -802,77 +944,6 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
             color: selected ? Colors.white : dark,
           ),
         ),
-      ),
-    );
-  }
-
-  // ─── Custom Bond Dialog ──────────────────────────────────────
-  void _showCustomBondDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Custom Bond'),
-        content: TextField(
-          controller: _customBondController,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            labelText: 'Weeks',
-            hintText: 'Enter number of weeks',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              if (_customBondController.text.isNotEmpty) {
-                setState(() {
-                  _customBondWeeks = int.tryParse(_customBondController.text);
-                });
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ─── Custom Minimum Stay Dialog ──────────────────────────────
-  void _showCustomStayDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Custom Minimum Stay'),
-        content: TextField(
-          controller: _customStayController,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            labelText: 'Weeks',
-            hintText: 'Enter number of weeks',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              if (_customStayController.text.isNotEmpty) {
-                setState(() {
-                  _customMinimumStay = int.tryParse(_customStayController.text);
-                  _minimumStay = 'Custom';
-                });
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('OK'),
-          ),
-        ],
       ),
     );
   }

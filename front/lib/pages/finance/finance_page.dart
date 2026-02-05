@@ -73,7 +73,6 @@ class _FinancePageState extends State<FinancePage> {
         date: '1/9 · 09:40AM',
         amount: -24,
       ),
-
       const TransactionItem(
         title: 'Rent Due',
         subtitle: 'My wallet → Olivia',
@@ -82,6 +81,34 @@ class _FinancePageState extends State<FinancePage> {
       ),
     ],
   };
+
+  // 필터링된 거래 내역 가져오기
+  Map<String, List<TransactionItem>> _getFilteredTransactions() {
+    if (_selectedFilter == 0) {
+      // All splits - 전체 표시
+      return _transactionsByMonth;
+    }
+
+    Map<String, List<TransactionItem>> filtered = {};
+
+    _transactionsByMonth.forEach((month, transactions) {
+      List<TransactionItem> filteredList = transactions.where((item) {
+        if (_selectedFilter == 1) {
+          // You paid - 음수 (내가 지불)
+          return item.amount < 0;
+        } else {
+          // Mate paid - 양수 (메이트가 지불)
+          return item.amount > 0;
+        }
+      }).toList();
+
+      if (filteredList.isNotEmpty) {
+        filtered[month] = filteredList;
+      }
+    });
+
+    return filtered;
+  }
 
   // 해당 월의 첫 번째 날의 요일 인덱스 (0=일요일)
   int _getFirstDayOfMonth(DateTime date) {
@@ -135,6 +162,8 @@ class _FinancePageState extends State<FinancePage> {
 
   @override
   Widget build(BuildContext context) {
+    final filteredTransactions = _getFilteredTransactions();
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: GradientLayout(
@@ -194,18 +223,33 @@ class _FinancePageState extends State<FinancePage> {
                   _buildFilterTabs(),
                   const SizedBox(height: 40),
 
-                  // 월별 거래 목록
-                  ..._transactionsByMonth.entries.map(
-                    (entry) => Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildMonthLabel(entry.key),
-                        const SizedBox(height: 16),
-                        _buildTransactionList(entry.value),
-                        const SizedBox(height: 20),
-                      ],
+                  // 월별 거래 목록 (필터링됨)
+                  if (filteredTransactions.isEmpty)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(40),
+                        child: Text(
+                          'No transactions found',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: grey03,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    ...filteredTransactions.entries.map(
+                      (entry) => Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildMonthLabel(entry.key),
+                          const SizedBox(height: 16),
+                          _buildTransactionList(entry.value),
+                          const SizedBox(height: 20),
+                        ],
+                      ),
                     ),
-                  ),
                 ]),
               ),
             ),
@@ -337,11 +381,10 @@ class _FinancePageState extends State<FinancePage> {
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 7,
         mainAxisExtent: 36,
-        mainAxisSpacing: 10, // 행 간격
+        mainAxisSpacing: 10,
       ),
       itemCount: totalCells,
       itemBuilder: (_, index) {
-        // 이전 달 날짜
         if (index < firstDayIndex) {
           final prevMonthDay = daysInPrevMonth - (firstDayIndex - index - 1);
           return Align(
@@ -355,7 +398,6 @@ class _FinancePageState extends State<FinancePage> {
 
         final dayNumber = index - firstDayIndex + 1;
 
-        // 다음 달 날짜
         if (dayNumber > daysInMonth) {
           final nextMonthDay = dayNumber - daysInMonth;
           return Align(
@@ -525,10 +567,7 @@ class _FinancePageState extends State<FinancePage> {
 
   Widget _buildTransactionList(List<TransactionItem> items) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        vertical: 16,
-        horizontal: 14,
-      ), // 리스트 안쪽 여유
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
@@ -545,8 +584,7 @@ class _FinancePageState extends State<FinancePage> {
           return Column(
             children: [
               _buildTransactionRow(items[i]),
-              if (i < items.length - 1)
-                const SizedBox(height: 2), // 아이템끼리 간격 좁게
+              if (i < items.length - 1) const SizedBox(height: 2),
             ],
           );
         }),
@@ -556,10 +594,7 @@ class _FinancePageState extends State<FinancePage> {
 
   Widget _buildTransactionRow(TransactionItem item) {
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: 2,
-      ), // 아이템끼리 좁게
+      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
       leading: Container(
         width: 42,
         height: 42,
