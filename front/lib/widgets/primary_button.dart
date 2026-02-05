@@ -12,6 +12,8 @@ class PrimaryButton extends StatelessWidget {
   final String? nextRoute;
   final NavigationType navigationType;
   final bool enabled;
+  final Color color;
+  final Color textColor;
 
   const PrimaryButton({
     super.key,
@@ -24,6 +26,8 @@ class PrimaryButton extends StatelessWidget {
     this.isLoading = false,
     this.navigationType = NavigationType.push,
     this.enabled = true,
+    this.color = yellow,
+    this.textColor = darkgreen,
   });
 
   void _navigate(BuildContext context) {
@@ -59,10 +63,10 @@ class PrimaryButton extends StatelessWidget {
             if (states.contains(MaterialState.disabled)) {
               return const Color(0xFFFFF8B6); // 비활성화 색상
             }
-            return yellow; // 활성화 색상
+            return color; // 활성화 색상
           }),
           foregroundColor: MaterialStateProperty.all(
-            enabled ? darkgreen : grey02,
+            enabled ? textColor : grey02,
           ),
           elevation: MaterialStateProperty.all(0),
           shape: MaterialStateProperty.all(

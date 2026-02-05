@@ -167,31 +167,31 @@ class _ListingPage extends State<ListingPage> {
       return const Center(child: CircularProgressIndicator(color: green));
     }
 
-    if (_hasError) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text("매물 정보를 불러오지 못했습니다.", style: TextStyle(color: grey02)),
-            const SizedBox(height: 10),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  _isLoading = true;
-                });
-                _loadData();
-              },
-              child: const Text(
-                "다시 시도",
-                style: TextStyle(color: dark, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
+    // if (_hasError) {
+    //   return Center(
+    //     child: Column(
+    //       mainAxisAlignment: MainAxisAlignment.center,
+    //       children: [
+    //         const Text("매물 정보를 불러오지 못했습니다.", style: TextStyle(color: grey02)),
+    //         const SizedBox(height: 10),
+    //         TextButton(
+    //           onPressed: () {
+    //             setState(() {
+    //               _isLoading = true;
+    //             });
+    //             _loadData();
+    //           },
+    //           child: const Text(
+    //             "다시 시도",
+    //             style: TextStyle(color: dark, fontWeight: FontWeight.bold),
+    //           ),
+    //         ),
+    //       ],
+    //     ),
+    //   );
+    // }
 
-    if (_listings.isEmpty) {
+    if (_listings.isEmpty || _hasError) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -221,7 +221,7 @@ class _ListingPage extends State<ListingPage> {
               style: TextStyle(
                 fontSize: 14,
                 color: grey02,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w400,
               ),
             ),
           ],

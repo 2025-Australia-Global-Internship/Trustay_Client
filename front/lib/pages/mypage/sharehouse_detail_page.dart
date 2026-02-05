@@ -338,14 +338,20 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
 
   Widget _buildTitlePrice(SharehouseDetailModel house) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // 제목 부분
         Expanded(
           child: Text(
             house.title,
             style: const TextStyle(fontSize: 23, fontWeight: FontWeight.w800),
+            maxLines: 2, // 원하면 줄 수 제한
+            overflow: TextOverflow.ellipsis, // 길면 ... 처리
           ),
         ),
+
+        const SizedBox(width: 8), // 제목과 가격 사이 간격
+        // 가격 부분 (항상 오른쪽 끝)
         Row(
           children: [
             Text(
@@ -668,6 +674,12 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
             ?.split(',')
             .map((e) => e.trim())
             .where((e) => e.isNotEmpty)
+            .map((e) {
+              // _ → 공백으로 바꾸고, 첫 글자만 대문자, 나머지는 소문자
+              final formatted = e.replaceAll('_', ' ');
+              return formatted[0].toUpperCase() +
+                  formatted.substring(1).toLowerCase();
+            })
             .toList() ??
         [];
     return Column(
@@ -683,8 +695,8 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
         ),
         const SizedBox(height: 20),
         Wrap(
-          spacing: 12,
-          runSpacing: 12,
+          spacing: 24,
+          runSpacing: 18,
           children: items.map((e) => _buildCheckChip(e)).toList(),
         ),
       ],
