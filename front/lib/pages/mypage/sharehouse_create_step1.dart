@@ -130,18 +130,18 @@ class _SharehouseCreateStep1PageState extends State<SharehouseCreateStep1Page> {
     // 폼 validator 밖의 추가 검증
     if (_selectedImages.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('최소 1개 이상의 이미지를 선택해주세요.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("You must select at least one image.")),
+        );
       }
       return false;
     }
 
     if (_selectedAddressIndex == -1) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('주소를 선택해주세요.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("You must select an address.")),
+        );
       }
       return false;
     }
@@ -208,14 +208,14 @@ class _SharehouseCreateStep1PageState extends State<SharehouseCreateStep1Page> {
                         },
                       ),
 
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 14),
 
-                      // 짧은 설명
+                      // 설명
                       CommonTextField(
                         label: 'Short Description',
                         controller: _descriptionController,
                         hintText: 'e.g. Bright room near tram, quiet house',
-                        maxLines: 4,
+                        maxLines: 6,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
                             return 'This field is required';
@@ -225,20 +225,20 @@ class _SharehouseCreateStep1PageState extends State<SharehouseCreateStep1Page> {
                         bottomPadding: 0,
                       ),
 
+                      const SizedBox(height: 12),
+
                       // 주소 검색
                       _buildAddressSearch(),
-
-                      // 상세 주소
-                      CommonTextField(
-                        label: '',
-                        controller: _detailedAddressController,
-                        hintText: 'Exact address will not be shown publicly',
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'This field is required';
-                          }
-                          return null;
-                        },
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(8, 10, 16, 0),
+                        child: Text(
+                          'Exact address will not be shown publicly',
+                          style: TextStyle(
+                            color: grey02,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
 
                       const SizedBox(height: 32),
@@ -299,7 +299,7 @@ class _SharehouseCreateStep1PageState extends State<SharehouseCreateStep1Page> {
                       Icon(Icons.photo_camera, color: grey02, size: 32),
                       SizedBox(height: 6),
                       Text(
-                        'Minimum 3',
+                        'Photos',
                         style: TextStyle(
                           fontSize: 12,
                           color: grey02,
