@@ -30,12 +30,19 @@ public class ChatMessage extends BaseEntity { // BaseEntity 상속으로 변경
 
     private boolean isRead; // 읽음 확인
 
+    /** 종이 계약 스캔(OCR·PDF) 문서와 연결 (CONTRACT 메시지용, 선택) */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "paper_contract_doc_id")
+    private PaperContractDocument paperContractDocument;
+
     @Builder
-    public ChatMessage(ChatRoom chatRoom, Member sender, String message, MessageType messageType) {
+    public ChatMessage(ChatRoom chatRoom, Member sender, String message, MessageType messageType,
+                        PaperContractDocument paperContractDocument) {
         this.chatRoom = chatRoom;
         this.sender = sender;
         this.message = message;
         this.messageType = messageType;
+        this.paperContractDocument = paperContractDocument;
         this.isRead = false; // 기본값 미읽음
     }
 

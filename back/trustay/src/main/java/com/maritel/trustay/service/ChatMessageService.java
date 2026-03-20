@@ -1,10 +1,12 @@
 package com.maritel.trustay.service;
 
+import com.maritel.trustay.constant.MessageType;
 import com.maritel.trustay.dto.req.ChatMessageReq;
 import com.maritel.trustay.dto.res.ChatMessageRes;
 import com.maritel.trustay.entity.ChatMessage;
 import com.maritel.trustay.entity.ChatRoom;
 import com.maritel.trustay.entity.Member;
+import com.maritel.trustay.entity.PaperContractDocument;
 import com.maritel.trustay.repository.ChatMessageRepository;
 import com.maritel.trustay.repository.ChatRoomRepository;
 import com.maritel.trustay.repository.MemberRepository;
@@ -37,6 +39,28 @@ public class ChatMessageService {
                 .sender(sender)
                 .message(req.getMessage())
                 .messageType(req.getMessageType())
+                .build();
+
+        chatMessageRepository.save(chatMessage);
+        return ChatMessageRes.of(chatMessage);
+    }
+
+    /**
+     * 종이 계약 OCR/PDF 완료 후 채팅방에 CONTRACT 메시지 전송용
+     */
+    public ChatMessageRes saveContractScanMessage(Long roomId, Long senderId, String pdfUrl,
+                                                  PaperContractDocument paperContractDocument) {
+        ChatRoom room = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new EntityNotFoundException("채팅방이 존재하지 않습니다."));
+        Member sender = memberRepository.findById(senderId)
+                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
+
+        ChatMessage chatMessage = ChatMessage.builder()
+                .chatRoom(room)
+                .sender(sender)
+                .message(pdfUrl)
+                .messageType(MessageType.CONTRACT)
+                .paperContractDocument(paperContractDocument)
                 .build();
 
         chatMessageRepository.save(chatMessage);
