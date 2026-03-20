@@ -12,6 +12,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.net.MalformedURLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -101,6 +102,79 @@ public class FileService {
         String uploadedURLPath = String.format("https://%s/images/%s/%s",
                 serverDomain, datePath, filename);
         return uploadedURLPath;
+    }
+
+    /**
+     * 계약서 스캔 원본 이미지 저장. URL 경로: /images/contracts/scans/…
+     */
+    public String uploadContractScanImage(MultipartFile file) throws MalformedURLException, BadRequestException {
+        if (file == null || file.isEmpty()) {
+            throw new BadRequestException("파일이 제공되지 않았습니다.");
+        }
+        String fileExt = FileUtils.extension(file.getContentType());
+        if (!(fileExt.equals(".jpg") || fileExt.equals(".jpeg") || fileExt.equals(".png")
+                || fileExt.equals(".heic") || fileExt.equals(".heif"))) {
+            log.warn("계약 스캔에 지원하지 않는 형식: {}", fileExt);
+            throw new BadRequestException("지원하지 않는 이미지 형식입니다.");
+        }
+        String fileName = getNewFileName(fileExt);
+        return uploadLocalUnderPrefix("contracts/scans", fileName, file);
+    }
+
+    /**
+     * OCR 결과 PDF 저장. URL 경로: /images/contracts/pdf/…
+     */
+    public String saveContractPdf(byte[] pdfBytes) {
+        if (pdfBytes == null || pdfBytes.length == 0) {
+            throw new IllegalArgumentException("PDF 데이터가 비어 있습니다.");
+        }
+        LocalDate nowDate = LocalDate.now();
+        String datePath = String.format("%04d/%02d/%02d",
+                nowDate.getYear(),
+                nowDate.getMonth().getValue(),
+                nowDate.getDayOfMonth());
+        String relativeDir = "contracts/pdf/" + datePath;
+        String fullPath = imageStoragePath + "/" + relativeDir.replace("/", java.io.File.separator);
+        FileUtils.hasDirectoryAndMkDir(fullPath);
+
+        String fileName = getNewFileName(".pdf");
+        java.io.File outFile = new java.io.File(fullPath, fileName);
+        try {
+            Files.write(outFile.toPath(), pdfBytes);
+        } catch (IOException e) {
+            log.error("PDF 저장 실패", e);
+            throw new RuntimeException("PDF 저장 실패: " + e.getLocalizedMessage());
+        }
+        return String.format("https://%s/images/%s/%s", serverDomain, relativeDir.replace("\\", "/"), fileName);
+    }
+
+    private String uploadLocalUnderPrefix(String pathPrefix, String filename, MultipartFile file)
+            throws MalformedURLException, BadRequestException {
+        LocalDate nowDate = LocalDate.now();
+        String datePath = String.format("%04d/%02d/%02d",
+                nowDate.getYear(),
+                nowDate.getMonth().getValue(),
+                nowDate.getDayOfMonth());
+        String relativeDir = pathPrefix + "/" + datePath;
+        String fullPath = imageStoragePath + "/" + relativeDir.replace("/", java.io.File.separator);
+        FileUtils.hasDirectoryAndMkDir(fullPath);
+
+        try {
+            java.io.File dir = new java.io.File(fullPath);
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+            try (java.io.FileOutputStream fos = new java.io.FileOutputStream(new java.io.File(dir, filename));
+                 java.io.BufferedOutputStream stream = new java.io.BufferedOutputStream(fos)) {
+                stream.write(file.getBytes());
+            }
+        } catch (IOException e) {
+            log.error("파일 업로드 중 오류", e);
+            throw new RuntimeException("파일 업로드 실패: " + e.getLocalizedMessage());
+        }
+
+        return String.format("https://%s/images/%s/%s",
+                serverDomain, relativeDir.replace("\\", "/"), filename);
     }
 
     /* 새 파일명 규칙 적용 */

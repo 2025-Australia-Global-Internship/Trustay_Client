@@ -13,7 +13,7 @@ public class PatternConstants {
     public static final String PASSWORD_REGEX = "^[a-zA-Z0-9!@#$%^&*?_]{8,50}$";
     public static final String BIRTH_REGEX = "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$";
     public static final String PHONE_REGEX = "^(0\\d{1,2})-(\\d{3,4})-(\\d{4})$";
-    public static final String ACCOUNT_REGEX = "([0-9,\\-]{3,6}\\-[0-9,\\-]{2,6}\\-[0-9,\\-])\n";
+    public static final String ACCOUNT_REGEX = "^[0-9]{2,6}(-[0-9]{2,7}){1,3}$\n";
 
     public static final String EMAIL_MESSAGE = "이메일 형식이 올바르지 않습니다.";
     public static final String NAME_MESSAGE = "이름은 문자만 입력 가능합니다.";
