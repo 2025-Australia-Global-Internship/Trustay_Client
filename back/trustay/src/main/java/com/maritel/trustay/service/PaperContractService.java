@@ -27,6 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -82,7 +83,11 @@ public class PaperContractService {
                 throw new BadRequestException("이미지를 읽을 수 없는 파일이 포함되어 있습니다: " + file.getOriginalFilename());
             }
             bufferedImages.add(bi);
-            imageUrls.add(fileService.uploadContractScanImage(file));
+            try {
+                imageUrls.add(fileService.uploadContractScanImage(file));
+            } catch (MalformedURLException e) {
+                throw new IllegalStateException("이미지 업로드 경로가 잘못되었습니다: " + file.getOriginalFilename(), e);
+            }
         }
 
         if (bufferedImages.isEmpty()) {
