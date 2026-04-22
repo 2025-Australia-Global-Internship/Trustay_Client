@@ -56,6 +56,12 @@ public enum ResponseCode {
     NOT_FOUND_LOUNGE_COMMENT_LIKE(4041, "라운지 댓글 좋아요가 존재하지 않습니다"),
     NOT_FOUND_RESERVATION(4041, "예약이 존재하지 않습니다"),
     NOT_FOUND_REVIEW(4041, "리뷰가 존재하지 않습니다"),
+    NOT_FOUND_PAYMENT(4042, "결제 건을 찾을 수 없습니다."),
+    NOT_FOUND_CONTRACT(4043, "계약을 찾을 수 없습니다."),
+
+    NOT_CONTRACT_TENANT(4032, "해당 계약의 세입자만 이 결제를 진행할 수 있습니다."),
+
+    TOSS_PAYMENT_FAILED(5001, "토스 결제 승인에 실패했습니다."),
     ;
 
     private final int code;
