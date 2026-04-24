@@ -65,13 +65,13 @@ class PaymentControllerTest {
         req.setTotalAmount(3000L);
         req.setMemberIds(List.of(1L, 2L, 3L));
         req.setPayeeMemberId(1L);
-        when(paymentService.createDutchPay("user@example.com", req)).thenReturn(DutchPayCreateRes.builder().groupId(1L).build());
+        when(paymentService.createDutchPay("user@example.com", req)).thenReturn(DutchPayCreateRes.builder().dutchPayGroupId(1L).build());
 
         ResponseEntity<DataResponse<DutchPayCreateRes>> response = paymentController.createDutch(principal, req);
 
         assertNotNull(response.getBody());
         assertEquals(200, response.getBody().getCode());
-        assertEquals(1L, response.getBody().getData().getGroupId());
+        assertEquals(1L, response.getBody().getData().getDutchPayGroupId());
     }
 
     @Test
