@@ -23,10 +23,10 @@ class DateUtilsTest {
     }
 
     @Test
-    void getToLocalDate_formatsDateAsDashSeparated() {
+    void getToLocalDate_formatsDateAsKoreanDate() {
         String formatted = DateUtils.getToLocalDate(LocalDate.of(2026, 4, 22));
 
-        assertEquals("2026-04-22", formatted);
+        assertEquals("2026년 04월 22일", formatted);
     }
 
     @Test
