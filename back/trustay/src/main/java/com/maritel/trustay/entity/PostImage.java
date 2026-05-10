@@ -2,9 +2,11 @@ package com.maritel.trustay.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Check;
 
 @Entity
 @Table(name = "TBL_POST_IMAGE")
+@Check(constraints = "display_order >= 0")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PostImage extends BaseEntity {

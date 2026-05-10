@@ -17,15 +17,15 @@ public class Contract extends BaseEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "house_id")
+    @JoinColumn(name = "house_id", nullable = false)
     private Sharehouse sharehouse;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "landlord_id")
+    @JoinColumn(name = "landlord_id", nullable = false)
     private Member landlord; // 집주인
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tenant_id")
+    @JoinColumn(name = "tenant_id", nullable = false)
     private Member tenant; // 세입자
 
     @OneToOne(fetch = FetchType.LAZY) // 계약서 스캔본 1:1
@@ -36,6 +36,7 @@ public class Contract extends BaseEntity {
     private String ocrTextData; // OCR로 추출한 텍스트 데이터
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
     private ContractStatus status; // 작성중, 서명완료, 보관중, 만료됨
 
     private LocalDate contractStartDate;

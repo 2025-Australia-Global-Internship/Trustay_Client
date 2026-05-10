@@ -2,9 +2,11 @@ package com.maritel.trustay.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Check;
 
 @Entity
 @Table(name = "TBL_DUTCH_PAY_GROUP")
+@Check(constraints = "total_amount > 0")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class DutchPayGroup extends BaseEntity {

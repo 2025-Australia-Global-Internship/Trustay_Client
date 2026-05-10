@@ -4,6 +4,7 @@ import com.maritel.trustay.constant.PaymentStatus;
 import com.maritel.trustay.constant.PaymentType;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Check;
 
 import java.time.LocalDateTime;
 
@@ -11,6 +12,7 @@ import java.time.LocalDateTime;
 @Table(name = "TBL_PAYMENT", uniqueConstraints = {
         @UniqueConstraint(name = "uk_payment_order_id", columnNames = "order_id")
 })
+@Check(constraints = "amount > 0")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Payment extends BaseEntity {
@@ -21,7 +23,7 @@ public class Payment extends BaseEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id")
+    @JoinColumn(name = "member_id", nullable = false)
     private Member member; // 돈을 낸 사람
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -32,15 +34,15 @@ public class Payment extends BaseEntity {
     private Long amount;
 
     /** 집주인/정산 담당 등 실제 이체 대상 계좌 안내 문자열 */
-    @Column(nullable = false)
+    @Column(nullable = false, length = 100)
     private String targetAccount;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 30)
     private PaymentType type;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 30)
     private PaymentStatus status = PaymentStatus.PENDING;
 
     @Column(name = "order_id", nullable = false, length = 100)
@@ -53,6 +55,7 @@ public class Payment extends BaseEntity {
     @JoinColumn(name = "dutch_pay_group_id")
     private DutchPayGroup dutchPayGroup;
 
+    @Column(nullable = false)
     private LocalDateTime transactionDate;
 
     @Column(nullable = false)

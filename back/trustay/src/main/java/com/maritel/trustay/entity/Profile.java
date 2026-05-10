@@ -15,11 +15,12 @@ import java.util.Set;
 public class Profile {
 
     @Id
+    @Column(name = "member_id")
     private Long memberId;
 
     @MapsId // Member의 ID를 PK이자 FK로 사용
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id")
+    @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
     @Column(length = 25)
@@ -38,10 +39,10 @@ public class Profile {
     @ElementCollection(targetClass = Role.class, fetch = FetchType.EAGER)
     @CollectionTable(name = "TBL_PROFILE_ROLES", joinColumns = @JoinColumn(name = "member_id"))
     @Enumerated(EnumType.STRING)
-    @Column(name = "role") // 테이블 내 컬럼명
+    @Column(name = "role", nullable = false, length = 30) // 테이블 내 컬럼명
     private Set<Role> roles = new HashSet<>();
 
-    @Column(length = 50)
+    @Column(length = 100)
     private String accountInfo; // 정산용 계좌 정보
 
     // --- 추가된 필드 ---

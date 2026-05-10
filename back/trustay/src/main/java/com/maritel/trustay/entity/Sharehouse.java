@@ -5,10 +5,12 @@ import com.maritel.trustay.constant.HouseType;
 import com.maritel.trustay.constant.RoomType;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Check;
 import org.hibernate.annotations.ColumnDefault;
 
 @Entity
 @Table(name = "TBL_SHAREHOUSE")
+@Check(constraints = "view_count >= 0 AND wish_count >= 0 AND rent_price > 0")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Sharehouse extends BaseEntity {
@@ -19,7 +21,7 @@ public class Sharehouse extends BaseEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "host_id") // 집주인 Member ID
+    @JoinColumn(name = "host_id", nullable = false) // 집주인 Member ID
     private Member host;
 
     // --- 기본 정보 ---
@@ -27,15 +29,17 @@ public class Sharehouse extends BaseEntity {
     private String title;
 
     @Lob // 대용량 텍스트
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String description;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 255)
     private String address;
 
     @Column(nullable = false)
     @ColumnDefault("0") // DB 생성 시 기본값 0
     private Integer viewCount = 0;
 
+    @Column(nullable = false)
     @ColumnDefault("0")
     private Integer wishCount = 0; // 찜 개수
 
@@ -45,15 +49,17 @@ public class Sharehouse extends BaseEntity {
 
     // --- 매물 상세 정보 ---
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
     private HouseType houseType; // APARTMENT, HOUSE, UNIT...
 
+    @Column(nullable = false)
     private Integer rentPrice; // 렌트비
 
     private Integer roomCount;
     private Integer bathroomCount;
     private Integer currentResidents; // 현재 거주 인원
 
-    @Column(name = "bills_included")
+    @Column(name = "bills_included", nullable = false)
     private Boolean billsIncluded; // Bills Included
 
 
@@ -61,16 +67,16 @@ public class Sharehouse extends BaseEntity {
     @Column(name = "room_type")
     private RoomType roomType; // Room Type (e.g. Single, Double)
 
-    @Column(name = "bond_type")
+    @Column(name = "bond_type", nullable = false)
     private Integer bondType; // 2weeks, 4weeks, custom
 
-    @Column(name = "minimum_stay")
+    @Column(name = "minimum_stay", nullable = false)
     private Integer minimumStay; // Minimum Stay (e.g. weeks)
 
-    @Column(length = 50)
+    @Column(nullable = false, length = 50)
     private String gender; // 선호 성별
 
-    @Column(length = 50)
+    @Column(nullable = false, length = 50)
     private String age; // 선호 연령
 
     @Column(length = 100)
@@ -89,6 +95,7 @@ public class Sharehouse extends BaseEntity {
 
     // --- 관리 정보 ---
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
     private ApprovalStatus approvalStatus; // PENDING, ACTIVE, REJECTED
 
     @Builder
