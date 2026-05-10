@@ -20,16 +20,18 @@ public class ChatRoom extends BaseEntity {
     private Sharehouse sharehouse;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sender_id") // 채팅을 먼저 건 사람 (보통 세입자)
+    @JoinColumn(name = "sender_id", nullable = false) // 채팅을 먼저 건 사람 (보통 세입자)
     private Member sender;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "receiver_id") // 받는 사람 (보통 집주인)
+    @JoinColumn(name = "receiver_id", nullable = false) // 받는 사람 (보통 집주인)
     private Member receiver;
 
+    @Column(nullable = false)
     @ColumnDefault("false")
     private Boolean leftBySender = false;
 
+    @Column(nullable = false)
     @ColumnDefault("false")
     private Boolean leftByReceiver = false;
 

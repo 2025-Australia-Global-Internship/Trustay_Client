@@ -17,10 +17,9 @@ import java.time.LocalDateTime;
 public class BaseEntity {
 
     @CreatedDate
-    @Column(name = "regTime", updatable = false)
+    @Column(name = "regTime", nullable = false, updatable = false)
     private LocalDateTime regTime;
 
-    // [수정] 주석 해제하여 수정 시간 기록 활성화
     @LastModifiedDate
     @Column(name = "modTime")
     private LocalDateTime modTime;
