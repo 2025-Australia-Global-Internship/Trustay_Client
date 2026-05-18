@@ -9,9 +9,11 @@ import '../models/sharehouse_model.dart'; // 홈 화면 목록용 모델
 import '../models/listing_model.dart'; // 마이페이지 목록용 모델 (MyListingItem)
 import '../models/sharehouse_detail_model.dart'; // 상세 조회용 모델
 
+import '../constants/api_constants.dart';
+
 class SharehouseService {
-  // API 기본 주소
-  static const String _baseUrl = 'https://trustay.digitalbasis.com';
+  // baseUrl is provided by ApiConstants
+  static const String _apiBase = '${ApiConstants.baseUrl}/api/trustay';
 
   // ------------------------------------------------------------------------
   // [공통] 내부 헬퍼 메서드
@@ -43,7 +45,7 @@ class SharehouseService {
   // ------------------------------------------------------------------------
   static Future<List<String>> uploadImages(List<File> imageFiles) async {
     try {
-      final uri = Uri.parse('$_baseUrl/api/trustay/sharehouses/images');
+      final uri = Uri.parse('$_apiBase/sharehouses/images');
       var request = http.MultipartRequest('POST', uri);
 
       // 이미지 파일 추가
@@ -80,7 +82,7 @@ class SharehouseService {
   static Future<bool> createSharehouse(SharehouseCreateRequest request) async {
     try {
       final token = await _getToken();
-      final uri = Uri.parse('$_baseUrl/api/trustay/sharehouses');
+      final uri = Uri.parse('$_apiBase/sharehouses');
 
       final response = await http.post(
         uri,
@@ -116,9 +118,7 @@ class SharehouseService {
         queryParams['houseType'] = filterType;
       }
 
-      final uri = Uri.parse(
-        '$_baseUrl/api/trustay/sharehouses',
-      ).replace(queryParameters: queryParams);
+      final uri = Uri.parse('$_apiBase/sharehouses').replace(queryParameters: queryParams);
 
       final response = await http.get(uri, headers: _getHeaders(token));
 
@@ -144,7 +144,7 @@ class SharehouseService {
     try {
       final token = await _getToken();
 
-      final uri = Uri.parse('$_baseUrl/api/trustay/sharehouses/my').replace(
+      final uri = Uri.parse('$_apiBase/sharehouses/my').replace(
         queryParameters: {'page': '0', 'size': '10', 'sort': 'createdAt,desc'},
       );
 
@@ -170,7 +170,7 @@ class SharehouseService {
   static Future<SharehouseDetailModel> getSharehouseDetail(int houseId) async {
     try {
       final token = await _getToken();
-      final uri = Uri.parse('$_baseUrl/api/trustay/sharehouses/$houseId');
+      final uri = Uri.parse('$_apiBase/sharehouses/$houseId');
 
       final response = await http.get(uri, headers: _getHeaders(token));
 
@@ -192,7 +192,7 @@ class SharehouseService {
  static Future<bool> toggleWish(int houseId) async {
   try {
     final token = await _getToken();
-    final uri = Uri.parse('$_baseUrl/api/trustay/sharehouses/$houseId/wish');
+    final uri = Uri.parse('$_apiBase/sharehouses/$houseId/wish');
 
     final response = await http.post(
       uri,
@@ -220,7 +220,7 @@ class SharehouseService {
   ) async {
     try {
       final token = await _getToken();
-      final uri = Uri.parse('$_baseUrl/api/trustay/sharehouses/$houseId');
+      final uri = Uri.parse('$_apiBase/sharehouses/$houseId');
 
       final response = await http.put(
         uri,
@@ -244,7 +244,7 @@ class SharehouseService {
   static Future<bool> deleteListing(int houseId) async {
     try {
       final token = await _getToken();
-      final uri = Uri.parse('$_baseUrl/api/trustay/sharehouses/$houseId');
+      final uri = Uri.parse('$_apiBase/sharehouses/$houseId');
 
       final response = await http.delete(uri, headers: _getHeaders(token));
 
