@@ -1,15 +1,26 @@
-HELP.md
-.gradle
+# Gradle
+.gradle/
 build/
-!gradle/wrapper/gradle-wrapper.jar
+gradle-wrapper.jar
+!gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### STS ###
+# IDE - IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+# IDE - Spring Tool Suite (STS)
 .apt_generated
 .classpath
 .factorypath
 .project
+.properties
 .settings
 .springBeans
 .sts4-cache
@@ -17,29 +28,48 @@ bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
 
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-out/
-!**/src/main/**/out/
-src/main/resources/application.yaml
-!**/src/test/**/out/
-
-### NetBeans ###
+# IDE - NetBeans
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
 
-### VS Code ###
+# IDE - VS Code
 .vscode/
+settings.json
 
-/back/trustay/build/
+# Compiled files
+*.class
 *.jar
 *.war
-*.class
-.gradle/
+*.ear
+*.zip
+*.tar.gz
 
+# 환경 설정 파일 (민감 정보 포함)
+src/main/resources/application.yaml
+src/main/resources/application-*.yaml
+!src/main/resources/application-example.yaml
+src/main/resources/firebase-admin-sdk.json
+.env
+.env.local
+
+# 로그 파일
+*.log
+logs/
+
+# OS 파일
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# 임시 파일
+*.tmp
+*.temp
+*~
+
+# 기타
+HELP.md
+.sts4-cache

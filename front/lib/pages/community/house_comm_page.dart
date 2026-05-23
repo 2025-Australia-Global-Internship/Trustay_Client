@@ -76,7 +76,7 @@ class _HouseCommPageState extends State<HouseCommPage> {
       User user = await AuthService.fetchProfile();
 
       // 2. 가져온 user의 memberId로 채팅 목록 API 호출
-      final rooms = await _chatService.getMyChatRooms(user.memberId);
+      final rooms = await ChatService.getMyChatRooms(user.memberId);
 
       if (mounted) {
         setState(() {
