@@ -3,6 +3,7 @@ package com.maritel.trustay.controller;
 import com.maritel.trustay.dto.req.ChatMessageReq;
 import com.maritel.trustay.dto.res.ChatMessageRes;
 import com.maritel.trustay.service.ChatMessageService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -19,6 +20,7 @@ public class ChatStompController {
     private final ChatMessageService chatMessageService;
 
 
+    @Operation(summary = "채팅 메시지 전송")
     @MessageMapping("/chat/send")
     public void sendMessage(@Payload ChatMessageReq req) {
 

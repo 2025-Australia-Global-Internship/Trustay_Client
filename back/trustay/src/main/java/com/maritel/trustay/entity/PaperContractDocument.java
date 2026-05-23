@@ -16,19 +16,19 @@ public class PaperContractDocument extends BaseEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "room_id")
+    @JoinColumn(name = "room_id", nullable = false)
     private ChatRoom chatRoom;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "house_id")
+    @JoinColumn(name = "house_id", nullable = false)
     private Sharehouse sharehouse;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "uploaded_by_id")
+    @JoinColumn(name = "uploaded_by_id", nullable = false)
     private Member uploadedBy;
 
     /** 업로드한 원본 이미지 URL 목록 (JSON 배열 문자열) */
-    @Column(columnDefinition = "TEXT")
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String sourceImageUrlsJson;
 
     @Column(length = 1000)
@@ -39,7 +39,7 @@ public class PaperContractDocument extends BaseEntity {
     private String ocrText;
 
     @Enumerated(EnumType.STRING)
-    @Column(length = 32)
+    @Column(nullable = false, length = 32)
     private PaperContractScanStatus status;
 
     @Column(length = 2000)

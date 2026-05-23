@@ -2,9 +2,11 @@ package com.maritel.trustay.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Check;
 
 @Entity
 @Table(name = "TBL_REVIEW")
+@Check(constraints = "rating BETWEEN 1 AND 5")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Review extends BaseEntity {
@@ -15,7 +17,7 @@ public class Review extends BaseEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "author_id")
+    @JoinColumn(name = "author_id", nullable = false)
     private Member author; // 작성자
 
     // 리뷰 대상이 '집'일 수도 있고 '사람'일 수도 있음

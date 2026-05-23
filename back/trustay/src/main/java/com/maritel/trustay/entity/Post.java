@@ -2,10 +2,12 @@ package com.maritel.trustay.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Check;
 import org.hibernate.annotations.ColumnDefault;
 
 @Entity
 @Table(name = "TBL_POST")
+@Check(constraints = "view_count >= 0 AND like_count >= 0")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Post extends BaseEntity {
@@ -33,14 +35,18 @@ public class Post extends BaseEntity {
     private String title; // 제목
 
     @Lob
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String content; // 내용
 
+    @Column(nullable = false)
     @ColumnDefault("false")
     private Boolean isNotice = false; // 공지 여부
 
+    @Column(nullable = false)
     @ColumnDefault("0")
     private Integer viewCount = 0; // 조회수
 
+    @Column(nullable = false)
     @ColumnDefault("0")
     private Integer likeCount = 0; // 좋아요 수
 

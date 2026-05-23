@@ -2,10 +2,12 @@ package com.maritel.trustay.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Check;
 import org.hibernate.annotations.ColumnDefault;
 
 @Entity
 @Table(name = "TBL_COMMUNITY")
+@Check(constraints = "member_count >= 0")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Community extends BaseEntity {
@@ -29,6 +31,7 @@ public class Community extends BaseEntity {
     @JoinColumn(name = "image_id")
     private Image communityImage;
 
+    @Column(nullable = false)
     @ColumnDefault("0")
     private Integer memberCount = 0; // 멤버 수
 

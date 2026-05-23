@@ -5,9 +5,10 @@ import '../models/user_model.dart'; // 서버 모델 User
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/material.dart';
+import '../constants/api_endpoints.dart';
 
 class AuthService {
-  static const String baseUrl = 'https://trustay.digitalbasis.com/api/trustay';
+  // Use ApiEndpoints for endpoint URLs
   static final fb.FirebaseAuth _auth = fb.FirebaseAuth.instance;
 
   /// 로그인
@@ -15,7 +16,7 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    final url = Uri.parse('$baseUrl/auth/login');
+    final url = Uri.parse(ApiEndpoints.authLogin);
 
     final response = await http.post(
       url,
@@ -85,7 +86,7 @@ class AuthService {
       }
 
       // 서버 호출
-      final url = Uri.parse('$baseUrl/auth/oauth');
+      final url = Uri.parse(ApiEndpoints.authOauth);
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
@@ -146,7 +147,7 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    final url = Uri.parse('$baseUrl/members/signup');
+    final url = Uri.parse(ApiEndpoints.signup);
 
     final response = await http.post(
       url,
@@ -172,7 +173,7 @@ class AuthService {
 
     if (token == null) return;
 
-    final url = Uri.parse('$baseUrl/auth/logout');
+    final url = Uri.parse(ApiEndpoints.authLogout);
 
     await http.post(
       url,
@@ -197,7 +198,7 @@ class AuthService {
     }
 
     final res = await http.get(
-      Uri.parse('$baseUrl/members/profile'),
+      Uri.parse(ApiEndpoints.profile),
       headers: {'Authorization': 'Bearer $token'},
     );
 

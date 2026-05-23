@@ -16,6 +16,9 @@ out/
 !**/src/test/**/out/
 
 # IDE - Spring Tool Suite (STS)
+*.yaml
+
+### STS ###
 .apt_generated
 .classpath
 .factorypath

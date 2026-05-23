@@ -15,19 +15,21 @@ public class ChatMessage extends BaseEntity { // BaseEntity 상속으로 변경
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "room_id")
+    @JoinColumn(name = "room_id", nullable = false)
     private ChatRoom chatRoom;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sender_id")
+    @JoinColumn(name = "sender_id", nullable = false)
     private Member sender;
 
     @Column(columnDefinition = "TEXT")
     private String message; // 메시지 내용 또는 파일 URL
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
     private MessageType messageType; // TEXT, IMAGE, CONTRACT
 
+    @Column(nullable = false)
     private boolean isRead; // 읽음 확인
 
     /** 종이 계약 스캔(OCR·PDF) 문서와 연결 (CONTRACT 메시지용, 선택) */

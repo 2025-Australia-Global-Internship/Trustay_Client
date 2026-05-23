@@ -3,9 +3,10 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/chat_room_list_model.dart';
 import '../models/chat_message_model.dart';
+import '../constants/api_endpoints.dart';
 
 class ChatService {
-  static const String baseUrl = 'https://trustay.digitalbasis.com';
+  // Use ApiEndpoints for endpoints
 
   static Future<String> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
@@ -18,7 +19,7 @@ class ChatService {
 
   // [수정됨] hostId 파라미터 제거 (CURL 예시 준수)
   static Future<int> createOrGetChatRoom(int houseId, int senderId) async {
-    final url = Uri.parse('$baseUrl/api/chat/room');
+    final url = Uri.parse(ApiEndpoints.createRoom);
     
     // 로그로 데이터 확인
     print("🚀 [ChatService] 전송 데이터: houseId=$houseId, senderId=$senderId");
@@ -56,7 +57,7 @@ class ChatService {
 
   // ... (나머지 메서드 getMyChatRooms, getChatHistory는 그대로 유지) ...
   static Future<List<ChatRoomListModel>> getMyChatRooms(int memberId) async {
-    final url = Uri.parse('$baseUrl/api/chat/rooms/$memberId');
+    final url = Uri.parse(ApiEndpoints.myChatRooms(memberId));
     try {
       String token = await _getToken();
       final response = await http.get(url, headers: {
@@ -78,7 +79,7 @@ class ChatService {
   }
 
   static Future<List<ChatMessageModel>> getChatHistory(int roomId, int memberId) async {
-    final url = Uri.parse('$baseUrl/api/chat/room/$roomId/messages/$memberId');
+    final url = Uri.parse(ApiEndpoints.chatRoomMessages(roomId, memberId));
     try {
       String token = await _getToken();
       final response = await http.get(url, headers: {

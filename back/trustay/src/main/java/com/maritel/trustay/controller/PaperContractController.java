@@ -5,6 +5,7 @@ import com.maritel.trustay.dto.res.PaperContractDocumentRes;
 import com.maritel.trustay.dto.res.PaperContractScanRes;
 import com.maritel.trustay.dto.res.ResponseCode;
 import com.maritel.trustay.service.PaperContractService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.coyote.BadRequestException;
@@ -30,6 +31,7 @@ public class PaperContractController {
      * @param memberId 업로드하는 회원 ID (채팅 참여자여야 함)
      * @param images   multipart 이름 {@code images} — 여러 장 가능
      */
+    @Operation(summary = "종이 계약서 스캔 업로드")
     @PostMapping(value = "/scan", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<DataResponse<PaperContractScanRes>> scan(
             @RequestParam Long roomId,
@@ -40,6 +42,7 @@ public class PaperContractController {
         return ResponseEntity.ok(DataResponse.of(ResponseCode.SUCCESS, res));
     }
 
+    @Operation(summary = "종이 계약서 문서 조회")
     @GetMapping("/{documentId}")
     public ResponseEntity<DataResponse<PaperContractDocumentRes>> getDocument(
             @PathVariable Long documentId,
