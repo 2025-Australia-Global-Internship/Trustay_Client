@@ -83,10 +83,13 @@ public class PaperContractService {
                 throw new BadRequestException("이미지를 읽을 수 없는 파일이 포함되어 있습니다: " + file.getOriginalFilename());
             }
             bufferedImages.add(bi);
+
+            // [수정됨] MalformedURLException 예외 처리 추가
             try {
                 imageUrls.add(fileService.uploadContractScanImage(file));
             } catch (MalformedURLException e) {
-                throw new IllegalStateException("이미지 업로드 경로가 잘못되었습니다: " + file.getOriginalFilename(), e);
+                log.error("URL 생성 오류", e);
+                throw new IllegalStateException("파일 업로드 중 URL 생성 오류가 발생했습니다: " + file.getOriginalFilename(), e);
             }
         }
 
