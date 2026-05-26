@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:front/constants/colors.dart';
@@ -13,73 +14,61 @@ class BottomNavbar extends StatelessWidget {
   });
 
   static final _items = [
-    _BottomNavItem('assets/icons/home.svg', 'Home'),
-    _BottomNavItem('assets/icons/community.svg', 'Comms'),
-    _BottomNavItem('assets/icons/map.svg', 'Map'),
-    _BottomNavItem('assets/icons/coin.svg', 'Finance'),
-    _BottomNavItem('assets/icons/profile.svg', 'My'),
+    'assets/icons/home.svg',
+    'assets/icons/community.svg',
+    'assets/icons/map.svg',
+    'assets/icons/coin.svg',
+    'assets/icons/profile.svg',
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 90,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 5,
-            offset: Offset(0, -2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: List.generate(_items.length, (index) {
-          final isSelected = index == currentIndex;
-
-          return GestureDetector(
-            onTap: () => onTap(index),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: isSelected ? yellow : Colors.transparent,
-                    shape: BoxShape.circle,
-                  ),
-                  child: SvgPicture.asset(
-                    _items[index].iconPath,
-                    width: 24,
-                    height: 24,
-                    color: darkgreen,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  _items[index].label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: darkgreen,
-                  ),
-                ),
-              ],
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 30),
+      child: Container(
+        height: 80,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF2F2F2).withOpacity(0.7),
+          borderRadius: BorderRadius.circular(50),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
             ),
-          );
-        }),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: List.generate(_items.length, (index) {
+            final isSelected = index == currentIndex;
+
+            return GestureDetector(
+              onTap: () => onTap(index),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isSelected ? green : Colors.white,
+                ),
+                child: Center(
+                  child: SvgPicture.asset(
+                    _items[index],
+                    width: 29,
+                    height: 29,
+                    colorFilter: ColorFilter.mode(
+                      isSelected ? yellow : darkgreen,
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }),
+        ),
       ),
     );
   }
-}
-
-class _BottomNavItem {
-  final String iconPath;
-  final String label;
-
-  const _BottomNavItem(this.iconPath, this.label);
 }

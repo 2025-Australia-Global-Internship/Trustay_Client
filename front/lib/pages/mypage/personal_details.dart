@@ -5,7 +5,6 @@ import 'package:front/widgets/common_text_field.dart';
 import 'package:front/widgets/custom_header.dart';
 import 'package:front/widgets/gradient_layout.dart';
 import 'package:front/widgets/primary_button.dart';
-import 'package:front/widgets/common_dropdown.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:front/models/user_model.dart';
 import 'package:flutter/cupertino.dart';
@@ -48,7 +47,17 @@ class _PersonalDetailsPage extends State<PersonalDetailsPage> {
       body: GradientLayout(
         child: Column(
           children: [
-            CustomHeader(showBack: true),
+            CustomHeader(
+              showBack: true,
+              center: const Text(
+                'Personal Details',
+                style: TextStyle(
+                  color: dark,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
             const SizedBox(height: 16),
 
             Expanded(
@@ -75,69 +84,129 @@ class _PersonalDetailsPage extends State<PersonalDetailsPage> {
                       const SizedBox(height: 16),
 
                       /// Date of Birth
-                      CommonTextField(
-                        label: 'Date of Birth',
-                        hintText: 'DD/MM/YYYY',
-                        readOnly: true,
-                        controller: _dateController,
-                        suffixIcon: SvgPicture.asset(
-                          'assets/icons/calendar.svg',
-                          width: 25,
-                          height: 25,
-                        ),
-                        onTap: () async {
-                          DateTime selectedDate = DateTime.now();
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Date of Birth',
+                            style: TextStyle(
+                              color: dark,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
 
-                          await showModalBottomSheet(
-                            context: context,
-                            backgroundColor: Colors.transparent,
-                            builder: (context) {
-                              return Container(
-                                height: 250,
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.vertical(
-                                    top: Radius.circular(20),
-                                  ),
+                          // 그림자를 위한 컨테이너
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(50),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.06),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
                                 ),
-                                child: Column(
-                                  children: [
-                                    // Done 버튼
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: TextButton(
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                          _dateController.text =
-                                              '${selectedDate.day.toString().padLeft(2, '0')}/'
-                                              '${selectedDate.month.toString().padLeft(2, '0')}/'
-                                              '${selectedDate.year}';
-                                        },
-                                        child: Text(
-                                          'Done',
-                                          style: TextStyle(color: green),
+                              ],
+                            ),
+                            child: TextFormField(
+                              controller: _dateController,
+                              readOnly: true,
+                              onTap: () async {
+                                DateTime selectedDate = DateTime.now();
+                                await showModalBottomSheet(
+                                  context: context,
+                                  backgroundColor: Colors.transparent,
+                                  builder: (context) {
+                                    return Container(
+                                      height: 300,
+                                      decoration: const BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.vertical(
+                                          top: Radius.circular(20),
                                         ),
                                       ),
-                                    ),
-
-                                    // CupertinoDatePicker
-                                    Expanded(
-                                      child: CupertinoDatePicker(
-                                        initialDateTime: DateTime(2000),
-                                        minimumDate: DateTime(1900),
-                                        maximumDate: DateTime(2100),
-                                        mode: CupertinoDatePickerMode.date,
-                                        onDateTimeChanged: (DateTime newDate) {
-                                          selectedDate = newDate;
-                                        },
+                                      child: Column(
+                                        children: [
+                                          Align(
+                                            alignment: Alignment.centerRight,
+                                            child: TextButton(
+                                              onPressed: () {
+                                                _dateController.text =
+                                                    '${selectedDate.day.toString().padLeft(2, '0')}/'
+                                                    '${selectedDate.month.toString().padLeft(2, '0')}/'
+                                                    '${selectedDate.year}';
+                                                Navigator.pop(context);
+                                              },
+                                              child: const Text(
+                                                'Done',
+                                                style: TextStyle(
+                                                  color: green,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: CupertinoDatePicker(
+                                              initialDateTime: DateTime(2000),
+                                              mode:
+                                                  CupertinoDatePickerMode.date,
+                                              onDateTimeChanged:
+                                                  (DateTime newDate) {
+                                                    selectedDate = newDate;
+                                                  },
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ),
-                                  ],
+                                    );
+                                  },
+                                );
+                              },
+                              style: const TextStyle(
+                                color: dark,
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: 'DD/MM/YYYY',
+                                hintStyle: const TextStyle(
+                                  color: grey02,
+                                  fontSize: 12.5,
                                 ),
-                              );
-                            },
-                          );
-                        },
+                                contentPadding: const EdgeInsets.fromLTRB(
+                                  16,
+                                  22,
+                                  16,
+                                  22,
+                                ),
+
+                                // 우측 아이콘
+                                suffixIcon: Padding(
+                                  padding: const EdgeInsets.only(right: 15),
+                                  child: SvgPicture.asset(
+                                    'assets/icons/calendar.svg',
+                                    width: 22,
+                                    height: 22,
+                                  ),
+                                ),
+                                suffixIconConstraints: const BoxConstraints(
+                                  minWidth: 0,
+                                  minHeight: 0,
+                                ),
+
+                                // 테두리 없애기 (무테 디자인)
+                                filled: true,
+                                fillColor: Colors.transparent,
+                                border: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
 
                       const SizedBox(height: 16),
@@ -317,6 +386,131 @@ class _PersonalDetailsPage extends State<PersonalDetailsPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class CommonDropdown<T> extends StatelessWidget {
+  final String label;
+  final T? value;
+  final List<DropdownMenuItem<T>> items;
+  final void Function(T?) onChanged;
+  final void Function(T?)? onSaved;
+  final String? Function(T?)? validator;
+  final Widget? prefixIcon;
+  final String? hintText;
+
+  const CommonDropdown({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.items,
+    required this.onChanged,
+    this.onSaved,
+    this.validator,
+    this.prefixIcon,
+    this.hintText,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: dark,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(50),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.06),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: DropdownButtonFormField<T>(
+              value: value,
+              items: items.map((item) {
+                return DropdownMenuItem<T>(
+                  value: item.value,
+                  child: DefaultTextStyle(
+                    style: const TextStyle(
+                      fontFamily: 'NanumSquareNeo',
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                      color: dark,
+                    ),
+                    child: item.child,
+                  ),
+                );
+              }).toList(),
+              onChanged: onChanged,
+              onSaved: onSaved,
+              validator: validator,
+              icon: Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: SvgPicture.asset(
+                  'assets/icons/arrow_down.svg',
+                  width: 8,
+                  height: 8,
+                  color: grey01, // 화살표 색상 명시
+                ),
+              ),
+              style: const TextStyle(
+                fontFamily: 'NanumSquareNeo',
+                color: dark,
+                fontSize: 13.5,
+                fontWeight: FontWeight.w400,
+              ),
+              decoration: InputDecoration(
+                contentPadding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
+                hintText: hintText,
+                hintStyle: const TextStyle(
+                  fontFamily: 'NanumSquareNeo',
+                  color: grey02,
+                  fontSize: 12,
+                ),
+                prefixIcon: prefixIcon != null
+                    ? Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 13, 0),
+                        child: prefixIcon,
+                      )
+                    : null,
+                prefixIconConstraints: const BoxConstraints(
+                  minWidth: 0,
+                  minHeight: 0,
+                ),
+                suffixIconConstraints: const BoxConstraints(
+                  minWidth: 16,
+                  minHeight: 16,
+                ),
+
+                // 테두리 제거 핵심 부분
+                filled: true,
+                fillColor: Colors.transparent,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

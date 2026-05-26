@@ -58,7 +58,7 @@ class _MyPageState extends State<MyPage> {
                 child: Text(
                   'Profile',
                   style: TextStyle(
-                    fontSize: 21,
+                    fontSize: 18,
                     fontWeight: FontWeight.w800,
                     color: dark,
                   ),
@@ -132,6 +132,7 @@ class _MyPageState extends State<MyPage> {
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: yellow,
+                          elevation: 0,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 11,
                             vertical: 10,
@@ -145,15 +146,15 @@ class _MyPageState extends State<MyPage> {
                           mainAxisSize: MainAxisSize.min, // 버튼 크기 최소화
                           children: [
                             SvgPicture.asset(
-                              'assets/icons/pencil.svg',
-                              width: 14,
-                              height: 14,
+                              'assets/icons/edit-note.svg',
+                              width: 16,
+                              height: 16,
                               colorFilter: const ColorFilter.mode(
                                 darkgreen,
                                 BlendMode.srcIn,
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 7),
                             const Text(
                               'Edit profile',
                               style: TextStyle(
@@ -173,90 +174,50 @@ class _MyPageState extends State<MyPage> {
 
             const SizedBox(height: 30),
 
-            /// 메뉴 섹션들
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                children: [
-                  MenuSection(
-                    children: [
-                      MyPageMenuItem(
-                        title: 'Personal Details',
-                        subtitle:
-                            'You must enter your personal information to complete transactions on the platform.',
-                        leading: const MenuIcon(
-                          assetPath: 'assets/icons/profile.svg',
-                        ),
-                        onTap: () {
-                          Navigator.pushNamed(context, '/person_details');
-                        },
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 4),
-
-                  MenuSection(
-                    children: [
-                      MyPageMenuItem(
-                        title: 'Current Stay',
-                        leading: const MenuIcon(
-                          assetPath: 'assets/icons/house-user.svg',
-                          size: 20,
-                        ),
-                      ),
-                      MyPageMenuItem(
-                        title: 'Listings',
-                        leading: const MenuIcon(
-                          assetPath: 'assets/icons/home-edit.svg',
-                        ),
-                        onTap: () {
-                          Navigator.pushNamed(context, '/listing');
-                        },
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 4),
-
-                  MenuSection(
-                    children: [
-                      MyPageMenuItem(
-                        title: 'Saved Listings',
-                        leading: const MenuIcon(
-                          assetPath: 'assets/icons/heart.svg',
-                        ),
-                      ),
-                      MyPageMenuItem(
-                        title: 'My Reviews',
-                        leading: const MenuIcon(
-                          assetPath: 'assets/icons/review.svg',
-                        ),
-                      ),
-                      MyPageMenuItem(
-                        title: 'My Wallet',
-                        leading: const MenuIcon(
-                          assetPath: 'assets/icons/coin-fill.svg',
-                          size: 25.5,
-                        ),
-                      ),
-                      MyPageMenuItem(
-                        title: 'My Contracts',
-                        leading: const MenuIcon(
-                          assetPath: 'assets/icons/contract.svg',
-                          size: 21.5,
-                        ),
-                      ),
-                      MyPageMenuItem(
-                        title: 'Recently Viewed',
-                        leading: const MenuIcon(
-                          assetPath: 'assets/icons/view.svg',
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+            /// 메뉴 리스트
+            MenuSection(
+              children: [
+                MyPageMenuItem(
+                  title: 'Personal Details',
+                  subtitle:
+                      'You must enter your info to complete transactions.',
+                  leadingPath: 'assets/icons/profile.svg',
+                  onTap: () => Navigator.pushNamed(context, '/person_details'),
+                ),
+                MyPageMenuItem(
+                  title: 'Current Stay',
+                  leadingPath: 'assets/icons/house-user.svg',
+                ),
+                MyPageMenuItem(
+                  title: 'Listings',
+                  leadingPath: 'assets/icons/home-edit.svg',
+                  onTap: () => Navigator.pushNamed(context, '/listing'),
+                ),
+              ],
+            ),
+            MenuSection(
+              children: [
+                MyPageMenuItem(
+                  title: 'Saved Listings',
+                  leadingPath: 'assets/icons/heart.svg',
+                ),
+                MyPageMenuItem(
+                  title: 'My Reviews',
+                  leadingPath: 'assets/icons/review.svg',
+                ),
+                MyPageMenuItem(
+                  title: 'My Wallet',
+                  leadingPath: 'assets/icons/wallet-line.svg',
+                ),
+                MyPageMenuItem(
+                  title: 'My Contracts',
+                  leadingPath: 'assets/icons/contract.svg',
+                ),
+                MyPageMenuItem(
+                  title: 'Recently Viewed',
+                  leadingPath: 'assets/icons/view.svg',
+                ),
+              ],
             ),
           ],
         ),
@@ -265,7 +226,6 @@ class _MyPageState extends State<MyPage> {
   }
 }
 
-/// 메뉴 섹션 카드
 class MenuSection extends StatelessWidget {
   final List<Widget> children;
   const MenuSection({super.key, required this.children});
@@ -273,114 +233,66 @@ class MenuSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8), // Card 외부 여백
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
       child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.14),
-              blurRadius: 5,
-              offset: Offset(0, 2),
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 9),
-          child: Column(children: children),
-        ),
+        child: Column(children: children),
       ),
     );
   }
 }
 
-/// 메뉴 아이템
+/// 메뉴 아이템 디자인
 class MyPageMenuItem extends StatelessWidget {
   final String title;
   final String? subtitle;
-  final Widget? leading;
+  final String leadingPath;
   final VoidCallback? onTap;
-  final bool isDanger;
 
   const MyPageMenuItem({
     super.key,
     required this.title,
     this.subtitle,
-    this.leading,
+    required this.leadingPath,
     this.onTap,
-    this.isDanger = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: leading,
-      dense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: dark,
-              fontWeight: FontWeight.w700,
-              fontSize: 13.5,
-            ),
-          ),
-          if (subtitle != null) ...[
-            const SizedBox(height: 6),
-            Text(
-              subtitle!,
-              style: const TextStyle(
-                color: grey04,
-                fontSize: 10.5,
-                height: 1.3,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-          ],
-        ],
-      ),
-      subtitle: null,
-      trailing: SvgPicture.asset(
-        'assets/icons/arrow_right.svg',
-        width: 16,
-        height: 16,
-        colorFilter: ColorFilter.mode(dark, BlendMode.srcIn),
-      ),
       onTap: onTap,
-    );
-  }
-}
-
-/// 메뉴 아이콘
-class MenuIcon extends StatelessWidget {
-  final String assetPath;
-  final Color backgroundColor;
-  final Color iconColor;
-  final double size;
-
-  const MenuIcon({
-    super.key,
-    required this.assetPath,
-    this.backgroundColor = green,
-    this.iconColor = yellow,
-    this.size = 22,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return CircleAvatar(
-      radius: 21,
-      backgroundColor: backgroundColor,
-      child: SvgPicture.asset(
-        assetPath,
-        width: size,
-        height: size,
-        colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+      leading: Container(
+        padding: const EdgeInsets.all(7),
+        child: SvgPicture.asset(leadingPath, width: 26, color: dark),
       ),
+      title: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w700,
+          color: dark,
+        ),
+      ),
+      subtitle: subtitle != null
+          ? Text(subtitle!, style: const TextStyle(fontSize: 11, color: grey04))
+          : null,
+      trailing: const Icon(
+        Icons.arrow_forward_ios,
+        size: 18,
+        color: grey01,
+      ), // 연한 화살표
     );
   }
 }
