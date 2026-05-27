@@ -7,6 +7,7 @@ import '../../models/listing_model.dart';
 import '../../services/sharehouse_service.dart';
 import '../../widgets/my_listing_card.dart';
 import 'sharehouse_detail_page.dart';
+import '../../widgets/primary_button.dart';
 
 class ListingPage extends StatefulWidget {
   const ListingPage({super.key});
@@ -104,6 +105,7 @@ class _ListingPage extends State<ListingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color(0xFFFAFAFA),
       body: GradientLayout(
         child: Stack(
           children: [
@@ -125,35 +127,20 @@ class _ListingPage extends State<ListingPage> {
             ),
             Positioned(
               bottom: 20,
+              left: 20,
               right: 20,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pushNamed(
-                    context,
-                    '/sharehouse_create',
-                  ).then((_) => _loadData());
+              child: PrimaryButton(
+                formKey: GlobalKey<FormState>(), // 단순 이동용이므로 빈 키 전달
+                text: 'Create',
+                svgIcon: 'assets/icons/plus.svg',
+                onAction: () async {
+                  // 페이지 이동 후 돌아왔을 때 데이터를 로드하도록 처리
+                  await Navigator.pushNamed(context, '/sharehouse_create');
+                  _loadData();
+                  return true;
                 },
-                icon: const Icon(Icons.add, size: 20, color: Colors.white),
-                label: const Text(
-                  'Create',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: green,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 28,
-                    vertical: 16,
-                  ),
-                  minimumSize: const Size(0, 36),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  elevation: 3,
-                ),
+                successMessage: '',
+                failMessage: '',
               ),
             ),
           ],

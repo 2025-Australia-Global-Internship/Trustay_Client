@@ -15,7 +15,7 @@ class GradientLayout extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Color(0xFFFFF6B7), Color(0xFFFFFDF6)],
+              colors: [Color(0xFFFFF6B7), Color(0xFFFAFAFA)],
             ),
           ),
         ),

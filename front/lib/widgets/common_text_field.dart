@@ -68,64 +68,76 @@ class CommonTextField extends StatelessWidget {
             const SizedBox(height: 12),
           ],
 
-          TextFormField(
-            controller: controller,
-            readOnly: readOnly,
-            onTap: onTap,
-            obscureText: obscureText,
-            keyboardType: keyboardType,
-            inputFormatters: inputFormatters,
-            validator: validator,
-            onSaved: onSaved,
-            onChanged: onChanged,
-            maxLines: maxLines,
-            cursorColor: grey03,
-            style: const TextStyle(
-              color: dark,
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
+          // 그림자를 위한 Container 추가
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(
+                maxLines > 1 ? 25 : 50,
+              ), // 멀티라인일 땐 살짝 덜 둥글게 조절
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-            decoration: InputDecoration(
-              contentPadding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
-              hintText: hintText,
-              hintStyle: const TextStyle(color: grey02, fontSize: 12),
-              prefixIcon: prefixIcon != null
-                  ? Padding(padding: prefixIconPadding, child: prefixIcon)
-                  : null,
-              prefixIconConstraints: const BoxConstraints(
-                minWidth: 20,
-                minHeight: 20,
-              ),
-              suffixText: suffixText,
-              suffixStyle: const TextStyle(
+            child: TextFormField(
+              controller: controller,
+              readOnly: readOnly,
+              onTap: onTap,
+              obscureText: obscureText,
+              keyboardType: keyboardType,
+              inputFormatters: inputFormatters,
+              validator: validator,
+              onSaved: onSaved,
+              onChanged: onChanged,
+              maxLines: maxLines,
+              cursorColor: grey03,
+              style: const TextStyle(
                 color: dark,
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
               ),
-              suffixIcon: suffixIcon != null
-                  ? Padding(padding: suffixIconPadding, child: suffixIcon)
-                  : null,
-              suffixIconConstraints: const BoxConstraints(
-                minWidth: 20,
-                minHeight: 20,
+              decoration: InputDecoration(
+                contentPadding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+                hintText: hintText,
+                hintStyle: const TextStyle(color: grey02, fontSize: 12),
+                prefixIcon: prefixIcon != null
+                    ? Padding(padding: prefixIconPadding, child: prefixIcon)
+                    : null,
+                prefixIconConstraints: const BoxConstraints(
+                  minWidth: 20,
+                  minHeight: 20,
+                ),
+                suffixText: suffixText,
+                suffixStyle: const TextStyle(
+                  color: dark,
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                ),
+                suffixIcon: suffixIcon != null
+                    ? Padding(padding: suffixIconPadding, child: suffixIcon)
+                    : null,
+                suffixIconConstraints: const BoxConstraints(
+                  minWidth: 20,
+                  minHeight: 20,
+                ),
+
+                // 테두리 제거 (InputBorder.none)
+                filled: true,
+                fillColor: Colors.transparent, // 컨테이너 배경색을 사용하므로 투명하게
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
               ),
-              filled: true,
-              fillColor: Colors.white,
-              enabledBorder: _border(grey01),
-              focusedBorder: _border(grey02),
-              errorBorder: _border(Colors.redAccent),
-              focusedErrorBorder: _border(Colors.redAccent),
             ),
           ),
         ],
       ),
-    );
-  }
-
-  static OutlineInputBorder _border(Color color) {
-    return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(18),
-      borderSide: BorderSide(color: color, width: 1.2),
     );
   }
 }

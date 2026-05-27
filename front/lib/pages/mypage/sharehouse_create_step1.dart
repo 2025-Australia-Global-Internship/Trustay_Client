@@ -168,7 +168,7 @@ class _SharehouseCreateStep1PageState extends State<SharehouseCreateStep1Page> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Color(0xFFFAFAFA),
       body: GradientLayout(
         child: Column(
           children: [
@@ -176,7 +176,7 @@ class _SharehouseCreateStep1PageState extends State<SharehouseCreateStep1Page> {
               center: const Text(
                 'Create Listing',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: 18,
                   fontWeight: FontWeight.w800,
                   color: dark,
                 ),
@@ -199,7 +199,6 @@ class _SharehouseCreateStep1PageState extends State<SharehouseCreateStep1Page> {
                       CommonTextField(
                         label: 'Title',
                         controller: _titleController,
-                        hintText: 'e.g. Bright room near tram, quiet house',
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
                             return 'This field is required';
@@ -246,7 +245,7 @@ class _SharehouseCreateStep1PageState extends State<SharehouseCreateStep1Page> {
                       // 다음 버튼 — _formKey를 그대로 전달, onAction에서 검증 수행
                       PrimaryButton(
                         formKey: _formKey,
-                        text: 'Continue to Details',
+                        text: 'save',
                         onAction: _continueToNextStep,
                         successMessage: '',
                         failMessage: '',
@@ -290,8 +289,14 @@ class _SharehouseCreateStep1PageState extends State<SharehouseCreateStep1Page> {
                   height: 90,
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: grey01, width: 1.2),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: const Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -324,7 +329,7 @@ class _SharehouseCreateStep1PageState extends State<SharehouseCreateStep1Page> {
                         width: 100,
                         height: 100,
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(16),
                           image: DecorationImage(
                             image: FileImage(image),
                             fit: BoxFit.cover,
@@ -373,13 +378,14 @@ class _SharehouseCreateStep1PageState extends State<SharehouseCreateStep1Page> {
           onChanged: _searchAddress,
           prefixIcon: SvgPicture.asset(
             'assets/icons/pin.svg',
-            width: 25,
-            height: 25,
+            width: 24,
+            height: 24,
           ),
           suffixIcon: SvgPicture.asset(
-            'assets/icons/search-color.svg',
-            width: 28,
-            height: 28,
+            'assets/icons/search.svg',
+            width: 22,
+            height: 22,
+            color: grey04,
           ),
           hintText: 'e.g. Preston',
           validator: (value) {
@@ -393,50 +399,60 @@ class _SharehouseCreateStep1PageState extends State<SharehouseCreateStep1Page> {
         // 주소 검색 결과 리스트
         if (_addressSuggestions.isNotEmpty)
           Container(
+            margin: const EdgeInsets.only(top: 12), // 입력창과 약간의 간격
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: grey01, width: 1.2),
+              borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 5,
-                  offset: const Offset(0, 2),
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
                 ),
               ],
             ),
-            child: ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _addressSuggestions.length,
-              separatorBuilder: (_, __) => const Divider(height: 0),
-              itemBuilder: (context, index) {
-                final address = _addressSuggestions[index];
-                return ListTile(
-                  dense: true,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  leading: Padding(
-                    padding: const EdgeInsets.only(left: 10),
-                    child: SvgPicture.asset(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(25),
+              child: ListView.separated(
+                shrinkWrap: true,
+                padding: EdgeInsets.zero, // 내부 기본 패딩 제거
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _addressSuggestions.length,
+                separatorBuilder: (_, __) => Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: const Color(0xFFFAFAFA),
+                ),
+                itemBuilder: (context, index) {
+                  final address = _addressSuggestions[index];
+                  return ListTile(
+                    dense: true,
+                    horizontalTitleGap: -6,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 8,
+                    ),
+                    leading: SvgPicture.asset(
                       'assets/icons/pin.svg',
-                      width: 22,
-                      height: 22,
-                      color: green,
+                      width: 24,
+                      height: 24,
+                      colorFilter: const ColorFilter.mode(
+                        green,
+                        BlendMode.srcIn,
+                      ),
                     ),
-                  ),
-                  title: Text(
-                    address,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
+                    title: Text(
+                      address,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: dark,
+                      ),
                     ),
-                  ),
-                  onTap: () => _selectAddress(index),
-                );
-              },
+                    onTap: () => _selectAddress(index),
+                  );
+                },
+              ),
             ),
           ),
       ],
