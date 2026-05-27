@@ -13,30 +13,38 @@ class BottomNavbar extends StatelessWidget {
     required this.onTap,
   });
 
-  static final _items = [
-    'assets/icons/home.svg',
-    'assets/icons/community.svg',
-    'assets/icons/map.svg',
-    'assets/icons/coin.svg',
-    'assets/icons/profile.svg',
+  static final List<Map<String, String>> _items = [
+    {
+      'default': 'assets/icons/home.svg',
+      'selected': 'assets/icons/home-fill.svg',
+    },
+    {
+      'default': 'assets/icons/community.svg',
+      'selected': 'assets/icons/community-fill.svg',
+    },
+    {
+      'default': 'assets/icons/map.svg',
+      'selected': 'assets/icons/map-fill.svg',
+    },
+    {
+      'default': 'assets/icons/coin.svg',
+      'selected': 'assets/icons/coin-fill.svg',
+    },
+    {
+      'default': 'assets/icons/profile.svg',
+      'selected': 'assets/icons/profile-fill.svg',
+    },
   ];
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 30),
+      padding: const EdgeInsets.fromLTRB(27, 0, 27, 30),
       child: Container(
-        height: 80,
+        height: 74,
         decoration: BoxDecoration(
-          color: const Color(0xFFF2F2F2).withOpacity(0.7),
+          color: const Color(0xFFF2F2F2).withOpacity(0.8),
           borderRadius: BorderRadius.circular(50),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -47,21 +55,19 @@ class BottomNavbar extends StatelessWidget {
               onTap: () => onTap(index),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 250),
-                width: 72,
-                height: 72,
+                width: 67,
+                height: 67,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: isSelected ? green : Colors.white,
                 ),
                 child: Center(
                   child: SvgPicture.asset(
-                    _items[index],
-                    width: 29,
-                    height: 29,
-                    colorFilter: ColorFilter.mode(
-                      isSelected ? yellow : darkgreen,
-                      BlendMode.srcIn,
-                    ),
+                    isSelected
+                        ? _items[index]['selected']!
+                        : _items[index]['default']!,
+                    width: 27,
+                    height: 27,
                   ),
                 ),
               ),

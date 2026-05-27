@@ -342,19 +342,19 @@ class _HouseCommPageState extends State<HouseCommPage> {
 
   Widget _buildFloatingButton() {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.only(bottom: 90),
       child: SizedBox(
-        width: 64,
-        height: 64,
+        width: 60,
+        height: 60,
         child: FloatingActionButton(
           onPressed: () {},
           backgroundColor: green,
           elevation: 4,
           child: SvgPicture.asset(
             'assets/icons/pencil.svg',
-            width: 25,
-            height: 25,
-            color: yellow,
+            width: 24,
+            height: 24,
+            color: Colors.white,
           ),
         ),
       ),

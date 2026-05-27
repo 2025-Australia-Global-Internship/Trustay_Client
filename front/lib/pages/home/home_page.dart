@@ -51,7 +51,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   HouseDummy _toHouseDummy(SharehouseModel s) {
-    const String baseUrl = "https://trustay.digitalbasis.com";
+    const String baseUrl = "http://trustay.mirim-it-show.site:8080";
 
     List<String> fullImageUrls = s.imageUrls.map((url) {
       if (url.startsWith('https')) {
