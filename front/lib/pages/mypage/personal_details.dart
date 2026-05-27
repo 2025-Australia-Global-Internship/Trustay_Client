@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:front/constants/colors.dart';
-import 'package:front/widgets/common_text_field.dart';
 import 'package:front/widgets/custom_header.dart';
 import 'package:front/widgets/gradient_layout.dart';
 import 'package:front/widgets/primary_button.dart';
@@ -168,7 +167,7 @@ class _PersonalDetailsPage extends State<PersonalDetailsPage> {
                               style: const TextStyle(
                                 color: dark,
                                 fontSize: 13.5,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w700,
                               ),
                               decoration: InputDecoration(
                                 hintText: 'DD/MM/YYYY',
@@ -178,18 +177,18 @@ class _PersonalDetailsPage extends State<PersonalDetailsPage> {
                                 ),
                                 contentPadding: const EdgeInsets.fromLTRB(
                                   16,
-                                  22,
+                                  24,
                                   16,
-                                  22,
+                                  24,
                                 ),
 
                                 // 우측 아이콘
                                 suffixIcon: Padding(
-                                  padding: const EdgeInsets.only(right: 15),
+                                  padding: const EdgeInsets.only(right: 19),
                                   child: SvgPicture.asset(
                                     'assets/icons/calendar.svg',
-                                    width: 22,
-                                    height: 22,
+                                    width: 20,
+                                    height: 20,
                                   ),
                                 ),
                                 suffixIconConstraints: const BoxConstraints(
@@ -197,7 +196,6 @@ class _PersonalDetailsPage extends State<PersonalDetailsPage> {
                                   minHeight: 0,
                                 ),
 
-                                // 테두리 없애기 (무테 디자인)
                                 filled: true,
                                 fillColor: Colors.transparent,
                                 border: InputBorder.none,
@@ -243,7 +241,6 @@ class _PersonalDetailsPage extends State<PersonalDetailsPage> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // 공통 라벨
                           const Text(
                             'Phone',
                             style: TextStyle(
@@ -252,74 +249,69 @@ class _PersonalDetailsPage extends State<PersonalDetailsPage> {
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 12),
 
                           Container(
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(18),
-                              border: Border.all(color: grey02),
+                              borderRadius: BorderRadius.circular(50),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.06),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                             ),
                             child: Row(
                               children: [
-                                /// 국가 드롭다운
+                                /// 국가 드롭다운 (왼쪽)
                                 Expanded(
-                                  flex: 3,
-                                  child: Padding(
-                                    padding: const EdgeInsetsGeometry.only(
-                                      right: 15,
-                                    ),
-                                    child:
-                                        DropdownButtonFormField<CountryPhone>(
-                                          value: selectedPhoneCountry,
-                                          items: phoneCountries
-                                              .map(
-                                                (c) => DropdownMenuItem(
-                                                  value: c,
-                                                  child: Center(
-                                                    child: Text(
-                                                      countryFlags[c.name] ??
-                                                          c.name, // 국기만 보여줌
-                                                      style: const TextStyle(
-                                                        fontSize: 20,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              )
-                                              .toList(),
-                                          onChanged: (v) {
-                                            setState(() {
-                                              selectedPhoneCountry = v!;
-                                              _phoneController.clear();
-                                            });
-                                          },
-                                          icon: SizedBox(
-                                            width: 19,
-                                            height: 19,
+                                  flex: 2,
+                                  child: DropdownButtonFormField<CountryPhone>(
+                                    value: selectedPhoneCountry,
+                                    items: phoneCountries
+                                        .map(
+                                          (c) => DropdownMenuItem(
+                                            value: c,
                                             child: Center(
-                                              child: SvgPicture.asset(
-                                                'assets/icons/arrow_down.svg',
-                                                width: 16,
-                                                height: 16,
+                                              child: Text(
+                                                countryFlags[c.name] ?? c.name,
+                                                style: const TextStyle(
+                                                  fontSize: 20,
+                                                ),
                                               ),
                                             ),
                                           ),
-                                          iconSize: 0,
-                                          decoration: const InputDecoration(
-                                            border: InputBorder.none,
-                                            contentPadding: EdgeInsets.only(
-                                              left: 28,
-                                              right: 6,
-                                              top: 18,
-                                              bottom: 18,
-                                            ),
-                                          ),
-                                        ),
+                                        )
+                                        .toList(),
+                                    onChanged: (v) {
+                                      setState(() {
+                                        selectedPhoneCountry = v!;
+                                        _phoneController.clear();
+                                      });
+                                    },
+                                    // 드롭다운 화살표 아이콘 설정
+                                    icon: Padding(
+                                      padding: const EdgeInsets.only(right: 10),
+                                      child: SvgPicture.asset(
+                                        'assets/icons/arrow_down.svg',
+                                        width: 8,
+                                        height: 8,
+                                        color: grey02,
+                                      ),
+                                    ),
+                                    decoration: const InputDecoration(
+                                      border: InputBorder.none,
+                                      contentPadding: EdgeInsets.only(
+                                        left: 20,
+                                        right: 20,
+                                      ),
+                                    ),
                                   ),
                                 ),
 
-                                /// 폰 번호 입력
+                                /// 폰 번호 입력 (오른쪽)
                                 Expanded(
                                   flex: 7,
                                   child: TextFormField(
@@ -329,25 +321,25 @@ class _PersonalDetailsPage extends State<PersonalDetailsPage> {
                                     inputFormatters: [
                                       FilteringTextInputFormatter.digitsOnly,
                                     ],
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontWeight: FontWeight.w700,
-                                      fontSize: 13,
+                                      fontSize: 13.5,
                                       color: dark,
                                     ),
                                     decoration: InputDecoration(
-                                      border: InputBorder.none,
                                       hintText: selectedPhoneCountry.hint,
                                       hintStyle: const TextStyle(
-                                        color: grey01,
-                                        fontSize: 13,
+                                        color: grey02,
+                                        fontSize: 14,
                                       ),
-
-                                      contentPadding: const EdgeInsets.fromLTRB(
-                                        16,
-                                        20,
-                                        16,
-                                        20,
-                                      ),
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 24,
+                                          ),
+                                      border: InputBorder.none,
+                                      enabledBorder: InputBorder.none,
+                                      focusedBorder: InputBorder.none,
                                     ),
                                   ),
                                 ),
@@ -467,7 +459,7 @@ class CommonDropdown<T> extends StatelessWidget {
                   'assets/icons/arrow_down.svg',
                   width: 8,
                   height: 8,
-                  color: grey01, // 화살표 색상 명시
+                  color: grey02,
                 ),
               ),
               style: const TextStyle(

@@ -250,6 +250,8 @@ class _FinancePageState extends State<FinancePage> {
                         ],
                       ),
                     ),
+
+                  const SizedBox(height: 70),
                 ]),
               ),
             ),
@@ -602,8 +604,8 @@ class _FinancePageState extends State<FinancePage> {
         alignment: Alignment.center,
         child: SvgPicture.asset(
           'assets/icons/coin-fill.svg',
-          width: 30,
-          height: 30,
+          width: 23,
+          height: 23,
           fit: BoxFit.contain,
         ),
       ),
