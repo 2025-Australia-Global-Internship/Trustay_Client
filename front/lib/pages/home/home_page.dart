@@ -81,7 +81,7 @@ class _HomePageState extends State<HomePage> {
     final generalList = _houses;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Color(0xFFFAFAFA),
       body: GradientLayout(
         child: CustomScrollView(
           slivers: [

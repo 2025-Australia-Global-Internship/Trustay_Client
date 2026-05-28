@@ -233,7 +233,7 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Color(0xFFFAFAFA),
       body: GradientLayout(
         child: Column(
           children: [
@@ -241,7 +241,7 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
               center: const Text(
                 'Add Property',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: 18,
                   fontWeight: FontWeight.w800,
                   color: dark,
                 ),
@@ -664,7 +664,7 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
             'assets/icons/bed.svg',
             width: 22,
             height: 22,
-            color: dark,
+            colorFilter: const ColorFilter.mode(dark, BlendMode.srcIn),
           ),
           label: 'Bedroom',
           value: _roomCount,
@@ -677,7 +677,7 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
             'assets/icons/bathroom.svg',
             width: 18,
             height: 18,
-            color: dark,
+            colorFilter: const ColorFilter.mode(dark, BlendMode.srcIn),
           ),
           label: 'Bathroom',
           value: _bathroomCount,
@@ -690,7 +690,7 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
             'assets/icons/profile.svg',
             width: 24,
             height: 24,
-            color: dark,
+            colorFilter: const ColorFilter.mode(dark, BlendMode.srcIn),
           ),
           label: 'Resident',
           value: _currentResidents,
@@ -701,7 +701,7 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
     );
   }
 
-  // ─── CounterRow ───────────────────────────────────────────
+  // ─── CounterRow (무테 + 그림자 스타일) ──────────────────────
   Widget _buildCounterRow({
     required Widget icon,
     required String label,
@@ -710,16 +710,22 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
     required VoidCallback onDecrement,
   }) {
     return Container(
-      height: 56,
+      height: 60, // 조금 더 여유 있게 조정
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(36),
-        border: Border.all(color: grey01, width: 1.2),
+        borderRadius: BorderRadius.circular(50), // 캡슐형
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06), // 요청하신 0.06 그림자
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          const SizedBox(width: 18),
-          icon,
+          const SizedBox(width: 20),
+          SizedBox(width: 24, child: Center(child: icon)), // 아이콘 위치 정렬
           const SizedBox(width: 12),
           Text(
             label,
@@ -730,50 +736,59 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
             ),
           ),
           const Spacer(),
-          // - button
-          GestureDetector(
+
+          // - 버튼
+          _buildCounterBtn(
+            icon: Icons.remove,
             onTap: onDecrement,
-            child: Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                border: Border.all(color: green, width: 1.2),
-              ),
-              child: const Icon(Icons.remove, color: green, size: 20),
-            ),
+            isEnabled: value > 0,
           ),
-          const SizedBox(width: 10),
+
+          const SizedBox(width: 12),
           SizedBox(
             width: 24,
             child: Text(
               '$value',
               textAlign: TextAlign.center,
               style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
                 color: dark,
               ),
             ),
           ),
-          const SizedBox(width: 10),
-          // + button
-          GestureDetector(
+          const SizedBox(width: 12),
+
+          // + 버튼
+          _buildCounterBtn(
+            icon: Icons.add,
             onTap: onIncrement,
-            child: Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                border: Border.all(color: green, width: 1.2),
-              ),
-              child: const Icon(Icons.add, color: green, size: 20),
-            ),
+            isEnabled: true,
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 6),
         ],
+      ),
+    );
+  }
+
+  // 카운터 내부 원형 버튼 공통 위젯
+  Widget _buildCounterBtn({
+    required IconData icon,
+    required VoidCallback onTap,
+    required bool isEnabled,
+  }) {
+    return GestureDetector(
+      onTap: isEnabled ? onTap : null,
+      child: Container(
+        width: 50,
+        height: 50,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+          border: Border.all(color: green, width: 1.1),
+        ),
+
+        child: const Icon(Icons.add, color: green, size: 20),
       ),
     );
   }
@@ -929,12 +944,19 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
   }) {
     return GestureDetector(
       onTap: onSelected,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 19, vertical: 16),
         decoration: BoxDecoration(
           color: selected ? green : Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: selected ? green : grey01, width: 1.2),
+          borderRadius: BorderRadius.circular(50),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Text(
           label,

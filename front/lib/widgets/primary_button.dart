@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:front/constants/colors.dart';
 import 'package:front/routes/navigation_type.dart';
 
@@ -15,6 +16,9 @@ class PrimaryButton extends StatelessWidget {
   final Color color;
   final Color textColor;
 
+  // 추가
+  final String? svgIcon;
+
   const PrimaryButton({
     super.key,
     required this.formKey,
@@ -28,6 +32,9 @@ class PrimaryButton extends StatelessWidget {
     this.enabled = true,
     this.color = yellow,
     this.textColor = darkgreen,
+
+    // 추가
+    this.svgIcon,
   });
 
   void _navigate(BuildContext context) {
@@ -61,9 +68,9 @@ class PrimaryButton extends StatelessWidget {
         style: ButtonStyle(
           backgroundColor: MaterialStateProperty.resolveWith<Color>((states) {
             if (states.contains(MaterialState.disabled)) {
-              return const Color(0xFFFFF8B6); // 비활성화 색상
+              return const Color(0xFFFFF8B6);
             }
-            return color; // 활성화 색상
+            return color;
           }),
           foregroundColor: MaterialStateProperty.all(
             enabled ? textColor : grey02,
@@ -73,7 +80,6 @@ class PrimaryButton extends StatelessWidget {
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
           ),
         ),
-
         onPressed: (!enabled || isLoading)
             ? null
             : () async {
@@ -83,6 +89,7 @@ class PrimaryButton extends StatelessWidget {
                 }
 
                 final success = await onAction?.call() ?? true;
+
                 if (!context.mounted || !success) return;
 
                 _navigate(context);
@@ -93,12 +100,22 @@ class PrimaryButton extends StatelessWidget {
                 height: 20,
                 child: CircularProgressIndicator(strokeWidth: 2, color: dark),
               )
-            : Text(
-                text,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                ),
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (svgIcon != null) ...[
+                    SvgPicture.asset(svgIcon!, width: 12, height: 12),
+                    const SizedBox(width: 8),
+                  ],
+
+                  Text(
+                    text,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
               ),
       ),
     );

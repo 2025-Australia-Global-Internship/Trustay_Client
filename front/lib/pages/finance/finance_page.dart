@@ -165,7 +165,7 @@ class _FinancePageState extends State<FinancePage> {
     final filteredTransactions = _getFilteredTransactions();
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Color(0xFFFAFAFA),
       body: GradientLayout(
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),

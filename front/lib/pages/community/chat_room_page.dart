@@ -179,7 +179,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.roomName),
-        backgroundColor: Colors.white,
+        backgroundColor: Color(0xFFFAFAFA),
         foregroundColor: Colors.black,
         elevation: 0,
       ),
