@@ -1,4 +1,7 @@
 import 'dart:io';
+import 'dart:convert';
+import 'dart:async';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
@@ -8,6 +11,7 @@ import 'package:front/widgets/gradient_layout.dart';
 import 'sharehouse_create_step2.dart';
 import 'package:front/widgets/primary_button.dart';
 import 'package:front/widgets/common_text_field.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class SharehouseCreateStep1Page extends StatefulWidget {
   const SharehouseCreateStep1Page({super.key});
@@ -18,6 +22,8 @@ class SharehouseCreateStep1Page extends StatefulWidget {
 }
 
 class _SharehouseCreateStep1PageState extends State<SharehouseCreateStep1Page> {
+  Timer? _debounce;
+
   final _formKey = GlobalKey<FormState>();
   final ImagePicker _picker = ImagePicker();
 
@@ -75,48 +81,71 @@ class _SharehouseCreateStep1PageState extends State<SharehouseCreateStep1Page> {
     });
   }
 
-  // 주소 검색 (더미 데이터)
-  void _searchAddress(String query) {
-    if (query.isEmpty) {
+  // 주소 검색
+  Future<void> _searchAddress(String query) async {
+    if (query.trim().length < 3) {
       setState(() {
         _addressSuggestions = [];
-        _isSearchingAddress = false;
-        _selectedAddressIndex = -1; // 텍스트 바뀌면 선택 초기화
+        _selectedAddressIndex = -1;
       });
       return;
     }
 
+    if (_isSearchingAddress) return;
+
     setState(() {
       _isSearchingAddress = true;
-      _selectedAddressIndex = -1; // 새로 검색하면 기존 선택 초기화
     });
 
-    // TODO: 실제 주소 검색 API 연동
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (!mounted) return;
+    try {
+      final apiKey = dotenv.env['GEOAPIFY_API_KEY'];
+
+      final url = Uri.https('api.geoapify.com', '/v1/geocode/autocomplete', {
+        'text': query,
+        'filter': 'countrycode:au',
+        'limit': '5',
+        'format': 'json',
+        'apiKey': apiKey,
+      });
+
+      final response = await http.get(url);
+
+      print(response.statusCode);
+      print(response.body);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        final results = data['results'] as List;
+
+        setState(() {
+          _addressSuggestions = results.map((item) {
+            return item['formatted'] as String;
+          }).toList();
+
+          _isSearchingAddress = false;
+        });
+      } else {
+        setState(() {
+          _isSearchingAddress = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Geoapify error: $e');
+
       setState(() {
-        _addressSuggestions =
-            [
-                  'Preston',
-                  'Preston, VIC 3072',
-                  'Preston South, VIC 3072',
-                  'Preston West, VIC 3072',
-                ]
-                .where(
-                  (addr) => addr.toLowerCase().contains(query.toLowerCase()),
-                )
-                .toList();
         _isSearchingAddress = false;
       });
-    });
+    }
   }
 
   // 주소 선택
   void _selectAddress(int index) {
     setState(() {
+      // 선택 시 인덱스를 고정하여 validator 통과
       _selectedAddressIndex = index;
       _addressController.text = _addressSuggestions[index];
-      _addressSuggestions = [];
+      _addressSuggestions = []; // 리스트 닫기
     });
   }
 
@@ -375,7 +404,15 @@ class _SharehouseCreateStep1PageState extends State<SharehouseCreateStep1Page> {
           label: '',
           bottomPadding: 0,
           controller: _addressController,
-          onChanged: _searchAddress,
+          onChanged: (value) {
+            if (_debounce?.isActive ?? false) {
+              _debounce!.cancel();
+            }
+
+            _debounce = Timer(const Duration(milliseconds: 700), () {
+              _searchAddress(value);
+            });
+          },
           prefixIcon: SvgPicture.asset(
             'assets/icons/pin.svg',
             width: 24,
@@ -415,14 +452,11 @@ class _SharehouseCreateStep1PageState extends State<SharehouseCreateStep1Page> {
               borderRadius: BorderRadius.circular(25),
               child: ListView.separated(
                 shrinkWrap: true,
-                padding: EdgeInsets.zero, // 내부 기본 패딩 제거
+                padding: EdgeInsets.zero,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: _addressSuggestions.length,
-                separatorBuilder: (_, __) => Divider(
-                  height: 1,
-                  thickness: 1,
-                  color: const Color(0xFFFAFAFA),
-                ),
+                separatorBuilder: (_, __) =>
+                    const Divider(height: 1, color: Color(0xFFFAFAFA)),
                 itemBuilder: (context, index) {
                   final address = _addressSuggestions[index];
                   return ListTile(
@@ -442,12 +476,14 @@ class _SharehouseCreateStep1PageState extends State<SharehouseCreateStep1Page> {
                       ),
                     ),
                     title: Text(
-                      address,
+                      _addressSuggestions[index],
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
                         color: dark,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     onTap: () => _selectAddress(index),
                   );

@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart'; // Firebase import
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 import 'routes/app_routes.dart';
 import 'routes/app_router.dart';
 import 'constants/theme.dart';
-import 'firebase_options.dart'; // FlutterFire CLI로 생성
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform, // FlutterFire CLI에서 자동 생성
-  );
+
+  // env 로드
+  await dotenv.load(fileName: ".env");
+
+  // Firebase 초기화
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   runApp(const MyApp());
 }
