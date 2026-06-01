@@ -54,6 +54,11 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
   // Rent
   final TextEditingController _rentController = TextEditingController();
 
+  // Religion & Dietary Preference
+  final TextEditingController _religionController =
+      TextEditingController(); // 추가
+  final TextEditingController _dietaryController = TextEditingController();
+
   // Bond
   int? _bondWeeks;
   final List<int> _bondOptions = [2, 4];
@@ -157,76 +162,57 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
   }
 
   Future<bool> _submitListing() async {
-    if (_rentController.text.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('임대료를 입력해주세요.')));
-      }
+    // 1. 필수값 간단 검증
+    if (_rentController.text.isEmpty || _selectedPropertyType == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all required fields.')),
+      );
       return false;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
-      // 1. 이미지 업로드
+      // 2. 이미지 서버 업로드 (URL 리스트 획득)
       final imageUrls = await SharehouseService.uploadImages(widget.images);
 
-      // 2. rentPrice 파싱
-      final int rentPrice = int.parse(_rentController.text);
-
-      // 3. options 리스트 구성: homeRules + features 합침
-      final List<String> options = [
-        ..._selectedHomeRules,
-        ..._selectedFeatures,
-      ];
-
-      // 4. Request 생성
+      // 3. Request 객체 생성
       final request = SharehouseCreateRequest(
         title: widget.title,
         description: widget.description,
         address: widget.address,
-        houseType: (_selectedPropertyType ?? '').toUpperCase(),
-        rentPrice: rentPrice,
+        houseType: _selectedPropertyType!,
+        rentPrice: int.parse(_rentController.text),
         roomCount: _roomCount,
         bathroomCount: _bathroomCount,
         currentResidents: _currentResidents,
-        options: options,
+        homeRules: _selectedHomeRules.toList(),
+        features: _selectedFeatures.toList(),
         imageUrls: imageUrls,
+        billsIncluded: _selectedBillsIncluded == 'YES',
+        roomType: _selectedRoomType ?? 'PRIVATE_ROOM',
+        bondType: _bondWeeks ?? _customBondWeeks ?? 0,
+        minimumStay: _customMinimumStay ?? 0,
+        gender: _selectedGender ?? 'ANY',
+        age: _minimumStay ?? 'No age rejection',
+        religion: _religionController.text,
+        dietaryPreference: _dietaryController.text,
       );
 
-      // 5. API 호출
+      // 4. API 호출
       final success = await SharehouseService.createSharehouse(request);
-
-      if (success && mounted) {
+      debugPrint('API result: $success'); // 결과 확인용
+      return success;
+    } catch (e, stackTrace) {
+      debugPrint('submitListing Error: $e');
+      debugPrint('StackTrace: $stackTrace'); // 어디서 터졌는지 확인
+      if (mounted)
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('매물이 등록되었습니다!')));
-        Navigator.of(context).popUntil((route) => route.isFirst);
-        return true;
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('등록 실패: 알 수 없는 오류')));
-      }
-      return false;
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('등록 실패: $e')));
-      }
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       return false;
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -268,6 +254,10 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
                       _buildRent(),
                       const SizedBox(height: 26),
 
+                      // Bedroom / Bathroom / Resident 카운터
+                      _buildCounters(),
+                      const SizedBox(height: 26),
+
                       _buildBond(),
                       const SizedBox(height: 26),
 
@@ -280,10 +270,6 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
                       _buildFeatures(),
                       const SizedBox(height: 26),
 
-                      // Bedroom / Bathroom / Resident 카운터
-                      _buildCounters(),
-                      const SizedBox(height: 26),
-
                       _buildGender(),
                       const SizedBox(height: 26),
 
@@ -291,23 +277,21 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
                       const SizedBox(height: 26),
 
                       _buildReligion(),
+                      const SizedBox(height: 26),
+
+                      _buildDietaryPreference(),
                       const SizedBox(height: 42),
 
                       PrimaryButton(
                         formKey: _formKey,
                         text: 'Publish',
-                        isLoading: false, // 로딩 없이
-                        onAction: () {
-                          // 바로 확인 페이지로 이동
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const PostPendingApprovalPage(),
-                            ),
-                          );
+                        isLoading: _isLoading,
+                        onAction: () async {
+                          return await _submitListing();
                         },
                         successMessage: '매물이 등록되었습니다!',
                         failMessage: '등록 실패',
+                        nextRoute: '/post_pending', // 라우트 지정
                         navigationType: NavigationType.clearStack,
                         enabled: true,
                       ),
@@ -323,14 +307,27 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
   }
 
   // ─── Section Title ───────────────────────────────────────────
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 15,
-        fontWeight: FontWeight.w800,
-        color: dark,
-      ),
+  Widget _buildSectionTitle(String title, {bool isRequired = false}) {
+    return Row(
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+            color: dark,
+          ),
+        ),
+        if (isRequired)
+          const Text(
+            '*',
+            style: TextStyle(
+              color: green,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+      ],
     );
   }
 
@@ -339,7 +336,7 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Property Type'),
+        _buildSectionTitle('Property Type', isRequired: true),
         const SizedBox(height: 16),
         Wrap(
           spacing: 6,
@@ -367,7 +364,7 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Bills Included'),
+        _buildSectionTitle('Bills Included', isRequired: true),
         const SizedBox(height: 16),
         Wrap(
           spacing: 6,
@@ -400,7 +397,7 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Room Type'),
+        _buildSectionTitle('Room Type', isRequired: true),
         const SizedBox(height: 16),
         Wrap(
           spacing: 6,
@@ -432,22 +429,48 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
 
   // ─── Rent ────────────────────────────────────────────────────
   Widget _buildRent() {
-    return CommonTextField(
-      label: 'Rent',
-      labelFontWeight: FontWeight.w800,
-      labelFontSize: 15,
-      controller: _rentController,
-      keyboardType: TextInputType.number,
-      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-      prefixIcon: SvgPicture.asset(
-        'assets/icons/dollar.svg',
-        width: 16,
-        height: 16,
-        color: dark,
-      ),
-      suffixText: 'week',
-      hintText: '0',
-      bottomPadding: 0,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text.rich(
+          TextSpan(
+            children: [
+              const TextSpan(
+                text: 'Rent',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: dark,
+                ),
+              ),
+              const TextSpan(
+                text: '*',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: green,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        CommonTextField(
+          label: '', // 라벨 비우기
+          controller: _rentController,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          prefixIcon: SvgPicture.asset(
+            'assets/icons/dollar.svg',
+            width: 16,
+            height: 16,
+            color: green,
+          ),
+          suffixText: 'week',
+          hintText: '0',
+          bottomPadding: 0,
+        ),
+      ],
     );
   }
 
@@ -456,7 +479,7 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Bond'),
+        _buildSectionTitle('Bond', isRequired: true),
         const SizedBox(height: 16),
         Wrap(
           spacing: 6,
@@ -494,12 +517,12 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               prefixIcon: SvgPicture.asset(
-                'assets/icons/coin.svg',
-                width: 20,
-                height: 20,
-                color: dark,
+                'assets/icons/calendar.svg',
+                width: 16,
+                height: 16,
+                color: green,
               ),
-              prefixIconPadding: const EdgeInsets.fromLTRB(14, 0, 9, 0),
+              prefixIconPadding: const EdgeInsets.fromLTRB(20, 0, 12, 0),
               suffixText: 'week',
               hintText: '0',
               bottomPadding: 0,
@@ -523,7 +546,7 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Minimum Stay'),
+        _buildSectionTitle('Minimum Stay', isRequired: true),
         const SizedBox(height: 16),
         Wrap(
           spacing: 6,
@@ -544,7 +567,7 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
             ),
             _buildChoiceChip(
               label: 'Custom',
-              selected: _minimumStay == 'Custom', // 이 부분 수정!
+              selected: _minimumStay == 'Custom',
               onSelected: () {
                 setState(() {
                   _minimumStay = 'Custom';
@@ -558,11 +581,11 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               prefixIcon: SvgPicture.asset(
                 'assets/icons/home.svg',
-                width: 16,
-                height: 16,
-                color: dark,
+                width: 18,
+                height: 18,
+                color: green,
               ),
-              prefixIconPadding: const EdgeInsets.fromLTRB(16, 0, 10, 0),
+              prefixIconPadding: const EdgeInsets.fromLTRB(20, 0, 11, 0),
               suffixText: 'week',
               hintText: '0',
               bottomPadding: 0,
@@ -659,11 +682,34 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Text.rich(
+          TextSpan(
+            children: [
+              const TextSpan(
+                text: 'Number of',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: dark,
+                ),
+              ),
+              const TextSpan(
+                text: '*',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: green,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
         _buildCounterRow(
           icon: SvgPicture.asset(
             'assets/icons/bed.svg',
-            width: 22,
-            height: 22,
+            width: 21,
+            height: 21,
             colorFilter: const ColorFilter.mode(dark, BlendMode.srcIn),
           ),
           label: 'Bedroom',
@@ -675,8 +721,8 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
         _buildCounterRow(
           icon: SvgPicture.asset(
             'assets/icons/bathroom.svg',
-            width: 18,
-            height: 18,
+            width: 20,
+            height: 20,
             colorFilter: const ColorFilter.mode(dark, BlendMode.srcIn),
           ),
           label: 'Bathroom',
@@ -765,7 +811,7 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
             onTap: onIncrement,
             isEnabled: true,
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 5),
         ],
       ),
     );
@@ -788,7 +834,7 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
           border: Border.all(color: green, width: 1.1),
         ),
 
-        child: const Icon(Icons.add, color: green, size: 20),
+        child: Icon(icon, color: green, size: 20),
       ),
     );
   }
@@ -798,7 +844,7 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Gender'),
+        _buildSectionTitle('Gender', isRequired: true),
         const SizedBox(height: 16),
         Wrap(
           spacing: 6,
@@ -815,9 +861,9 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
               onSelected: () => setState(() => _selectedGender = 'FEMALE'),
             ),
             _buildChoiceChip(
-              label: 'Any',
-              selected: _selectedGender == 'ANY',
-              onSelected: () => setState(() => _selectedGender = 'ANY'),
+              label: 'Non-binary',
+              selected: _selectedGender == 'NON_BINARY',
+              onSelected: () => setState(() => _selectedGender = 'NON_BINARY'),
             ),
           ],
         ),
@@ -831,7 +877,7 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Age'),
+        _buildSectionTitle('Age', isRequired: true),
         const SizedBox(height: 16),
         Wrap(
           spacing: 6,
@@ -868,9 +914,9 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
                 'assets/icons/social.svg',
                 width: 16,
                 height: 16,
-                color: dark,
+                color: green,
               ),
-              prefixIconPadding: const EdgeInsets.fromLTRB(16, 0, 10, 0),
+              prefixIconPadding: const EdgeInsets.fromLTRB(20, 0, 10, 0),
               suffixText: 'Age',
               hintText: '0',
               bottomPadding: 0,
@@ -888,10 +934,23 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
     );
   }
 
+  // ─── Religion ──────────────────────────────────────────────────
   Widget _buildReligion() {
     return CommonTextField(
       label: 'Religion',
       labelFontWeight: FontWeight.w800,
+      controller: _religionController,
+      labelFontSize: 15,
+      bottomPadding: 0,
+    );
+  }
+
+  // ─── Dietary Preference ─────────────────────────────────────────
+  Widget _buildDietaryPreference() {
+    return CommonTextField(
+      label: 'Dietary Preference',
+      labelFontWeight: FontWeight.w800,
+      controller: _dietaryController,
       labelFontSize: 15,
       bottomPadding: 0,
     );

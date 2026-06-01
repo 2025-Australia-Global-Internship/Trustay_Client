@@ -24,6 +24,7 @@ class SharehouseService {
     final prefs = await SharedPreferences.getInstance();
     // 저장된 키 이름이 'token'인지 'accessToken'인지 확인 필요
     final String? token = prefs.getString('token');
+    print('토큰: $token');
 
     if (token == null) {
       throw Exception('로그인 정보가 없습니다. 다시 로그인해주세요.');
@@ -90,12 +91,10 @@ class SharehouseService {
         body: jsonEncode(request.toJson()),
       );
 
-      if (response.statusCode == 200) {
-        return true;
-      } else {
-        final decodedBody = utf8.decode(response.bodyBytes);
-        throw Exception('매물 등록 실패: $decodedBody');
-      }
+      print('createSharehouse status: ${response.statusCode}');
+      print('createSharehouse body: ${response.body}'); // ← 추가
+
+      return response.statusCode == 200;
     } catch (e) {
       throw Exception('매물 등록 중 오류: $e');
     }
@@ -104,36 +103,39 @@ class SharehouseService {
   // ------------------------------------------------------------------------
   // 3. 홈 화면: 쉐어하우스 전체 목록 조회 (GET)
   // ------------------------------------------------------------------------
-  static Future<List<SharehouseModel>> getSharehouseList(
-    String filterType,
-  ) async {
+  static Future<List<SharehouseModel>> fetchAllHouses({
+    String? houseType,
+    String? keyword,
+  }) async {
     try {
-      final token = await _getToken();
-
-      // 쿼리 파라미터 설정
-      Map<String, String> queryParams = {'page': '0', 'size': '10'};
-
-      // 필터 적용 ('ALL'이 아닐 경우 houseType 추가)
-      if (filterType != 'ALL') {
-        queryParams['houseType'] = filterType;
+      final Map<String, String> queryParams = {};
+      if (houseType != null && houseType != 'ALL') {
+        queryParams['houseType'] = houseType;
+      }
+      if (keyword != null && keyword.trim().isNotEmpty) {
+        queryParams['keyword'] = keyword.trim();
       }
 
-      final uri = Uri.parse('$_apiBase/sharehouses').replace(queryParameters: queryParams);
-
-      final response = await http.get(uri, headers: _getHeaders(token));
+      final uri = Uri.parse(
+        '$_apiBase/sharehouses',
+      ).replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
+      final response = await http.get(uri);
 
       if (response.statusCode == 200) {
-        final decodedBody = utf8.decode(response.bodyBytes);
-        final jsonResponse = json.decode(decodedBody);
+        final decodedData = jsonDecode(utf8.decode(response.bodyBytes));
+        final data = decodedData['data'];
 
-        // 응답 구조: { "data": { "content": [...] } }
-        final List<dynamic> content = jsonResponse['data']['content'];
-        return content.map((e) => SharehouseModel.fromJson(e)).toList();
+        // data가 List면 바로 사용, Map이면 content 키로 꺼내기
+        final List<dynamic> list = data is List
+            ? data
+            : (data['content'] as List<dynamic>? ?? []);
+
+        return list.map((json) => SharehouseModel.fromJson(json)).toList();
       } else {
-        throw Exception('목록 조회 실패: ${response.statusCode}');
+        throw Exception('Failed to load houses');
       }
     } catch (e) {
-      throw Exception('홈 데이터 로드 중 오류: $e');
+      throw Exception('Error: $e');
     }
   }
 
@@ -188,29 +190,26 @@ class SharehouseService {
     }
   }
 
+  static Future<bool> toggleWish(int houseId) async {
+    try {
+      final token = await _getToken();
+      final uri = Uri.parse('$_apiBase/sharehouses/$houseId/wish');
 
- static Future<bool> toggleWish(int houseId) async {
-  try {
-    final token = await _getToken();
-    final uri = Uri.parse('$_apiBase/sharehouses/$houseId/wish');
+      final response = await http.post(uri, headers: _getHeaders(token));
 
-    final response = await http.post(
-      uri,
-      headers: _getHeaders(token),
-    );
-
-    if (response.statusCode == 200) {
-      final decodedData = jsonDecode(response.body);
-      // 보내주신 JSON 구조: { "data": { "wished": true ... } }
-      // 따라서 ['data']['wished']를 리턴해야 합니다.
-      return decodedData['data']['wished'] ?? false;
-    } else {
-      throw Exception('찜하기 요청 실패');
+      if (response.statusCode == 200) {
+        final decodedData = jsonDecode(response.body);
+        // 보내주신 JSON 구조: { "data": { "wished": true ... } }
+        // 따라서 ['data']['wished']를 리턴해야 합니다.
+        return decodedData['data']['wished'] ?? false;
+      } else {
+        throw Exception('찜하기 요청 실패');
+      }
+    } catch (e) {
+      throw Exception('찜하기 오류: $e');
     }
-  } catch (e) {
-    throw Exception('찜하기 오류: $e');
   }
-}
+
   // ------------------------------------------------------------------------
   // 6. 쉐어하우스 정보 수정 (PUT)
   // ------------------------------------------------------------------------
