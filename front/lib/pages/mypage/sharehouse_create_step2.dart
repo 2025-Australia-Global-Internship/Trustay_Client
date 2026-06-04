@@ -36,7 +36,7 @@ class SharehouseCreateStep2Page extends StatefulWidget {
 class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  // Property Type
+  // Property Type — API enum: HOUSE, APARTMENT, UNIT, TOWNHOUSE
   String? _selectedPropertyType;
   final List<String> _propertyTypes = [
     'House',
@@ -48,15 +48,14 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
   // Bills Included
   String? _selectedBillsIncluded;
 
-  // Room Type
+  // Room Type — API enum: SHAREDROOM, PRIVATE_ROOM, ENTIRE_PLACE
   String? _selectedRoomType;
 
   // Rent
   final TextEditingController _rentController = TextEditingController();
 
   // Religion & Dietary Preference
-  final TextEditingController _religionController =
-      TextEditingController(); // 추가
+  final TextEditingController _religionController = TextEditingController();
   final TextEditingController _dietaryController = TextEditingController();
 
   // Bond
@@ -65,10 +64,20 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
   int? _customBondWeeks;
   final TextEditingController _customBondController = TextEditingController();
 
-  // Minimum Stay
-  String? _minimumStay;
-  int? _customMinimumStay;
-  final TextEditingController _customStayController = TextEditingController();
+  // ─── Minimum Stay (minimumStay: int, 주 단위) ─────────────────
+  // _minimumStayLabel: UI 상태 추적용 ('No minimum stay' | 'Custom')
+  // _minimumStayWeeks: 실제 API에 보낼 값 (주 단위 정수, 0 = 제한없음)
+  String? _minimumStayLabel;
+  int _minimumStayWeeks = 0;
+  final TextEditingController _minimumStayController = TextEditingController();
+
+  // ─── Age (age: string) ────────────────────────────────────────
+  // _ageLabel: UI 상태 추적용 ('No age rejection' | 'Specify minimum age')
+  // _ageValue: 실제 API에 보낼 값
+  String _ageLabel = 'No age rejection';
+  String _ageValue = 'No age rejection'; // API age 필드 값
+  int? _customAgeInput;
+  final TextEditingController _customAgeController = TextEditingController();
 
   // Home Rules
   final Set<String> _selectedHomeRules = {};
@@ -124,7 +133,10 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
   void dispose() {
     _rentController.dispose();
     _customBondController.dispose();
-    _customStayController.dispose();
+    _minimumStayController.dispose();
+    _customAgeController.dispose();
+    _religionController.dispose();
+    _dietaryController.dispose();
     super.dispose();
   }
 
@@ -162,7 +174,7 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
   }
 
   Future<bool> _submitListing() async {
-    // 1. 필수값 간단 검증
+    // 1. 필수값 검증
     if (_rentController.text.isEmpty || _selectedPropertyType == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill in all required fields.')),
@@ -176,12 +188,22 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
       // 2. 이미지 서버 업로드 (URL 리스트 획득)
       final imageUrls = await SharehouseService.uploadImages(widget.images);
 
-      // 3. Request 객체 생성
+      // 3. address: 기본 주소 + 상세 주소 조합
+      final fullAddress = widget.detailedAddress.trim().isEmpty
+          ? widget.address
+          : '${widget.address}, ${widget.detailedAddress}';
+
+      // 4. Request 객체 생성
       final request = SharehouseCreateRequest(
         title: widget.title,
         description: widget.description,
-        address: widget.address,
+
+        // [FIX] address: detailedAddress 포함하여 전송
+        address: fullAddress,
+
+        // [FIX] houseType: UI 선택값이 이미 대문자 enum 형태로 저장됨 (e.g. 'APARTMENT')
         houseType: _selectedPropertyType!,
+
         rentPrice: int.parse(_rentController.text),
         roomCount: _roomCount,
         bathroomCount: _bathroomCount,
@@ -190,26 +212,38 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
         features: _selectedFeatures.toList(),
         imageUrls: imageUrls,
         billsIncluded: _selectedBillsIncluded == 'YES',
-        roomType: _selectedRoomType ?? 'PRIVATE_ROOM',
+
+        // [FIX] roomType: 기본값을 API 스펙 기준 'SHAREDROOM'으로 통일
+        roomType: _selectedRoomType ?? 'SHAREDROOM',
+
+        // [FIX] bondType: 선택된 주 수 전송 (미선택 시 0)
         bondType: _bondWeeks ?? _customBondWeeks ?? 0,
-        minimumStay: _customMinimumStay ?? 0,
+
+        // [FIX] minimumStay: 전용 변수(_minimumStayWeeks) 사용, 주 단위 정수
+        minimumStay: _minimumStayWeeks,
+
+        // [FIX] gender: 미선택 시 'ANY' 전송
         gender: _selectedGender ?? 'ANY',
-        age: _minimumStay ?? 'No age rejection',
+
+        // [FIX] age: 전용 변수(_ageValue) 사용 — minimumStay와 완전히 분리
+        age: _ageValue,
+
         religion: _religionController.text,
         dietaryPreference: _dietaryController.text,
       );
 
-      // 4. API 호출
+      // 5. API 호출
       final success = await SharehouseService.createSharehouse(request);
-      debugPrint('API result: $success'); // 결과 확인용
+      debugPrint('API result: $success');
       return success;
     } catch (e, stackTrace) {
       debugPrint('submitListing Error: $e');
-      debugPrint('StackTrace: $stackTrace'); // 어디서 터졌는지 확인
-      if (mounted)
+      debugPrint('StackTrace: $stackTrace');
+      if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
       return false;
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -254,7 +288,6 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
                       _buildRent(),
                       const SizedBox(height: 26),
 
-                      // Bedroom / Bathroom / Resident 카운터
                       _buildCounters(),
                       const SizedBox(height: 26),
 
@@ -291,7 +324,7 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
                         },
                         successMessage: '매물이 등록되었습니다!',
                         failMessage: '등록 실패',
-                        nextRoute: '/post_pending', // 라우트 지정
+                        nextRoute: '/post_pending',
                         navigationType: NavigationType.clearStack,
                         enabled: true,
                       ),
@@ -332,6 +365,7 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
   }
 
   // ─── Property Type ───────────────────────────────────────────
+  // [FIX] key를 toUpperCase()로 변환 → API enum과 일치 (e.g. 'APARTMENT')
   Widget _buildPropertyType() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -411,9 +445,10 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
             ),
             _buildChoiceChip(
               label: 'Shared room',
-              selected: _selectedRoomType == 'SHARED_ROOM',
+              // [FIX] API 스펙 enum: SHAREDROOM (언더스코어 없음)
+              selected: _selectedRoomType == 'SHAREDROOM',
               onSelected: () =>
-                  setState(() => _selectedRoomType = 'SHARED_ROOM'),
+                  setState(() => _selectedRoomType = 'SHAREDROOM'),
             ),
             _buildChoiceChip(
               label: 'Entire place',
@@ -456,7 +491,7 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
         ),
         const SizedBox(height: 16),
         CommonTextField(
-          label: '', // 라벨 비우기
+          label: '',
           controller: _rentController,
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -542,6 +577,9 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
     );
   }
 
+  // ─── Minimum Stay ─────────────────────────────────────────────
+  // [FIX] minimumStay 전용 변수(_minimumStayLabel, _minimumStayWeeks, _minimumStayController) 사용
+  //       Age와 완전히 분리됨
   Widget _buildMinimumStay() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -554,29 +592,27 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
           children: [
             _buildChoiceChip(
               label: 'No minimum stay',
-              selected:
-                  _minimumStay == 'No minimum stay' &&
-                  _customMinimumStay == null,
+              selected: _minimumStayLabel == 'No minimum stay',
               onSelected: () {
                 setState(() {
-                  _minimumStay = 'No minimum stay';
-                  _customMinimumStay = null;
-                  _customStayController.clear();
+                  _minimumStayLabel = 'No minimum stay';
+                  _minimumStayWeeks = 0; // API에 0 전송
+                  _minimumStayController.clear();
                 });
               },
             ),
             _buildChoiceChip(
               label: 'Custom',
-              selected: _minimumStay == 'Custom',
+              selected: _minimumStayLabel == 'Custom',
               onSelected: () {
                 setState(() {
-                  _minimumStay = 'Custom';
+                  _minimumStayLabel = 'Custom';
                 });
               },
             ),
             CommonTextField(
               label: '',
-              controller: _customStayController,
+              controller: _minimumStayController,
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               prefixIcon: SvgPicture.asset(
@@ -589,11 +625,11 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
               suffixText: 'week',
               hintText: '0',
               bottomPadding: 0,
-              readOnly: _minimumStay != 'Custom',
+              readOnly: _minimumStayLabel != 'Custom',
               onChanged: (value) {
                 setState(() {
-                  _customMinimumStay = int.tryParse(value);
-                  if (_customMinimumStay != null) _minimumStay = 'Custom';
+                  _minimumStayWeeks = int.tryParse(value) ?? 0;
+                  if (_minimumStayWeeks > 0) _minimumStayLabel = 'Custom';
                 });
               },
             ),
@@ -747,7 +783,7 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
     );
   }
 
-  // ─── CounterRow (무테 + 그림자 스타일) ──────────────────────
+  // ─── CounterRow ──────────────────────────────────────────────
   Widget _buildCounterRow({
     required Widget icon,
     required String label,
@@ -756,13 +792,13 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
     required VoidCallback onDecrement,
   }) {
     return Container(
-      height: 60, // 조금 더 여유 있게 조정
+      height: 60,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(50), // 캡슐형
+        borderRadius: BorderRadius.circular(50),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06), // 요청하신 0.06 그림자
+            color: Colors.black.withOpacity(0.06),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -771,7 +807,7 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
       child: Row(
         children: [
           const SizedBox(width: 20),
-          SizedBox(width: 24, child: Center(child: icon)), // 아이콘 위치 정렬
+          SizedBox(width: 24, child: Center(child: icon)),
           const SizedBox(width: 12),
           Text(
             label,
@@ -782,14 +818,11 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
             ),
           ),
           const Spacer(),
-
-          // - 버튼
           _buildCounterBtn(
             icon: Icons.remove,
             onTap: onDecrement,
             isEnabled: value > 0,
           ),
-
           const SizedBox(width: 12),
           SizedBox(
             width: 24,
@@ -804,8 +837,6 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
             ),
           ),
           const SizedBox(width: 12),
-
-          // + 버튼
           _buildCounterBtn(
             icon: Icons.add,
             onTap: onIncrement,
@@ -817,7 +848,6 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
     );
   }
 
-  // 카운터 내부 원형 버튼 공통 위젯
   Widget _buildCounterBtn({
     required IconData icon,
     required VoidCallback onTap,
@@ -833,7 +863,6 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
           shape: BoxShape.circle,
           border: Border.all(color: green, width: 1.1),
         ),
-
         child: Icon(icon, color: green, size: 20),
       ),
     );
@@ -871,9 +900,10 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
     );
   }
 
-  // ─── Age ──────────────────────────────────────────────────
+  // ─── Age ──────────────────────────────────────────────────────
+  // [FIX] Age 전용 변수(_ageLabel, _ageValue, _customAgeInput, _customAgeController) 사용
+  //       Minimum Stay 변수와 완전히 분리됨
   Widget _buildAge() {
-    // TODO: 아직 보이기만 해요
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -885,29 +915,28 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
           children: [
             _buildChoiceChip(
               label: 'No age rejection',
-              selected:
-                  _minimumStay == 'No minimum stay' &&
-                  _customMinimumStay == null,
+              selected: _ageLabel == 'No age rejection',
               onSelected: () {
                 setState(() {
-                  _minimumStay = 'No minimum stay';
-                  _customMinimumStay = null;
-                  _customStayController.clear();
+                  _ageLabel = 'No age rejection';
+                  _ageValue = 'No age rejection'; // API age 필드 값
+                  _customAgeInput = null;
+                  _customAgeController.clear();
                 });
               },
             ),
             _buildChoiceChip(
               label: 'Specify minimum age',
-              selected: _minimumStay == 'Specify minimum age',
+              selected: _ageLabel == 'Specify minimum age',
               onSelected: () {
                 setState(() {
-                  _minimumStay = 'Specify minimum age';
+                  _ageLabel = 'Specify minimum age';
                 });
               },
             ),
             CommonTextField(
               label: '',
-              controller: _customStayController,
+              controller: _customAgeController,
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               prefixIcon: SvgPicture.asset(
@@ -920,11 +949,15 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
               suffixText: 'Age',
               hintText: '0',
               bottomPadding: 0,
-              readOnly: _minimumStay != 'Specify minimum age',
+              readOnly: _ageLabel != 'Specify minimum age',
               onChanged: (value) {
                 setState(() {
-                  _customMinimumStay = int.tryParse(value);
-                  if (_customMinimumStay != null) _minimumStay = 'Custom';
+                  _customAgeInput = int.tryParse(value);
+                  if (_customAgeInput != null) {
+                    // API age 필드: 숫자를 문자열로 전송
+                    _ageValue = value;
+                    _ageLabel = 'Specify minimum age';
+                  }
                 });
               },
             ),

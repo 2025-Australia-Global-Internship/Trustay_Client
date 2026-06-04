@@ -46,29 +46,24 @@ class SharehouseService {
   // ------------------------------------------------------------------------
   static Future<List<String>> uploadImages(List<File> imageFiles) async {
     try {
+      final token = await _getToken();
       final uri = Uri.parse('$_apiBase/sharehouses/images');
       var request = http.MultipartRequest('POST', uri);
+      request.headers['Authorization'] = 'Bearer $token';
 
-      // 이미지 파일 추가
       for (var imageFile in imageFiles) {
         request.files.add(
           await http.MultipartFile.fromPath('images', imageFile.path),
         );
       }
 
-      // 필요한 경우 토큰 추가 (보안 설정에 따라 다름)
-      final token = await _getToken();
-      request.headers['Authorization'] = 'Bearer $token';
-
       final response = await request.send();
       final responseBody = await response.stream.bytesToString();
 
       if (response.statusCode == 200) {
         final data = jsonDecode(responseBody);
-
-        // null 체크 후 안전하게 변환
         final urls = data['data'] as List<dynamic>? ?? [];
-        return urls.whereType<String>().toList(); // null 제거 후 String만 변환
+        return urls.whereType<String>().toList();
       } else {
         throw Exception('이미지 업로드 실패: ${response.statusCode}');
       }
@@ -85,17 +80,28 @@ class SharehouseService {
       final token = await _getToken();
       final uri = Uri.parse('$_apiBase/sharehouses');
 
+      final bodyJson = jsonEncode(request.toJson());
+      print('📤 URL: $uri');
+      print('📤 Body: $bodyJson'); // ← 바디 내용 확인
+
       final response = await http.post(
         uri,
-        headers: _getHeaders(token),
-        body: jsonEncode(request.toJson()),
+        headers: {
+          'accept': '*/*',
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: utf8.encode(bodyJson),
       );
 
-      print('createSharehouse status: ${response.statusCode}');
-      print('createSharehouse body: ${response.body}'); // ← 추가
+      print('📥 status: ${response.statusCode}');
+      print('📥 body: ${response.body}');
+      print('📥 headers: ${response.headers}'); // ← 응답 헤더 확인
 
       return response.statusCode == 200;
-    } catch (e) {
+    } catch (e, stack) {
+      print('❌ 에러: $e');
+      print('❌ 스택: $stack');
       throw Exception('매물 등록 중 오류: $e');
     }
   }
