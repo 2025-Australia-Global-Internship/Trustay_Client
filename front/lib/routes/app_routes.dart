@@ -8,4 +8,5 @@ class AppRoutes {
   static const editProfile = '/edit_profile';
   static const personalDetails = '/person_details';
   static const sharehouseCreate = '/sharehouse_create';
+  static const postPending = '/post_pending';
 }

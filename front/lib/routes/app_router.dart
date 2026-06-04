@@ -8,6 +8,7 @@ import '../pages/mypage/listing.dart';
 import '../pages/mypage/edit_profile.dart';
 import '../pages/mypage/personal_details.dart';
 import '../pages/mypage/sharehouse_create_step1.dart';
+import '../pages/mypage/post_pending_approval.dart';
 import 'app_routes.dart';
 
 final Map<String, WidgetBuilder> appRouter = {
@@ -20,4 +21,5 @@ final Map<String, WidgetBuilder> appRouter = {
   AppRoutes.editProfile: (_) => const EditProfilePage(),
   AppRoutes.personalDetails: (_) => const PersonalDetailsPage(),
   AppRoutes.sharehouseCreate: (_) => const SharehouseCreateStep1Page(),
+  AppRoutes.postPending: (_) => const PostPendingApprovalPage(),
 };

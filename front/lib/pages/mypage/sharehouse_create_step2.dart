@@ -48,7 +48,7 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
   // Bills Included
   String? _selectedBillsIncluded;
 
-  // Room Type — API enum: SHAREDROOM, PRIVATE_ROOM, ENTIRE_PLACE
+  // Room Type — API enum: SHAREDROOM, PRIVATEROOM, ENTIREPLACE
   String? _selectedRoomType;
 
   // Rent
@@ -439,9 +439,9 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
           children: [
             _buildChoiceChip(
               label: 'Private room',
-              selected: _selectedRoomType == 'PRIVATE_ROOM',
+              selected: _selectedRoomType == 'PRIVATEROOM',
               onSelected: () =>
-                  setState(() => _selectedRoomType = 'PRIVATE_ROOM'),
+                  setState(() => _selectedRoomType = 'PRIVATEROOM'),
             ),
             _buildChoiceChip(
               label: 'Shared room',
@@ -452,9 +452,9 @@ class _SharehouseCreateStep2PageState extends State<SharehouseCreateStep2Page> {
             ),
             _buildChoiceChip(
               label: 'Entire place',
-              selected: _selectedRoomType == 'ENTIRE_PLACE',
+              selected: _selectedRoomType == 'ENTIREPLACE',
               onSelected: () =>
-                  setState(() => _selectedRoomType = 'ENTIRE_PLACE'),
+                  setState(() => _selectedRoomType = 'ENTIREPLACE'),
             ),
           ],
         ),

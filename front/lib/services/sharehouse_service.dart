@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // [중요] 프로젝트에 존재하는 모델 파일들을 모두 import 해주세요.
@@ -41,6 +42,25 @@ class SharehouseService {
     };
   }
 
+  static MediaType _imageContentTypeFor(File imageFile) {
+    final path = imageFile.path.toLowerCase();
+
+    if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
+      return MediaType('image', 'jpeg');
+    }
+    if (path.endsWith('.png')) {
+      return MediaType('image', 'png');
+    }
+    if (path.endsWith('.heic')) {
+      return MediaType('image', 'heic');
+    }
+    if (path.endsWith('.heif')) {
+      return MediaType('image', 'heif');
+    }
+
+    throw Exception('지원하지 않는 이미지 형식입니다: ${imageFile.path}');
+  }
+
   // ------------------------------------------------------------------------
   // 1. 이미지 업로드 (Multipart/form-data)
   // ------------------------------------------------------------------------
@@ -52,8 +72,14 @@ class SharehouseService {
       request.headers['Authorization'] = 'Bearer $token';
 
       for (var imageFile in imageFiles) {
+        final fileName = imageFile.path.split(Platform.pathSeparator).last;
         request.files.add(
-          await http.MultipartFile.fromPath('images', imageFile.path),
+          await http.MultipartFile.fromPath(
+            'images',
+            imageFile.path,
+            filename: fileName,
+            contentType: _imageContentTypeFor(imageFile),
+          ),
         );
       }
 
