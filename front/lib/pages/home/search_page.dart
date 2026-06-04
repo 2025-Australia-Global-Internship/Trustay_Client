@@ -3,7 +3,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:front/constants/colors.dart';
 import 'package:front/models/search_model.dart';
 import 'package:front/models/sharehouse_model.dart';
-import 'package:front/models/house_dummy.dart';
 import 'package:front/services/search_service.dart';
 import 'package:front/services/sharehouse_service.dart';
 import 'package:front/widgets/house_card.dart';
@@ -33,28 +32,13 @@ class _SearchPageState extends State<SearchPage> {
 
   Future<void> _loadHouses() async {
     try {
-      final list = await SharehouseService.getSharehouseList('ALL');
+      final list = await SharehouseService.fetchAllHouses(houseType: 'ALL');
       if (!mounted) return;
       setState(() => _houses = list);
     } catch (_) {
       if (!mounted) return;
       setState(() => _houses = []);
     }
-  }
-
-  HouseDummy _toHouseDummy(SharehouseModel s) {
-    return HouseDummy(
-      id: s.id,
-      title: s.title,
-      address: s.address,
-      houseType: s.houseType,
-      approvalStatus: 'APPROVED',
-      imageUrls: s.imageUrls,
-      price: s.rentPrice,
-      beds: s.roomCount,
-      baths: s.bathroomCount,
-      currentResidents: s.currentResidents,
-    );
   }
 
   @override
@@ -307,7 +291,7 @@ class _SearchPageState extends State<SearchPage> {
               ),
               itemCount: _houses.length > 4 ? 4 : _houses.length,
               itemBuilder: (context, index) =>
-                  HouseCard(house: _toHouseDummy(_houses[index]), isGrid: true),
+                  HouseCard(house: _houses[index], isGrid: true),
             ),
           ),
           const SizedBox(height: 24),
@@ -371,7 +355,7 @@ class _SearchPageState extends State<SearchPage> {
           ),
           itemCount: results.length,
           itemBuilder: (context, index) =>
-              HouseCard(house: _toHouseDummy(results[index]), isGrid: true),
+              HouseCard(house: results[index], isGrid: true),
         ),
       ],
     );

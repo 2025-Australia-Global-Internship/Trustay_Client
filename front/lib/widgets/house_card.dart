@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../constants/colors.dart';
-import '../models/house_dummy.dart';
+// 1. 더미 대신 실제 모델 import
+import '../models/sharehouse_model.dart';
 
 class HouseCard extends StatelessWidget {
-  final HouseDummy house;
+  // 2. 타입을 SharehouseModel로 변경
+  final SharehouseModel house;
   final bool isGrid;
 
   const HouseCard({super.key, required this.house, this.isGrid = false});
 
   @override
   Widget build(BuildContext context) {
+    // 3. 서버 모델 필드에 맞게 변수 매핑
     final imageUrl = house.imageUrls.isNotEmpty
         ? house.imageUrls.first
         : 'https://via.placeholder.com/400x300';
@@ -25,7 +28,7 @@ class HouseCard extends StatelessWidget {
           BoxShadow(
             color: Colors.black.withOpacity(0.14),
             blurRadius: 5,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -33,9 +36,9 @@ class HouseCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 이미지
+          // 이미지 영역
           Padding(
-            padding: EdgeInsets.all(7),
+            padding: const EdgeInsets.all(7),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(14),
               child: Image.network(
@@ -43,26 +46,24 @@ class HouseCard extends StatelessWidget {
                 height: 140,
                 width: double.infinity,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) {
-                  return Container(
-                    height: 140,
-                    width: double.infinity,
-                    color: grey01,
-                    child: const Icon(Icons.home, size: 50, color: grey01),
-                  );
-                },
+                errorBuilder: (_, __, ___) => Container(
+                  height: 140,
+                  width: double.infinity,
+                  color: grey01,
+                  child: const Icon(Icons.home, size: 50, color: grey02),
+                ),
               ),
             ),
           ),
 
-          // 카드 내용
+          // 카드 내용 영역
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 7, 16, 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                // 제목 + 가격
+                // 제목 + 가격 (house.rentPrice 사용)
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -81,7 +82,7 @@ class HouseCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      '\$${house.price}',
+                      '\$${house.rentPrice}', // .price 대신 .rentPrice
                       style: TextStyle(
                         fontSize: isGrid ? 12 : 13,
                         fontWeight: FontWeight.w800,
@@ -101,7 +102,10 @@ class HouseCard extends StatelessWidget {
                       'assets/icons/pin.svg',
                       width: 12,
                       height: 12,
-                      color: green,
+                      colorFilter: const ColorFilter.mode(
+                        green,
+                        BlendMode.srcIn,
+                      ),
                     ),
                     const SizedBox(width: 4),
                     Expanded(
@@ -109,7 +113,7 @@ class HouseCard extends StatelessWidget {
                         house.address,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w400,
                           color: grey04,
@@ -120,21 +124,22 @@ class HouseCard extends StatelessWidget {
                   ],
                 ),
 
-                isGrid ? SizedBox(height: 14) : SizedBox(height: 19),
+                SizedBox(height: isGrid ? 14 : 19),
 
-                // 아이콘 영역
+                // 아이콘 영역 (서버 모델 필드명에 맞게 수정)
                 Wrap(
                   spacing: 6,
                   runSpacing: 3,
                   children: [
                     _iconChip(
                       svg: 'assets/icons/bed.svg',
-                      text: '${house.beds}',
+                      text: '${house.roomCount}', // .beds 대신 .roomCount
                       isGrid: isGrid,
                     ),
                     _iconChip(
                       svg: 'assets/icons/bathroom.svg',
-                      text: '${house.baths}',
+                      text:
+                          '${house.bathroomCount}', // .baths 대신 .bathroomCount
                       isGrid: isGrid,
                     ),
                     _iconChip(
@@ -153,6 +158,7 @@ class HouseCard extends StatelessWidget {
   }
 }
 
+// _iconChip 함수는 기존과 동일하되 Svg color 부분만 업데이트된 방식으로 수정 권장
 Widget _iconChip({
   required String svg,
   required String text,
@@ -164,11 +170,8 @@ Widget _iconChip({
       vertical: isGrid ? 7 : 8,
     ),
     decoration: BoxDecoration(
-      color: Colors.transparent,
       border: Border.all(color: grey01, width: 1.2),
-      borderRadius: isGrid
-          ? BorderRadius.circular(16)
-          : BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(isGrid ? 16 : 20),
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
@@ -177,7 +180,7 @@ Widget _iconChip({
           svg,
           width: isGrid ? 13 : 18,
           height: isGrid ? 13 : 18,
-          color: dark,
+          colorFilter: const ColorFilter.mode(dark, BlendMode.srcIn),
         ),
         SizedBox(width: isGrid ? 6 : 10),
         Text(

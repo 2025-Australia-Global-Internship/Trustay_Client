@@ -1,15 +1,24 @@
-// ─── Request ─────────────────────────────────────────────────────────────────
+// ─── Request Model ───────────────────────────────────────────────────────────
 class SharehouseCreateRequest {
   final String title;
   final String description;
   final String address;
   final String houseType; // APARTMENT, HOUSE, UNIT, TOWNHOUSE
   final int rentPrice;
-  final int roomCount;
-  final int bathroomCount;
-  final int currentResidents;
-  final List<String> options;
+  final int roomCount; // Bedroom 수
+  final int bathroomCount; // Bathroom 수
+  final int currentResidents; // Resident 수
+  final List<String> homeRules; // ["No smoking", "No parties" 등]
+  final List<String> features; // ["Double bed", "Washing Machine" 등]
   final List<String> imageUrls;
+  final bool billsIncluded; // true / false
+  final String roomType; // SHAREDROOM, PRIVATEROOM, ENTIREPLACE
+  final int bondType; // 0 (Custom), 2, 4 (weeks)
+  final int minimumStay; // 주 단위 숫자
+  final String gender; // MALE, FEMALE, NON_BINARY
+  final String age; // "No age rejection" 또는 숫자 포함 문자열
+  final String religion;
+  final String dietaryPreference;
 
   SharehouseCreateRequest({
     required this.title,
@@ -20,8 +29,17 @@ class SharehouseCreateRequest {
     required this.roomCount,
     required this.bathroomCount,
     required this.currentResidents,
-    required this.options,
+    required this.homeRules,
+    required this.features,
     required this.imageUrls,
+    required this.billsIncluded,
+    required this.roomType,
+    required this.bondType,
+    required this.minimumStay,
+    required this.gender,
+    required this.age,
+    required this.religion,
+    required this.dietaryPreference,
   });
 
   Map<String, dynamic> toJson() => {
@@ -33,12 +51,21 @@ class SharehouseCreateRequest {
     'roomCount': roomCount,
     'bathroomCount': bathroomCount,
     'currentResidents': currentResidents,
-    'options': options,
+    'homeRules': homeRules,
+    'features': features,
     'imageUrls': imageUrls,
+    'billsIncluded': billsIncluded,
+    'roomType': roomType,
+    'bondType': bondType,
+    'minimumStay': minimumStay,
+    'gender': gender,
+    'age': age,
+    'religion': religion,
+    'dietaryPreference': dietaryPreference,
   };
 }
 
-// ─── Response ────────────────────────────────────────────────────────────────
+// ─── Response Model (기존 유지) ────────────────────────────────────────────────
 class SharehouseCreateResponse {
   final String dateTime;
   final String version;
@@ -70,8 +97,8 @@ class SharehouseCreatedData {
   final String address;
   final int viewCount;
   final int wishCount;
-  final String houseType; // APARTMENT, HOUSE, UNIT, TOWNHOUSE
-  final String approvalStatus; // PENDING, ...
+  final String houseType;
+  final String approvalStatus;
   final List<String> imageUrls;
   final bool wishedByMe;
 
