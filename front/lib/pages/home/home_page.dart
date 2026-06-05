@@ -12,6 +12,8 @@ import 'package:front/widgets/house_card.dart';
 // 상세 페이지 이동을 위해 import 추가
 import '../../pages/mypage/sharehouse_detail_page.dart';
 
+import 'package:front/main.dart'; // routeObserver import
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -19,7 +21,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with RouteAware {
   User? user;
   String _selectedFilter = 'ALL'; // 필터 상태: ALL, HOUSE, APARTMENT, UNIT
   List<SharehouseModel> _houses = [];
@@ -30,6 +32,25 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     _loadProfile();
     _loadHouses();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // routeObserver에 등록
+    routeObserver.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  // 다른 페이지에서 pop되어 홈으로 돌아올 때 호출
+  @override
+  void didPopNext() {
+    _loadHouses(); // ← 여기서 실행됨
   }
 
   // 프로필 정보 로드
@@ -351,7 +372,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
 
-              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+              const SliverToBoxAdapter(child: SizedBox(height: 72)),
             ],
           ),
         ),

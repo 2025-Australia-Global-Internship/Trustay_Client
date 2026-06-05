@@ -4,6 +4,8 @@ import '../constants/colors.dart';
 // 1. 더미 대신 실제 모델 import
 import '../models/sharehouse_model.dart';
 
+import '../services/sharehouse_service.dart'; // 찜하기 API 호출을 위해 서비스 import
+
 class HouseCard extends StatelessWidget {
   // 2. 타입을 SharehouseModel로 변경
   final SharehouseModel house;
@@ -39,23 +41,33 @@ class HouseCard extends StatelessWidget {
           // 이미지 영역
           Padding(
             padding: const EdgeInsets.all(7),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(14),
-              child: Image.network(
-                imageUrl,
-                height: 140,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  height: 140,
-                  width: double.infinity,
-                  color: grey01,
-                  child: const Icon(Icons.home, size: 50, color: grey02),
+            child: Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: Image.network(
+                    imageUrl,
+                    height: 140,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      height: 140,
+                      width: double.infinity,
+                      color: grey01,
+                      child: const Icon(Icons.home, size: 50, color: grey02),
+                    ),
+                  ),
                 ),
-              ),
+
+                // 찜 버튼
+                Positioned(
+                  top: 7,
+                  right: 7,
+                  child: _WishlistButton(houseId: house.id, isGrid: isGrid),
+                ),
+              ],
             ),
           ),
-
           // 카드 내용 영역
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 7, 16, 10),
@@ -195,4 +207,63 @@ Widget _iconChip({
       ],
     ),
   );
+}
+
+class _WishlistButton extends StatefulWidget {
+  final int houseId;
+  final bool isGrid;
+  const _WishlistButton({required this.houseId, this.isGrid = false});
+
+  @override
+  State<_WishlistButton> createState() => _WishlistButtonState();
+}
+
+class _WishlistButtonState extends State<_WishlistButton> {
+  bool _isLiked = false;
+  bool _isLoading = false;
+
+  Future<void> _toggleWish() async {
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+
+    try {
+      final wished = await SharehouseService.toggleWish(widget.houseId);
+      setState(() => _isLiked = wished); // 서버 응답값으로 상태 설정
+    } catch (e) {
+      debugPrint('찜하기 오류: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: _toggleWish,
+      child: Container(
+        width: widget.isGrid ? 36 : 40,
+        height: widget.isGrid ? 36 : 40,
+        decoration: BoxDecoration(
+          color: const Color(0xFFEEEEEE),
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white, width: 1.1),
+        ),
+        child: Padding(
+          padding: widget.isGrid
+              ? const EdgeInsets.all(8)
+              : const EdgeInsets.all(9), // 아이콘 크기에 맞게 패딩 조정
+          child: SvgPicture.asset(
+            _isLiked
+                ? 'assets/icons/heart_filled.svg'
+                : 'assets/icons/heart.svg',
+            colorFilter: ColorFilter.mode(
+              _isLiked ? green : dark,
+              BlendMode.srcIn,
+            ),
+            fit: BoxFit.contain,
+          ),
+        ),
+      ),
+    );
+  }
 }

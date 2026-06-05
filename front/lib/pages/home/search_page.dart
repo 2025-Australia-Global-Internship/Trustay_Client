@@ -7,6 +7,7 @@ import 'package:front/services/search_service.dart';
 import 'package:front/services/sharehouse_service.dart';
 import 'package:front/widgets/house_card.dart';
 import 'package:front/widgets/custom_header.dart';
+import 'package:front/pages/mypage/sharehouse_detail_page.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -18,8 +19,12 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocus = FocusNode();
+
   List<SearchHistory> _searchHistory = [];
-  List<SharehouseModel> _houses = [];
+  List<SharehouseModel> _allHouses = [];
+  List<SharehouseModel> _recentViewed = []; // ← SharedPreferences에서 로드
+  List<SharehouseModel> _searchResults = [];
+
   bool _isSearching = false;
   String _searchQuery = '';
 
@@ -28,17 +33,7 @@ class _SearchPageState extends State<SearchPage> {
     super.initState();
     _loadSearchHistory();
     _loadHouses();
-  }
-
-  Future<void> _loadHouses() async {
-    try {
-      final list = await SharehouseService.fetchAllHouses(houseType: 'ALL');
-      if (!mounted) return;
-      setState(() => _houses = list);
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _houses = []);
-    }
+    _loadRecentViewed(); // ← 추가
   }
 
   @override
@@ -48,12 +43,36 @@ class _SearchPageState extends State<SearchPage> {
     super.dispose();
   }
 
+  // ──────────────────────────────────────────
+  // 데이터 로드
+  // ──────────────────────────────────────────
+
+  Future<void> _loadHouses() async {
+    try {
+      final list = await SharehouseService.fetchAllHouses(houseType: 'ALL');
+      if (!mounted) return;
+      setState(() => _allHouses = list);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _allHouses = []);
+    }
+  }
+
   Future<void> _loadSearchHistory() async {
     final history = await SearchService.getSearchHistory();
-    setState(() {
-      _searchHistory = history;
-    });
+    if (!mounted) return;
+    setState(() => _searchHistory = history);
   }
+
+  Future<void> _loadRecentViewed() async {
+    final list = await SearchService.getRecentViewed();
+    if (!mounted) return;
+    setState(() => _recentViewed = list);
+  }
+
+  // ──────────────────────────────────────────
+  // 검색 기록 조작
+  // ──────────────────────────────────────────
 
   Future<void> _addSearchQuery(String query) async {
     if (query.trim().isEmpty) return;
@@ -71,32 +90,59 @@ class _SearchPageState extends State<SearchPage> {
     await _loadSearchHistory();
   }
 
+  // ──────────────────────────────────────────
+  // 최근 본 매물 조작
+  // ──────────────────────────────────────────
+
+  Future<void> _clearRecentViewed() async {
+    await SearchService.clearRecentViewed();
+    await _loadRecentViewed();
+  }
+
+  // ──────────────────────────────────────────
+  // 검색 실행
+  // ──────────────────────────────────────────
+
   void _performSearch(String query) {
-    if (query.trim().isEmpty) return;
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return;
+
+    final q = trimmed.toLowerCase();
+    final results = _allHouses.where((house) {
+      return house.title.toLowerCase().contains(q) ||
+          house.address.toLowerCase().contains(q) ||
+          house.houseType.toLowerCase().contains(q);
+    }).toList();
+
     setState(() {
-      _searchQuery = query;
+      _searchQuery = trimmed;
       _isSearching = true;
+      _searchResults = results;
     });
-    _addSearchQuery(query);
+
+    _addSearchQuery(trimmed);
     _searchFocus.unfocus();
   }
 
+  void _clearSearch() {
+    _searchController.clear();
+    setState(() {
+      _isSearching = false;
+      _searchQuery = '';
+      _searchResults = [];
+    });
+  }
+
+  // ──────────────────────────────────────────
+  // Build
+  // ──────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
-    final searchResults = _isSearching && _searchQuery.isNotEmpty
-        ? _houses.where((house) {
-            final query = _searchQuery.toLowerCase();
-            return house.title.toLowerCase().contains(query) ||
-                house.address.toLowerCase().contains(query) ||
-                house.houseType.toLowerCase().contains(query);
-          }).toList()
-        : <SharehouseModel>[];
-
     return Scaffold(
       backgroundColor: Colors.grey[50],
       body: Column(
         children: [
-          // CustomHeader 사용
           CustomHeader(
             showBack: true,
             toolbarHeight: 72,
@@ -106,47 +152,38 @@ class _SearchPageState extends State<SearchPage> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.14),
+                    blurRadius: 5,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.14),
-                      blurRadius: 5,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  focusNode: _searchFocus,
-                  autofocus: true,
-                  cursorColor: grey03,
-                  onSubmitted: _performSearch,
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 14,
-                    ),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(
-                              Icons.clear,
-                              color: grey03,
-                              size: 20,
-                            ),
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() {
-                                _isSearching = false;
-                                _searchQuery = '';
-                              });
-                            },
-                          )
-                        : Padding(
+              child: TextField(
+                controller: _searchController,
+                focusNode: _searchFocus,
+                autofocus: true,
+                cursorColor: grey03,
+                onSubmitted: _performSearch,
+                decoration: InputDecoration(
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 14,
+                  ),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(
+                            Icons.clear,
+                            color: grey03,
+                            size: 20,
+                          ),
+                          onPressed: _clearSearch,
+                        )
+                      : GestureDetector(
+                          onTap: () => _performSearch(_searchController.text),
+                          child: Padding(
                             padding: const EdgeInsets.all(12),
                             child: SvgPicture.asset(
                               'assets/icons/search.svg',
@@ -155,86 +192,38 @@ class _SearchPageState extends State<SearchPage> {
                               color: grey03,
                             ),
                           ),
-                  ),
-                  onChanged: (value) {
-                    setState(() {});
-                  },
+                        ),
                 ),
+                onChanged: (value) => setState(() {}),
               ),
             ),
           ),
-
-          // 검색 결과 또는 최근 검색
           Expanded(
-            child: _isSearching && _searchQuery.isNotEmpty
-                ? _buildSearchResults(searchResults)
-                : _buildRecentSearches(),
+            child: _isSearching ? _buildSearchResults() : _buildRecentSection(),
           ),
         ],
       ),
     );
   }
 
-  // 최근 검색 및 최근 본 매물
-  Widget _buildRecentSearches() {
+  // ──────────────────────────────────────────
+  // 최근 검색 + 최근 본 매물 화면
+  // ──────────────────────────────────────────
+
+  Widget _buildRecentSection() {
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 최근 검색
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Recently searches',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: dark,
-                  ),
-                ),
-                GestureDetector(
-                  onTap: _searchHistory.isEmpty
-                      ? null
-                      : () {
-                          showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text('Delete all search history?'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text('Cancel'),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    _clearAllHistory();
-                                    Navigator.pop(context);
-                                  },
-                                  child: const Text(
-                                    'Delete',
-                                    style: TextStyle(color: Colors.red),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                  child: Text(
-                    'Delete all',
-                    style: TextStyle(
-                      color: _searchHistory.isEmpty ? grey02 : green,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ],
+          _buildSectionHeader(
+            title: 'Recently searches',
+            isEmpty: _searchHistory.isEmpty,
+            onDeleteAll: () => _showDeleteDialog(
+              message: 'Delete all search history?',
+              onConfirm: _clearAllHistory,
             ),
           ),
-
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: _searchHistory.isEmpty
@@ -246,7 +235,7 @@ class _SearchPageState extends State<SearchPage> {
                     spacing: 8,
                     runSpacing: 8,
                     children: _searchHistory
-                        .map((history) => _buildSearchChip(history.query))
+                        .map((h) => _buildSearchChip(h.query))
                         .toList(),
                   ),
           ),
@@ -254,45 +243,50 @@ class _SearchPageState extends State<SearchPage> {
           const SizedBox(height: 24),
 
           // 최근 본 매물
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
-                Text(
-                  'Recently viewed',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: dark,
-                  ),
-                ),
-                Text(
-                  'Delete all',
-                  style: TextStyle(
-                    color: green,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
+          _buildSectionHeader(
+            title: 'Recently viewed',
+            isEmpty: _recentViewed.isEmpty,
+            onDeleteAll: () => _showDeleteDialog(
+              message: 'Delete all viewed history?',
+              onConfirm: _clearRecentViewed,
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 9,
-                crossAxisSpacing: 11,
-                childAspectRatio: 0.68,
-              ),
-              itemCount: _houses.length > 4 ? 4 : _houses.length,
-              itemBuilder: (context, index) =>
-                  HouseCard(house: _houses[index], isGrid: true),
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: _recentViewed.isEmpty
+                ? const Text(
+                    'No recently viewed houses',
+                    style: TextStyle(fontSize: 13, color: grey03),
+                  )
+                : GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 9,
+                          crossAxisSpacing: 11,
+                          childAspectRatio: 0.68,
+                        ),
+                    itemCount: _recentViewed.length > 4
+                        ? 4
+                        : _recentViewed.length,
+                    itemBuilder: (context, index) {
+                      final house = _recentViewed[index];
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  SharehouseDetailPage(houseId: house.id),
+                            ),
+                          );
+                        },
+                        child: HouseCard(house: house, isGrid: true),
+                      );
+                    },
+                  ),
           ),
           const SizedBox(height: 24),
         ],
@@ -300,9 +294,12 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  // 검색 결과
-  Widget _buildSearchResults(List<SharehouseModel> results) {
-    if (results.isEmpty) {
+  // ──────────────────────────────────────────
+  // 검색 결과 화면
+  // ──────────────────────────────────────────
+
+  Widget _buildSearchResults() {
+    if (_searchResults.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -323,7 +320,7 @@ class _SearchPageState extends State<SearchPage> {
               ),
             ),
             const SizedBox(height: 8),
-            Text(
+            const Text(
               'Try different keywords',
               style: TextStyle(fontSize: 14, color: grey03),
             ),
@@ -336,7 +333,7 @@ class _SearchPageState extends State<SearchPage> {
       padding: const EdgeInsets.all(16),
       children: [
         Text(
-          '${results.length} results found',
+          '${_searchResults.length} results found',
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
@@ -353,15 +350,52 @@ class _SearchPageState extends State<SearchPage> {
             crossAxisSpacing: 11,
             childAspectRatio: 0.68,
           ),
-          itemCount: results.length,
+          itemCount: _searchResults.length,
           itemBuilder: (context, index) =>
-              HouseCard(house: results[index], isGrid: true),
+              HouseCard(house: _searchResults[index], isGrid: true),
         ),
       ],
     );
   }
 
-  // 검색 기록 칩
+  // ──────────────────────────────────────────
+  // 공통 위젯
+  // ──────────────────────────────────────────
+
+  Widget _buildSectionHeader({
+    required String title,
+    required bool isEmpty,
+    required VoidCallback onDeleteAll,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: dark,
+            ),
+          ),
+          GestureDetector(
+            onTap: isEmpty ? null : onDeleteAll,
+            child: Text(
+              'Delete all',
+              style: TextStyle(
+                color: isEmpty ? grey02 : green,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSearchChip(String query) {
     return Container(
       decoration: BoxDecoration(
@@ -395,6 +429,31 @@ class _SearchPageState extends State<SearchPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showDeleteDialog({
+    required String message,
+    required VoidCallback onConfirm,
+  }) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              onConfirm();
+              Navigator.pop(context);
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
       ),
     );
   }

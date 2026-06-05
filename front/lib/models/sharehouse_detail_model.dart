@@ -39,7 +39,7 @@ class SharehouseDetailModel {
     this.features,
     required this.viewCount,
     required this.hostId, // [추가]
-    required this.hostName,    
+    required this.hostName,
     this.lat,
     this.lon,
     required this.imageUrls,
@@ -68,7 +68,7 @@ class SharehouseDetailModel {
       currentResidents: d['currentResidents'] ?? 0,
       features: d['features'],
       viewCount: d['viewCount'] ?? 0,
-      hostId: json['hostId'] ?? 0, 
+      hostId: json['hostId'] ?? 0,
       hostName: json['hostName'] ?? 'Host',
       lat: (d['lat'] as num?)?.toDouble(),
       lon: (d['lon'] as num?)?.toDouble(),
