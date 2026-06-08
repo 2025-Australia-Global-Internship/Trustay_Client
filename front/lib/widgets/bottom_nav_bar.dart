@@ -66,8 +66,8 @@ class BottomNavbar extends StatelessWidget {
                     isSelected
                         ? _items[index]['selected']!
                         : _items[index]['default']!,
-                    width: 27,
-                    height: 27,
+                    width: index == 4 ? 29 : 27,
+                    height: index == 4 ? 29 : 27,
                   ),
                 ),
               ),

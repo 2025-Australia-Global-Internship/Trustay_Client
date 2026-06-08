@@ -10,8 +10,16 @@ class HouseCard extends StatelessWidget {
   // 2. 타입을 SharehouseModel로 변경
   final SharehouseModel house;
   final bool isGrid;
+  final bool initialIsWished;
+  final ValueChanged<bool>? onWishChanged; // 찜 상태 바뀔 때 콜백
 
-  const HouseCard({super.key, required this.house, this.isGrid = false});
+  const HouseCard({
+    super.key,
+    required this.house,
+    this.isGrid = false,
+    this.initialIsWished = false,
+    this.onWishChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -61,9 +69,14 @@ class HouseCard extends StatelessWidget {
 
                 // 찜 버튼
                 Positioned(
-                  top: 7,
-                  right: 7,
-                  child: _WishlistButton(houseId: house.id, isGrid: isGrid),
+                  top: 5.5,
+                  right: 5.5,
+                  child: _WishlistButton(
+                    houseId: house.id,
+                    isGrid: isGrid,
+                    initialIsWished: initialIsWished,
+                    onWishChanged: onWishChanged,
+                  ),
                 ),
               ],
             ),
@@ -212,7 +225,15 @@ Widget _iconChip({
 class _WishlistButton extends StatefulWidget {
   final int houseId;
   final bool isGrid;
-  const _WishlistButton({required this.houseId, this.isGrid = false});
+  final bool initialIsWished;
+  final ValueChanged<bool>? onWishChanged;
+
+  const _WishlistButton({
+    required this.houseId,
+    this.isGrid = false,
+    this.initialIsWished = false,
+    this.onWishChanged,
+  });
 
   @override
   State<_WishlistButton> createState() => _WishlistButtonState();
@@ -222,13 +243,20 @@ class _WishlistButtonState extends State<_WishlistButton> {
   bool _isLiked = false;
   bool _isLoading = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _isLiked = widget.initialIsWished;
+  }
+
   Future<void> _toggleWish() async {
     if (_isLoading) return;
     setState(() => _isLoading = true);
 
     try {
       final wished = await SharehouseService.toggleWish(widget.houseId);
-      setState(() => _isLiked = wished); // 서버 응답값으로 상태 설정
+      setState(() => _isLiked = wished);
+      widget.onWishChanged?.call(wished); // 콜백 호출
     } catch (e) {
       debugPrint('찜하기 오류: $e');
     } finally {

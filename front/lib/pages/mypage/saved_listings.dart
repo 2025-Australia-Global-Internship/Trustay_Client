@@ -90,7 +90,7 @@ class _SavedListingsPageState extends State<SavedListingsPage> {
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
           SizedBox(
-            height: MediaQuery.of(context).size.height * 0.6,
+            height: MediaQuery.of(context).size.height * 0.7,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -104,8 +104,8 @@ class _SavedListingsPageState extends State<SavedListingsPage> {
                 const Text(
                   'No saved listings yet.',
                   style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
                     color: grey02,
                   ),
                 ),
@@ -113,7 +113,7 @@ class _SavedListingsPageState extends State<SavedListingsPage> {
                 const Text(
                   'Tap the heart on any listing to save it.',
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 14,
                     fontWeight: FontWeight.w400,
                     color: grey02,
                   ),
@@ -125,11 +125,16 @@ class _SavedListingsPageState extends State<SavedListingsPage> {
       );
     }
 
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 30),
       physics: const AlwaysScrollableScrollPhysics(),
       itemCount: _wishlist.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 14),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12, // 가로 간격
+        mainAxisSpacing: 14, // 세로 간격
+        childAspectRatio: 0.68, // 카드의 가로세로 비율
+      ),
       itemBuilder: (context, index) {
         final item = _wishlist[index];
         return GestureDetector(
@@ -140,9 +145,19 @@ class _SavedListingsPageState extends State<SavedListingsPage> {
                 builder: (_) => SharehouseDetailPage(houseId: item.id),
               ),
             );
-            _loadData(); // 디테일에서 찜 해제하고 돌아오면 목록 갱신
+            _loadData();
           },
-          child: HouseCard(house: item, isGrid: false),
+          child: HouseCard(
+            house: item,
+            isGrid: true,
+            initialIsWished: true, // 찜 목록이므로 항상 true
+            onWishChanged: (wished) {
+              if (!wished) {
+                // 찜 취소 시 목록에서 즉시 제거
+                setState(() => _wishlist.removeWhere((h) => h.id == item.id));
+              }
+            },
+          ),
         );
       },
     );

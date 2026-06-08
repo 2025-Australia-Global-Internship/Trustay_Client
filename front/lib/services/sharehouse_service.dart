@@ -179,7 +179,7 @@ class SharehouseService {
       final token = await _getToken();
 
       final uri = Uri.parse('$_apiBase/sharehouses/my').replace(
-        queryParameters: {'page': '0', 'size': '10', 'sort': 'createdAt,desc'},
+        queryParameters: {'page': '0', 'size': '10', 'sort': 'regTime,desc'},
       );
 
       final response = await http.get(uri, headers: _getHeaders(token));

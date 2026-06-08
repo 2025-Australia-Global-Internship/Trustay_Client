@@ -200,7 +200,11 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
                       const SizedBox(height: 12),
                       Text(
                         _house!.description,
-                        style: const TextStyle(color: grey04, height: 1.5),
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: dark,
+                          height: 1.5,
+                        ),
                       ),
                       const SizedBox(height: 35),
                       _buildPropertyDetails(_house!),

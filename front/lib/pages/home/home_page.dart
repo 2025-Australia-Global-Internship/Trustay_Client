@@ -25,6 +25,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
   User? user;
   String _selectedFilter = 'ALL'; // 필터 상태: ALL, HOUSE, APARTMENT, UNIT
   List<SharehouseModel> _houses = [];
+  Set<int> _wishedIds = {}; // 찜한 매물 id 집합
   bool _isLoading = false; // 로딩 상태 추가
 
   @override
@@ -63,15 +64,20 @@ class _HomePageState extends State<HomePage> with RouteAware {
     }
   }
 
-  // 쉐어하우스 목록 로드 (필터 적용)
+  // 쉐어하우스 목록 + 찜 목록 병렬 로드
   Future<void> _loadHouses() async {
     setState(() => _isLoading = true);
     try {
-      // 서비스의 fetchAllHouses 호출
-      final results = await SharehouseService.fetchAllHouses(
-        houseType: _selectedFilter,
-      );
-      setState(() => _houses = results);
+      final results = await Future.wait([
+        SharehouseService.fetchAllHouses(houseType: _selectedFilter),
+        SharehouseService.fetchWishlist(),
+      ]);
+      setState(() {
+        _houses = results[0] as List<SharehouseModel>;
+        _wishedIds = (results[1] as List<SharehouseModel>)
+            .map((h) => h.id)
+            .toSet();
+      });
     } catch (e) {
       debugPrint('House Load Error: $e');
     } finally {
@@ -306,7 +312,20 @@ class _HomePageState extends State<HomePage> with RouteAware {
                             ),
                           );
                         },
-                        child: HouseCard(house: item, isGrid: false),
+                        child: HouseCard(
+                          house: item,
+                          isGrid: false,
+                          initialIsWished: _wishedIds.contains(item.id),
+                          onWishChanged: (wished) {
+                            setState(() {
+                              if (wished) {
+                                _wishedIds.add(item.id);
+                              } else {
+                                _wishedIds.remove(item.id);
+                              }
+                            });
+                          },
+                        ),
                       );
                     },
                   ),
@@ -360,7 +379,20 @@ class _HomePageState extends State<HomePage> with RouteAware {
                           ),
                         );
                       },
-                      child: HouseCard(house: item, isGrid: true),
+                      child: HouseCard(
+                        house: item,
+                        isGrid: true,
+                        initialIsWished: _wishedIds.contains(item.id),
+                        onWishChanged: (wished) {
+                          setState(() {
+                            if (wished) {
+                              _wishedIds.add(item.id);
+                            } else {
+                              _wishedIds.remove(item.id);
+                            }
+                          });
+                        },
+                      ),
                     );
                   }, childCount: generalList.length),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
