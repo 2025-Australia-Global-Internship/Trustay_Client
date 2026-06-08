@@ -40,15 +40,21 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
 
   Future<void> _loadDetail() async {
     try {
-      final data = await SharehouseService.getSharehouseDetail(widget.houseId);
+      // 두 개 동시에 호출
+      final results = await Future.wait([
+        SharehouseService.getSharehouseDetail(widget.houseId),
+        SharehouseService.fetchWishStatus(widget.houseId),
+      ]);
+
       if (mounted) {
         setState(() {
-          _house = data;
+          _house = results[0] as SharehouseDetailModel;
+          _isWished = results[1] as bool;
           _isLoading = false;
         });
       }
-      if (data.address != null && data.address!.isNotEmpty) {
-        _geocodeAddress(data.address!);
+      if (_house!.address != null && _house!.address!.isNotEmpty) {
+        _geocodeAddress(_house!.address!);
       }
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
@@ -194,7 +200,11 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
                       const SizedBox(height: 12),
                       Text(
                         _house!.description,
-                        style: const TextStyle(color: grey04, height: 1.5),
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: dark,
+                          height: 1.5,
+                        ),
                       ),
                       const SizedBox(height: 35),
                       _buildPropertyDetails(_house!),

@@ -127,9 +127,7 @@ class _MyPageState extends State<MyPage> {
                       const SizedBox(height: 6),
 
                       ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/edit_profile');
-                        },
+                        onPressed: () {},
                         style: ElevatedButton.styleFrom(
                           backgroundColor: yellow,
                           elevation: 0,
@@ -200,6 +198,7 @@ class _MyPageState extends State<MyPage> {
                 MyPageMenuItem(
                   title: 'Saved Listings',
                   leadingPath: 'assets/icons/heart.svg',
+                  onTap: () => Navigator.pushNamed(context, '/saved_listings'),
                 ),
                 MyPageMenuItem(
                   title: 'My Reviews',

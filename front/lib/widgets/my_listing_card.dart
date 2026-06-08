@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import '../constants/colors.dart';
 import '../models/listing_model.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class MyListingCard extends StatelessWidget {
   final MyListingItem item;
@@ -20,24 +21,26 @@ class MyListingCard extends StatelessWidget {
 
   Color _getStatusColor(String status) {
     switch (status) {
-      case 'APPROVED':
+      case 'ACTIVE':
         return green;
+
       case 'REJECTED':
-        return Colors.red;
+        return grey04;
+
       case 'WAITING':
       default:
-        return const Color(0xFFFFA000);
+        return darkgreen;
     }
   }
 
   String _getStatusText(String status) {
     switch (status) {
-      case 'APPROVED':
-        return '승인됨';
+      case 'ACTIVE':
+        return 'ACTIVE';
       case 'REJECTED':
-        return '반려됨';
+        return 'REJECTED';
       case 'WAITING':
-        return '심사중';
+        return 'WAITING';
       default:
         return status;
     }
@@ -74,9 +77,9 @@ class MyListingCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(12),
                       child: Container(
-                        width: 80,
+                        width: 100,
                         height: 80,
                         color: grey01,
                         child: imageUrl.isNotEmpty
@@ -91,7 +94,7 @@ class MyListingCard extends StatelessWidget {
                             : const Icon(Icons.home, color: grey02),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -105,7 +108,7 @@ class MyListingCard extends StatelessWidget {
                               color: _getStatusColor(
                                 item.approvalStatus,
                               ).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: BorderRadius.circular(50),
                               border: Border.all(
                                 color: _getStatusColor(
                                   item.approvalStatus,
@@ -116,13 +119,13 @@ class MyListingCard extends StatelessWidget {
                             child: Text(
                               _getStatusText(item.approvalStatus),
                               style: TextStyle(
-                                fontSize: 11,
+                                fontSize: 10,
                                 fontWeight: FontWeight.w800,
                                 color: _getStatusColor(item.approvalStatus),
                               ),
                             ),
                           ),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 8),
                           Text(
                             item.title,
                             maxLines: 1,
@@ -133,12 +136,12 @@ class MyListingCard extends StatelessWidget {
                               color: dark,
                             ),
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 5),
                           Text(
                             item.address,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 12, color: grey02),
+                            style: const TextStyle(fontSize: 11, color: grey04),
                           ),
                         ],
                       ),
@@ -163,16 +166,24 @@ class MyListingCard extends StatelessWidget {
                         borderRadius: const BorderRadius.only(
                           bottomLeft: Radius.circular(16),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.edit, size: 16, color: grey02),
-                            SizedBox(width: 4),
+                            SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: SvgPicture.asset(
+                                'assets/icons/pencil.svg',
+                                color: dark,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                            SizedBox(width: 7),
                             Text(
-                              '수정',
+                              'Edit',
                               style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
                                 color: dark,
                               ),
                             ),
@@ -188,20 +199,24 @@ class MyListingCard extends StatelessWidget {
                         borderRadius: const BorderRadius.only(
                           bottomRight: Radius.circular(16),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
-                              Icons.delete_outline,
-                              size: 16,
-                              color: Colors.redAccent,
+                            SizedBox(
+                              width: 15,
+                              height: 15,
+                              child: SvgPicture.asset(
+                                'assets/icons/trash.svg',
+                                color: Colors.redAccent,
+                                fit: BoxFit.contain,
+                              ),
                             ),
-                            SizedBox(width: 4),
+                            SizedBox(width: 6),
                             Text(
-                              '삭제',
+                              'Delete',
                               style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
                                 color: Colors.redAccent,
                               ),
                             ),

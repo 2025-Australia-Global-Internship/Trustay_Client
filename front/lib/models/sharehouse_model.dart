@@ -4,12 +4,10 @@ class SharehouseModel {
   final String address;
   final String houseType;
   final List<String> imageUrls;
-  // 카드에 표시할 추가 정보
-  final int rentPrice; 
+  final int rentPrice;
   final int bathroomCount;
   final int roomCount;
   final int currentResidents;
-
 
   SharehouseModel({
     required this.id,
@@ -37,5 +35,19 @@ class SharehouseModel {
       roomCount: json['roomCount'] ?? 0,
       currentResidents: json['currentResidents'] ?? 0,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'address': address,
+      'houseType': houseType,
+      'imageUrls': imageUrls,
+      'rentPrice': rentPrice,
+      'bathroomCount': bathroomCount,
+      'roomCount': roomCount,
+      'currentResidents': currentResidents,
+    };
   }
 }

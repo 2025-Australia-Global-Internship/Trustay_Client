@@ -7,6 +7,9 @@ import 'routes/app_router.dart';
 import 'constants/theme.dart';
 import 'firebase_options.dart';
 
+final RouteObserver<ModalRoute<void>> routeObserver =
+    RouteObserver<ModalRoute<void>>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -29,6 +32,7 @@ class MyApp extends StatelessWidget {
       initialRoute: AppRoutes.intro,
       debugShowCheckedModeBanner: false,
       routes: appRouter,
+      navigatorObservers: [routeObserver],
     );
   }
 }
