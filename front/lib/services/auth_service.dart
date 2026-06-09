@@ -285,6 +285,62 @@ class AuthService {
     }
   }
 
+  /// 프로필 정보 수정 (전화번호, 생일, 계좌)
+  /// PATCH /api/trustay/members/profile
+  ///
+  /// null 또는 빈 문자열로 들어온 값은 전송에서 제외한다.
+  /// 성공 시 서버 최신 프로필을 다시 조회해 [currentUserNotifier] 까지 갱신한다.
+  static Future<User> updateProfile({
+    String? birth,
+    String? phone,
+    String? gender,
+    String? address,
+    String? accountInfo,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
+    if (token == null) {
+      throw Exception('토큰 없음');
+    }
+
+    final body = <String, dynamic>{};
+    if (birth != null && birth.isNotEmpty) body['birth'] = birth;
+    if (phone != null && phone.isNotEmpty) body['phone'] = phone;
+    if (gender != null && gender.isNotEmpty) body['gender'] = gender;
+    if (address != null && address.isNotEmpty) body['address'] = address;
+    if (accountInfo != null && accountInfo.isNotEmpty) {
+      body['accountInfo'] = accountInfo;
+    }
+
+    final res = await http.patch(
+      Uri.parse(ApiEndpoints.profile),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(body),
+    );
+
+    if (res.statusCode != 200 && res.statusCode != 201) {
+      throw Exception('프로필 수정 실패 (${res.statusCode}): ${res.body}');
+    }
+
+    try {
+      final decoded = jsonDecode(res.body);
+      final code = decoded['code'] ?? 200;
+      if (code != 200) {
+        throw Exception(decoded['message'] ?? '프로필 수정 실패');
+      }
+    } catch (e) {
+      if (e is Exception) rethrow;
+      // 응답 본문이 JSON이 아니어도 statusCode 200이면 성공으로 간주
+    }
+
+    // 최신 프로필을 서버에서 다시 받아 전역 상태까지 동기화
+    return fetchProfile();
+  }
+
   /// 프로필 이미지 업로드
   /// POST /api/trustay/members/profile/image
   /// multipart/form-data, 필드명: profileImage
