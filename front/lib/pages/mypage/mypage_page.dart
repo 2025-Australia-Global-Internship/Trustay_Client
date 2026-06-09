@@ -24,7 +24,22 @@ class _MyPageState extends State<MyPage> {
   @override
   void initState() {
     super.initState();
+    // 전역 사용자 노티파이어 구독 → 다른 화면에서의 프로필 변경도 즉시 반영
+    user = AuthService.currentUserNotifier.value;
+    AuthService.currentUserNotifier.addListener(_onUserChanged);
+
     _loadProfile();
+  }
+
+  @override
+  void dispose() {
+    AuthService.currentUserNotifier.removeListener(_onUserChanged);
+    super.dispose();
+  }
+
+  void _onUserChanged() {
+    if (!mounted) return;
+    setState(() => user = AuthService.currentUserNotifier.value);
   }
 
   Future<void> _loadProfile() async {
@@ -119,62 +134,39 @@ class _MyPageState extends State<MyPage> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  GestureDetector(
-                    onTap: _pickAndUploadProfileImage,
-                    child: Stack(
-                      children: [
-                        CircleAvatar(
-                          radius: 40,
-                          backgroundColor: Colors.grey[300],
-                          backgroundImage:
-                              user?.profileImageUrl?.isNotEmpty == true
-                              ? NetworkImage(user!.profileImageUrl!)
-                                    as ImageProvider
-                              : const AssetImage('assets/icons/default.png'),
-                        ),
-                        if (_isUploadingImage)
-                          Positioned.fill(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.35),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Center(
-                                child: SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2.5,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white,
-                                    ),
+                  Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 40,
+                        backgroundColor: Colors.grey[300],
+                        backgroundImage:
+                            user?.profileImageUrl?.isNotEmpty == true
+                            ? NetworkImage(user!.profileImageUrl!)
+                                  as ImageProvider
+                            : const AssetImage('assets/icons/default.png'),
+                      ),
+                      if (_isUploadingImage)
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.35),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Center(
+                              child: SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                        Positioned(
-                          right: 0,
-                          bottom: 0,
-                          child: Container(
-                            padding: const EdgeInsets.all(5),
-                            decoration: BoxDecoration(
-                              color: yellow,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Colors.white,
-                                width: 2,
-                              ),
-                            ),
-                            child: const Icon(
-                              Icons.camera_alt,
-                              size: 14,
-                              color: darkgreen,
-                            ),
-                          ),
                         ),
-                      ],
-                    ),
+                    ],
                   ),
 
                   const SizedBox(width: 18),
@@ -215,7 +207,9 @@ class _MyPageState extends State<MyPage> {
                       const SizedBox(height: 6),
 
                       ElevatedButton(
-                        onPressed: () {},
+                        onPressed: _isUploadingImage
+                            ? null
+                            : _pickAndUploadProfileImage,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: yellow,
                           elevation: 0,

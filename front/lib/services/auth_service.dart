@@ -21,6 +21,13 @@ class AuthService {
   /// 동시 호출 시 default 이미지가 여러 번 업로드되지 않도록 단일 Future로 메모이즈
   static Future<void>? _ensureDefaultImageFuture;
 
+  /// 현재 로그인한 사용자 정보를 앱 전역에 공유하는 노티파이어.
+  /// `fetchProfile()` 호출로 최신 값이 자동 반영되며, 다른 화면은 이를 구독해
+  /// 새로고침 없이 프로필(이미지 포함) 변경을 즉시 받아볼 수 있다.
+  static final ValueNotifier<User?> currentUserNotifier = ValueNotifier<User?>(
+    null,
+  );
+
   /// 로그인
   static Future<bool> login({
     required String email,
@@ -216,6 +223,9 @@ class AuthService {
         debugPrint('⚠️ 기본 프로필 이미지 업로드 실패: $e');
       }
     }
+
+    // 전역 사용자 정보 갱신 → 다른 화면이 새로고침 없이 즉시 반영
+    currentUserNotifier.value = user;
 
     return user;
   }

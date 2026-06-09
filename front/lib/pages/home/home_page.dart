@@ -31,6 +31,11 @@ class _HomePageState extends State<HomePage> with RouteAware {
   @override
   void initState() {
     super.initState();
+    // 전역 사용자 노티파이어 구독 → 다른 화면(마이페이지 등)에서
+    // 프로필 이미지가 변경되면 새로고침 없이 즉시 반영된다.
+    user = AuthService.currentUserNotifier.value;
+    AuthService.currentUserNotifier.addListener(_onUserChanged);
+
     _loadProfile();
     _loadHouses();
   }
@@ -44,6 +49,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
 
   @override
   void dispose() {
+    AuthService.currentUserNotifier.removeListener(_onUserChanged);
     routeObserver.unsubscribe(this);
     super.dispose();
   }
@@ -54,10 +60,19 @@ class _HomePageState extends State<HomePage> with RouteAware {
     _loadHouses(); // ← 여기서 실행됨
   }
 
+  // 전역 사용자 정보가 갱신될 때 호출되는 리스너
+  void _onUserChanged() {
+    if (!mounted) return;
+    setState(() => user = AuthService.currentUserNotifier.value);
+  }
+
   // 프로필 정보 로드
   Future<void> _loadProfile() async {
     try {
       final data = await AuthService.fetchProfile();
+      // fetchProfile 내부에서 currentUserNotifier가 갱신되므로
+      // 리스너가 setState를 호출하지만, 첫 진입에서도 즉시 반영되도록 보조 설정
+      if (!mounted) return;
       setState(() => user = data);
     } catch (e) {
       debugPrint('Profile Load Error: $e');
@@ -85,6 +100,11 @@ class _HomePageState extends State<HomePage> with RouteAware {
     }
   }
 
+  // 풀-투-리프레시 시 프로필 + 쉐어하우스 목록 함께 다시 로드
+  Future<void> _onRefresh() async {
+    await Future.wait([_loadProfile(), _loadHouses()]);
+  }
+
   // 필터 칩 클릭 시 호출될 함수
   void _onFilterSelected(String type) {
     setState(() => _selectedFilter = type);
@@ -102,7 +122,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
       backgroundColor: Color(0xFFFAFAFA),
       body: GradientLayout(
         child: RefreshIndicator(
-          onRefresh: _loadHouses,
+          onRefresh: _onRefresh,
           child: CustomScrollView(
             slivers: [
               // 헤더
