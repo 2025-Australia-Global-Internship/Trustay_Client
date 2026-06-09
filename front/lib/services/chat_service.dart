@@ -165,9 +165,11 @@ class ChatSocketService {
     _manualDisconnect = false;
     _reconnectAttempts = 0;
 
+    // 백엔드가 SockJS이므로 StompConfig.sockJS 팩토리를 사용한다.
+    // (raw WebSocket 모드인 StompConfig(url: 'ws://...')로는 400을 받는다)
     _client = StompClient(
-      config: StompConfig(
-        url: ApiEndpoints.websocketEndpoint,
+      config: StompConfig.sockJS(
+        url: ApiEndpoints.websocketEndpoint, // http(s)://host/ws-stomp
         onConnect: _handleConnect,
         onWebSocketError: (dynamic error) {
           final msg = '소켓 연결 에러: $error';
@@ -184,12 +186,10 @@ class ChatSocketService {
           print('⚠️ 소켓 연결 끊김');
           _scheduleReconnect();
         },
-        // SecurityConfig에서 핸드셰이크는 ignoring으로 열려 있음 (Origin만 설정)
-        webSocketConnectHeaders: const {
-          'Origin': 'https://trustay.digitalbasis.com',
-        },
-        // STOMP CONNECT 프레임에 토큰 포함
+        // STOMP CONNECT 프레임에 토큰 포함 (SecurityConfig에서 STOMP 단계 인증)
         stompConnectHeaders: {'Authorization': 'Bearer $_token'},
+        // SockJS HTTP 핸드셰이크에 함께 보낼 헤더가 필요하면 webSocketConnectHeaders 사용
+        webSocketConnectHeaders: {'Authorization': 'Bearer $_token'},
       ),
     );
 

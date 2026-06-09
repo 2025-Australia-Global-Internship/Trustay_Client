@@ -22,11 +22,14 @@ class ApiEndpoints {
   static String myChatRooms(int memberId) => '$chatBase/rooms/$memberId';
   static String leaveChatRoom(int roomId) => '$chatBase/room/$roomId/leave';
 
-  // STOMP (WebSocket)
-  // - websocketEndpoint: SockJS/STOMP 핸드셰이크 엔드포인트 (절대 URL)
-  // - stompPublishSend : 메시지 발행 destination (서버 @MessageMapping("/chat/send") + prefix /pub)
-  // - stompSubscribeRoom: 방 구독 destination (서버 SimpleBroker /sub)
-  static String get websocketEndpoint => '${ApiConstants.wsBaseUrl}/ws-stomp';
+  // STOMP (SockJS over HTTP)
+  // - 백엔드가 `registry.addEndpoint("/ws-stomp").withSockJS()` 형태이므로
+  //   클라이언트는 SockJS 프로토콜(HTTP 기반 핸드셰이크 → WS 업그레이드)로 접속해야 한다.
+  //   따라서 URL은 ws://가 아니라 http(s):// 스킴이어야 한다.
+  // - websocketEndpoint  : SockJS/STOMP 핸드셰이크 엔드포인트 (절대 URL, http/https)
+  // - stompPublishSend   : 메시지 발행 destination (서버 @MessageMapping("/chat/send") + prefix /pub)
+  // - stompSubscribeRoom : 방 구독 destination (서버 SimpleBroker /sub)
+  static String get websocketEndpoint => '${ApiConstants.baseUrl}/ws-stomp';
   static const String stompPublishSend = '/pub/chat/send';
   static String stompSubscribeRoom(int roomId) => '/sub/chat/room/$roomId';
 
