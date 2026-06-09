@@ -22,8 +22,12 @@ class ApiEndpoints {
   static String myChatRooms(int memberId) => '$chatBase/rooms/$memberId';
   static String leaveChatRoom(int roomId) => '$chatBase/room/$roomId/leave';
 
-  // STOMP (WebSocket) — 상대 경로로 사용
-  static const String stompSend = '/chat/send';
+  // STOMP (WebSocket)
+  // - websocketEndpoint: SockJS/STOMP 핸드셰이크 엔드포인트 (절대 URL)
+  // - stompPublishSend : 메시지 발행 destination (서버 @MessageMapping("/chat/send") + prefix /pub)
+  // - stompSubscribeRoom: 방 구독 destination (서버 SimpleBroker /sub)
+  static String get websocketEndpoint => '${ApiConstants.wsBaseUrl}/ws-stomp';
+  static const String stompPublishSend = '/pub/chat/send';
   static String stompSubscribeRoom(int roomId) => '/sub/chat/room/$roomId';
 
   // Communities

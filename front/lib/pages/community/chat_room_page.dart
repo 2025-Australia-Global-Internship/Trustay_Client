@@ -1,9 +1,5 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:front/constants/colors.dart';
-import 'package:stomp_dart_client/stomp.dart';
-import 'package:stomp_dart_client/stomp_config.dart';
-import 'package:stomp_dart_client/stomp_frame.dart';
 import 'package:front/services/chat_service.dart';
 import 'package:front/models/chat_message_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -25,150 +21,116 @@ class ChatRoomPage extends StatefulWidget {
 }
 
 class _ChatRoomPageState extends State<ChatRoomPage> {
-  StompClient? stompClient;
-  List<ChatMessageModel> _messages = [];
+  final ChatSocketService _socket = ChatSocketService();
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  final ChatService _chatService = ChatService();
 
+  List<ChatMessageModel> _messages = [];
   bool _isLoading = true;
   bool _isConnected = false;
   String? _token;
 
-  // [중요] 서버의 WebSocketConfig와 정확히 일치하는 주소
-  final String socketUrl = 'wss://trustay.digitalbasis.com/ws-stomp';
   @override
   void initState() {
     super.initState();
-    _loadData();
+    _bootstrap();
   }
 
-  Future<void> _loadData() async {
-    await _getToken();
+  /// 1) 토큰 → 2) 채팅 내역 → 3) 소켓 연결 + 구독
+  Future<void> _bootstrap() async {
+    await _loadToken();
     await _loadChatHistory();
-    _connectWebSocket();
+    await _connectAndSubscribe();
   }
 
-  Future<void> _getToken() async {
+  Future<void> _loadToken() async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _token = prefs.getString('token');
-    });
+    _token = prefs.getString('token');
   }
 
   Future<void> _loadChatHistory() async {
     try {
-      // API를 통해 이전 대화 내역 불러오기
-      // (ChatService에 해당 기능이 구현되어 있다고 가정)
-      // List<ChatMessageModel> history = await _chatService.getChatHistory(widget.roomId);
-
-      // setState(() {
-      //   _messages = history;
-      //   _isLoading = false;
-      // });
-
-      // 임시: 로딩 상태만 해제
+      final history = await ChatService.getChatHistory(
+        widget.roomId,
+        widget.myMemberId,
+      );
+      if (!mounted) return;
       setState(() {
+        _messages = history;
         _isLoading = false;
       });
+      _scrollToBottom();
     } catch (e) {
-      print('채팅 내역 로드 실패: $e');
+      print('❌ 채팅 내역 로드 실패: $e');
+      if (!mounted) return;
       setState(() => _isLoading = false);
     }
   }
 
-  void _connectWebSocket() {
+  Future<void> _connectAndSubscribe() async {
     if (_token == null) {
-      print("❌ 토큰이 없어 소켓 연결 불가");
+      print('❌ 토큰이 없어 소켓 연결 불가');
       return;
     }
-
-    stompClient = StompClient(
-      config: StompConfig(
-        url: socketUrl,
-
-        onConnect: _onConnect,
-
-        // [핵심 1] 소켓 연결 시 에러 처리
-        onWebSocketError: (dynamic error) => print("❌ 소켓 연결 에러: $error"),
-        onStompError: (frame) => print("❌ STOMP 에러: ${frame.body}"),
-        onDisconnect: (frame) => print("⚠️ 소켓 연결 끊김"),
-
-        // [핵심 2] 400 에러 방지를 위한 헤더 설정
-        // Handshake 단계에서는 Authorization을 뺍니다. (SecurityConfig에서 ignoring 설정됨)
-        webSocketConnectHeaders: {'Origin': 'https://trustay.digitalbasis.com'},
-
-        // [핵심 3] STOMP 연결 단계에서 토큰 인증
-        stompConnectHeaders: {'Authorization': 'Bearer $_token'},
-      ),
-    );
-
-    stompClient?.activate();
-  }
-
-  void _onConnect(StompFrame frame) {
-    setState(() {
-      _isConnected = true;
-    });
-    print("✅ 소켓 연결 성공!");
-
-    // [구독] 해당 방의 메시지 구독
-    stompClient?.subscribe(
-      destination: '/sub/chat/room/${widget.roomId}',
-      callback: (StompFrame frame) {
-        if (frame.body != null) {
-          try {
-            final Map<String, dynamic> jsonBody = jsonDecode(frame.body!);
-            final newMessage = ChatMessageModel.fromJson(jsonBody);
-
-            setState(() {
-              _messages.add(newMessage);
-            });
-            _scrollToBottom();
-          } catch (e) {
-            print("메시지 파싱 에러: $e");
-          }
-        }
+    await _socket.connect(
+      token: _token!,
+      autoReconnect: true,
+      onConnected: () {
+        if (!mounted) return;
+        setState(() => _isConnected = true);
+        _socket.subscribeRoom(
+          roomId: widget.roomId,
+          onMessage: _handleIncomingMessage,
+        );
+      },
+      onError: (msg) {
+        if (!mounted) return;
+        setState(() => _isConnected = false);
       },
     );
   }
 
+  void _handleIncomingMessage(ChatMessageModel msg) {
+    if (!mounted) return;
+    setState(() {
+      _messages.add(msg);
+    });
+    _scrollToBottom();
+  }
+
   void _sendMessage() {
-    if (_textController.text.trim().isEmpty || !_isConnected) return;
+    final text = _textController.text.trim();
+    if (text.isEmpty || !_isConnected) return;
 
-    final String messageContent = _textController.text;
-
-    // [발송] 메시지 전송
-    stompClient?.send(
-      destination: '/pub/chat/send',
-      body: jsonEncode({
-        'roomId': widget.roomId,
-        'senderId': widget.myMemberId,
-        'message': messageContent,
-        'messageType': 'TEXT', // 서버 Enum과 일치해야 함
-      }),
-      headers: {'Authorization': 'Bearer $_token'},
+    final ok = _socket.sendMessage(
+      roomId: widget.roomId,
+      senderId: widget.myMemberId,
+      message: text,
+      messageType: 'TALK',
     );
 
-    _textController.clear();
+    if (ok) {
+      _textController.clear();
+    }
   }
 
   void _scrollToBottom() {
-    if (_scrollController.hasClients) {
-      // 약간의 딜레이 후 스크롤 (렌더링 완료 대기)
-      Future.delayed(const Duration(milliseconds: 100), () {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      });
-    }
+    if (!_scrollController.hasClients) return;
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (!_scrollController.hasClients) return;
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    });
   }
 
   @override
   void dispose() {
-    stompClient?.deactivate();
+    // 구독 해제 + 소켓 종료 (자동 재연결도 중단)
+    _socket.unsubscribeRoom(widget.roomId);
+    _socket.disconnect();
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -238,7 +200,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           children: [
             if (!isMe)
               Text(
-                msg.senderName ?? 'Unknown',
+                msg.senderName,
                 style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,

@@ -9,6 +9,7 @@ import 'package:front/models/user_model.dart';
 
 import '../../models/chat_room_list_model.dart';
 import '../../services/chat_service.dart';
+import 'chat_room_page.dart';
 
 class HouseCommPage extends StatefulWidget {
   const HouseCommPage({super.key});
@@ -22,6 +23,8 @@ class _HouseCommPageState extends State<HouseCommPage> {
 
   List<ChatRoomListModel> _chatRooms = [];
   bool _isLoading = false;
+  String? _errorMessage;
+  User? _currentUser; // ChatRoomPage 진입 시 myMemberId 전달용
 
   @override
   void initState() {
@@ -65,28 +68,57 @@ class _HouseCommPageState extends State<HouseCommPage> {
   }
 
   // [수정] MyPage 패턴 적용: AuthService로 유저 정보 가져온 뒤 채팅 목록 요청
+  // - pull-to-refresh / 탭 전환 / 채팅방 복귀 모두 이 메서드 하나로 처리
   Future<void> _loadUserAndChats() async {
     if (_isLoading) return;
-
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
     try {
       // 1. AuthService를 통해 내 프로필 정보 가져오기 (mypage_page.dart와 동일 방식)
-      User user = await AuthService.fetchProfile();
+      final User user = _currentUser ?? await AuthService.fetchProfile();
 
       // 2. 가져온 user의 memberId로 채팅 목록 API 호출
+      //    (서비스에서 lastMessageTime 내림차순 정렬됨)
       final rooms = await ChatService.getMyChatRooms(user.memberId);
 
-      if (mounted) {
-        setState(() {
-          _chatRooms = rooms;
-          _isLoading = false;
-        });
-      }
+      if (!mounted) return;
+      setState(() {
+        _currentUser = user;
+        _chatRooms = rooms;
+        _isLoading = false;
+      });
     } catch (e) {
       print("Error loading data: $e");
-      if (mounted) setState(() => _isLoading = false);
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = '채팅방을 불러오지 못했어요.';
+        _isLoading = false;
+      });
     }
+  }
+
+  Future<void> _onTapChatRoom(ChatRoomListModel room) async {
+    // 프로필 정보가 아직 없으면(예: 첫 호출 실패 후) 보강해서 가져오기
+    final user = _currentUser ?? await AuthService.fetchProfile();
+    if (!mounted) return;
+    _currentUser = user;
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChatRoomPage(
+          roomId: room.roomId,
+          roomName: room.otherMemberName,
+          myMemberId: user.memberId,
+        ),
+      ),
+    );
+
+    // 방에서 돌아오면 마지막 메시지가 갱신되었을 수 있으니 새로고침
+    if (mounted) _loadUserAndChats();
   }
 
   @override
@@ -214,24 +246,70 @@ class _HouseCommPageState extends State<HouseCommPage> {
   }
 
   Widget _buildChatContent() {
-    if (_isLoading) {
+    if (_isLoading && _chatRooms.isEmpty) {
       return Center(child: CircularProgressIndicator(color: green));
     }
 
-    if (_chatRooms.isEmpty) {
-      return Center(
-        child: Text(
-          'No active chats.',
-          style: TextStyle(
-            fontSize: 14,
-            color: grey02,
-            fontWeight: FontWeight.w400,
+    // pull-to-refresh: 어떤 상태(빈/에러/리스트)든 새로고침 가능하도록
+    return RefreshIndicator(
+      color: green,
+      onRefresh: _loadUserAndChats,
+      child: _buildChatList(),
+    );
+  }
+
+  Widget _buildChatList() {
+    if (_errorMessage != null && _chatRooms.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          SizedBox(height: MediaQuery.of(context).size.height * 0.25),
+          Center(
+            child: Text(
+              _errorMessage!,
+              style: TextStyle(
+                fontSize: 14,
+                color: grey02,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
           ),
-        ),
+          const SizedBox(height: 8),
+          Center(
+            child: Text(
+              'Pull to refresh',
+              style: TextStyle(
+                fontSize: 12,
+                color: grey03,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (_chatRooms.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          SizedBox(height: MediaQuery.of(context).size.height * 0.3),
+          Center(
+            child: Text(
+              'No active chats.',
+              style: TextStyle(
+                fontSize: 14,
+                color: grey02,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ),
+        ],
       );
     }
 
     return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.symmetric(vertical: 8),
       itemCount: _chatRooms.length,
       itemBuilder: (context, index) {
@@ -241,9 +319,7 @@ class _HouseCommPageState extends State<HouseCommPage> {
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
           child: InkWell(
-            onTap: () {
-              // TODO: Navigate to chat room detail (pass item.roomId)
-            },
+            onTap: () => _onTapChatRoom(item),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
