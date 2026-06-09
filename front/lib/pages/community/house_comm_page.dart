@@ -113,6 +113,7 @@ class _HouseCommPageState extends State<HouseCommPage> {
           roomId: room.roomId,
           roomName: room.otherMemberName,
           myMemberId: user.memberId,
+          otherProfileImageUrl: room.profileImageUrl,
         ),
       ),
     );
@@ -330,21 +331,8 @@ class _HouseCommPageState extends State<HouseCommPage> {
                       (item.profileImageUrl != null &&
                           item.profileImageUrl!.isNotEmpty)
                       ? NetworkImage(item.profileImageUrl!)
-                      : null,
-                  child:
-                      (item.profileImageUrl == null ||
-                          item.profileImageUrl!.isEmpty)
-                      ? Text(
-                          item.otherMemberName.isNotEmpty
-                              ? item.otherMemberName[0].toUpperCase()
-                              : '?',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: grey03,
-                          ),
-                        )
-                      : null,
+                            as ImageProvider
+                      : const AssetImage('assets/icons/default.png'),
                 ),
                 SizedBox(width: 13),
                 Expanded(

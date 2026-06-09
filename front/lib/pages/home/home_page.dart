@@ -117,11 +117,12 @@ class _HomePageState extends State<HomePage> with RouteAware {
                       children: [
                         CircleAvatar(
                           radius: 24,
-                          backgroundImage: NetworkImage(
-                            user?.profileImageUrl?.isNotEmpty == true
-                                ? user!.profileImageUrl!
-                                : 'https://i.pravatar.cc/150',
-                          ),
+                          backgroundColor: Colors.grey[300],
+                          backgroundImage:
+                              user?.profileImageUrl?.isNotEmpty == true
+                              ? NetworkImage(user!.profileImageUrl!)
+                                    as ImageProvider
+                              : const AssetImage('assets/icons/default.png'),
                         ),
                         const SizedBox(width: 12),
                         Column(

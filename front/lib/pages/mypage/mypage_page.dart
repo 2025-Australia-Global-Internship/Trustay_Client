@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:front/constants/colors.dart';
 import 'package:front/services/auth_service.dart';
@@ -6,6 +7,7 @@ import 'package:front/widgets/gradient_layout.dart';
 import 'package:front/widgets/circle_icon_button.dart';
 import 'package:front/widgets/custom_header.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:image_picker/image_picker.dart';
 
 class MyPage extends StatefulWidget {
   const MyPage({super.key});
@@ -16,6 +18,8 @@ class MyPage extends StatefulWidget {
 
 class _MyPageState extends State<MyPage> {
   User? user;
+  final ImagePicker _picker = ImagePicker();
+  bool _isUploadingImage = false;
 
   @override
   void initState() {
@@ -25,6 +29,7 @@ class _MyPageState extends State<MyPage> {
 
   Future<void> _loadProfile() async {
     final data = await AuthService.fetchProfile();
+    if (!mounted) return;
     setState(() {
       user = data;
     });
@@ -39,6 +44,40 @@ class _MyPageState extends State<MyPage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('로그아웃 실패')));
+    }
+  }
+
+  /// 프로필 이미지 선택 → 서버 업로드 → 프로필 재조회
+  Future<void> _pickAndUploadProfileImage() async {
+    if (_isUploadingImage) return;
+
+    try {
+      final picked = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+      if (picked == null) return;
+
+      setState(() => _isUploadingImage = true);
+
+      await AuthService.updateProfileImage(File(picked.path));
+
+      // 업로드 성공 → 최신 프로필(이미지 URL) 다시 받아오기
+      await _loadProfile();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('프로필 이미지가 변경되었습니다.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('이미지 업로드 실패: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isUploadingImage = false);
+      }
     }
   }
 
@@ -80,12 +119,61 @@ class _MyPageState extends State<MyPage> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  CircleAvatar(
-                    radius: 40,
-                    backgroundImage: NetworkImage(
-                      user?.profileImageUrl?.isNotEmpty == true
-                          ? user!.profileImageUrl!
-                          : 'https://i.pravatar.cc/150',
+                  GestureDetector(
+                    onTap: _pickAndUploadProfileImage,
+                    child: Stack(
+                      children: [
+                        CircleAvatar(
+                          radius: 40,
+                          backgroundColor: Colors.grey[300],
+                          backgroundImage:
+                              user?.profileImageUrl?.isNotEmpty == true
+                              ? NetworkImage(user!.profileImageUrl!)
+                                    as ImageProvider
+                              : const AssetImage('assets/icons/default.png'),
+                        ),
+                        if (_isUploadingImage)
+                          Positioned.fill(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.35),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Center(
+                                child: SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(5),
+                            decoration: BoxDecoration(
+                              color: yellow,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 2,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.camera_alt,
+                              size: 14,
+                              color: darkgreen,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
 

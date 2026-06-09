@@ -8,12 +8,14 @@ class ChatRoomPage extends StatefulWidget {
   final int roomId;
   final String roomName;
   final int myMemberId;
+  final String? otherProfileImageUrl;
 
   const ChatRoomPage({
     super.key,
     required this.roomId,
     required this.roomName,
     required this.myMemberId,
+    this.otherProfileImageUrl,
   });
 
   @override
@@ -138,9 +140,26 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
 
   @override
   Widget build(BuildContext context) {
+    final hasOtherImage =
+        widget.otherProfileImageUrl != null &&
+        widget.otherProfileImageUrl!.isNotEmpty;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.roomName),
+        title: Row(
+          children: [
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: Colors.grey[300],
+              backgroundImage: hasOtherImage
+                  ? NetworkImage(widget.otherProfileImageUrl!)
+                        as ImageProvider
+                  : const AssetImage('assets/icons/default.png'),
+            ),
+            const SizedBox(width: 10),
+            Text(widget.roomName),
+          ],
+        ),
         backgroundColor: Color(0xFFFAFAFA),
         foregroundColor: Colors.black,
         elevation: 0,

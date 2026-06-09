@@ -1,15 +1,25 @@
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart'; // 서버 모델 User
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import '../constants/api_endpoints.dart';
 
 class AuthService {
   // Use ApiEndpoints for endpoint URLs
   static final fb.FirebaseAuth _auth = fb.FirebaseAuth.instance;
+
+  /// 기본 프로필 이미지 자산 경로 (이미지가 없는 신규 회원에게 업로드)
+  static const String _defaultProfileAsset = 'assets/icons/default.png';
+
+  /// 동시 호출 시 default 이미지가 여러 번 업로드되지 않도록 단일 Future로 메모이즈
+  static Future<void>? _ensureDefaultImageFuture;
 
   /// 로그인
   static Future<bool> login({
@@ -189,7 +199,29 @@ class AuthService {
   }
 
   /// 프로필 조회
+  ///
+  /// 이미지가 없는 신규 회원이라면 클라이언트 번들의 `assets/icons/default.png`를
+  /// 한 번 업로드한 뒤 다시 프로필을 조회해서 최신 URL을 돌려준다.
+  /// (이후 호출부터는 서버가 갖고 있는 이미지 URL을 그대로 사용)
   static Future<User> fetchProfile() async {
+    User user = await _fetchProfileRaw();
+
+    if (user.profileImageUrl == null || user.profileImageUrl!.isEmpty) {
+      try {
+        await _ensureDefaultProfileImageUploaded();
+        user = await _fetchProfileRaw();
+      } catch (e) {
+        // 기본 이미지 업로드 실패는 치명적이지 않음 → 원본 프로필 그대로 반환
+        // (다음 fetchProfile 호출 시 다시 시도)
+        debugPrint('⚠️ 기본 프로필 이미지 업로드 실패: $e');
+      }
+    }
+
+    return user;
+  }
+
+  /// 서버에서 프로필을 그대로 받아오는 내부 헬퍼 (default 업로드 로직 없음)
+  static Future<User> _fetchProfileRaw() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
 
@@ -208,5 +240,103 @@ class AuthService {
 
     final body = jsonDecode(res.body);
     return User.fromJson(body['data']);
+  }
+
+  /// `assets/icons/default.png`를 임시 파일로 풀어 multipart 업로드.
+  /// 동시 호출이 발생해도 단일 Future로 메모이즈해 중복 업로드를 막는다.
+  static Future<void> _ensureDefaultProfileImageUploaded() {
+    return _ensureDefaultImageFuture ??= _uploadDefaultProfileImageAsset()
+        .whenComplete(() {
+      _ensureDefaultImageFuture = null;
+    });
+  }
+
+  static Future<void> _uploadDefaultProfileImageAsset() async {
+    final ByteData byteData = await rootBundle.load(_defaultProfileAsset);
+    final Uint8List bytes = byteData.buffer.asUint8List(
+      byteData.offsetInBytes,
+      byteData.lengthInBytes,
+    );
+
+    // 시스템 임시 디렉터리에 default.png 풀기
+    final tempPath =
+        '${Directory.systemTemp.path}${Platform.pathSeparator}default_profile_${DateTime.now().millisecondsSinceEpoch}.png';
+    final tempFile = await File(tempPath).writeAsBytes(bytes, flush: true);
+
+    try {
+      await updateProfileImage(tempFile);
+    } finally {
+      // 업로드 후 임시 파일 정리 (실패해도 무시)
+      try {
+        if (await tempFile.exists()) {
+          await tempFile.delete();
+        }
+      } catch (_) {}
+    }
+  }
+
+  /// 프로필 이미지 업로드
+  /// POST /api/trustay/members/profile/image
+  /// multipart/form-data, 필드명: profileImage
+  static Future<void> updateProfileImage(File imageFile) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
+    if (token == null) {
+      throw Exception('토큰 없음');
+    }
+
+    final uri = Uri.parse(ApiEndpoints.profileImage);
+    final request = http.MultipartRequest('POST', uri);
+    request.headers['Authorization'] = 'Bearer $token';
+    request.headers['accept'] = '*/*';
+
+    final fileName = imageFile.path.split(Platform.pathSeparator).last;
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'profileImage',
+        imageFile.path,
+        filename: fileName,
+        contentType: _imageContentTypeFor(imageFile),
+      ),
+    );
+
+    final streamed = await request.send();
+    final responseBody = await streamed.stream.bytesToString();
+
+    if (streamed.statusCode != 200 && streamed.statusCode != 201) {
+      throw Exception('프로필 이미지 업로드 실패 (${streamed.statusCode}): $responseBody');
+    }
+
+    try {
+      final decoded = jsonDecode(responseBody);
+      final code = decoded['code'] ?? 200;
+      if (code != 200) {
+        throw Exception(decoded['message'] ?? '프로필 이미지 업로드 실패');
+      }
+    } catch (_) {
+      // 응답 본문이 JSON이 아니어도 statusCode가 200이면 성공으로 간주
+    }
+  }
+
+  /// 이미지 파일 확장자별 ContentType 추론
+  static MediaType _imageContentTypeFor(File imageFile) {
+    final path = imageFile.path.toLowerCase();
+    if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
+      return MediaType('image', 'jpeg');
+    }
+    if (path.endsWith('.png')) {
+      return MediaType('image', 'png');
+    }
+    if (path.endsWith('.heic')) {
+      return MediaType('image', 'heic');
+    }
+    if (path.endsWith('.heif')) {
+      return MediaType('image', 'heif');
+    }
+    if (path.endsWith('.webp')) {
+      return MediaType('image', 'webp');
+    }
+    throw Exception('지원하지 않는 이미지 형식입니다: ${imageFile.path}');
   }
 }
