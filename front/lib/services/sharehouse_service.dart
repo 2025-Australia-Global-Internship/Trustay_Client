@@ -179,7 +179,7 @@ class SharehouseService {
       final token = await _getToken();
 
       final uri = Uri.parse('$_apiBase/sharehouses/my').replace(
-        queryParameters: {'page': '0', 'size': '10', 'sort': 'createdAt,desc'},
+        queryParameters: {'page': '0', 'size': '10', 'sort': 'regTime,desc'},
       );
 
       final response = await http.get(uri, headers: _getHeaders(token));
@@ -286,6 +286,56 @@ class SharehouseService {
       }
     } catch (e) {
       throw Exception('삭제 중 오류: $e');
+    }
+  }
+
+  // ------------------------------------------------------------------------
+  // 8. 찜 목록 조회 (GET)
+  // ------------------------------------------------------------------------
+  static Future<List<SharehouseModel>> fetchWishlist() async {
+    try {
+      final token = await _getToken();
+      final uri = Uri.parse('$_apiBase/sharehouses/wishlist');
+
+      final response = await http.get(uri, headers: _getHeaders(token));
+
+      if (response.statusCode == 200) {
+        final decodedData = jsonDecode(utf8.decode(response.bodyBytes));
+        final data = decodedData['data'];
+
+        final List<dynamic> list = data is List
+            ? data
+            : (data['content'] as List<dynamic>? ?? []);
+
+        return list.map((json) => SharehouseModel.fromJson(json)).toList();
+      } else {
+        throw Exception('찜 목록 조회 실패: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('찜 목록 로드 중 오류: $e');
+    }
+  }
+
+  static Future<bool> fetchWishStatus(int houseId) async {
+    try {
+      final token = await _getToken();
+      final uri = Uri.parse('$_apiBase/sharehouses/wishlist');
+
+      final response = await http.get(uri, headers: _getHeaders(token));
+
+      if (response.statusCode == 200) {
+        final decodedData = jsonDecode(utf8.decode(response.bodyBytes));
+        final data = decodedData['data'];
+        final List<dynamic> list = data is List
+            ? data
+            : (data['content'] as List<dynamic>? ?? []);
+
+        // 찜 목록 중에 현재 houseId가 있으면 true
+        return list.any((item) => item['id'] == houseId);
+      }
+      return false;
+    } catch (e) {
+      return false;
     }
   }
 }

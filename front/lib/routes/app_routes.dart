@@ -5,6 +5,7 @@ class AppRoutes {
   static const index = '/index';
   static const search = '/search';
   static const listing = '/listing';
+  static const savedListings = '/saved_listings';
   static const editProfile = '/edit_profile';
   static const personalDetails = '/person_details';
   static const sharehouseCreate = '/sharehouse_create';

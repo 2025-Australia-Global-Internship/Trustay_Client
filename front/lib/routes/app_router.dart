@@ -5,6 +5,7 @@ import '../pages/join/signup_page.dart';
 import '../index.dart';
 import '../pages/home/search_page.dart';
 import '../pages/mypage/listing.dart';
+import '../pages/mypage/saved_listings.dart';
 import '../pages/mypage/edit_profile.dart';
 import '../pages/mypage/personal_details.dart';
 import '../pages/mypage/sharehouse_create_step1.dart';
@@ -18,6 +19,7 @@ final Map<String, WidgetBuilder> appRouter = {
   AppRoutes.index: (_) => const IndexPage(),
   AppRoutes.search: (_) => const SearchPage(),
   AppRoutes.listing: (_) => const ListingPage(),
+  AppRoutes.savedListings: (_) => const SavedListingsPage(),
   AppRoutes.editProfile: (_) => const EditProfilePage(),
   AppRoutes.personalDetails: (_) => const PersonalDetailsPage(),
   AppRoutes.sharehouseCreate: (_) => const SharehouseCreateStep1Page(),

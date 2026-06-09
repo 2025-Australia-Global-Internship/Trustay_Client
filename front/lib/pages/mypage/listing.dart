@@ -54,19 +54,24 @@ class _ListingPage extends State<ListingPage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text("매물 삭제"),
-        content: const Text("정말로 이 매물을 삭제하시겠습니까?\n삭제 후에는 복구할 수 없습니다."),
+        title: const Text("Delete Listing"),
+        content: const Text(
+          "Are you sure you want to delete this listing?\nThis action cannot be undone.",
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text("취소", style: TextStyle(color: grey02)),
+            child: const Text("Cancel", style: TextStyle(color: grey02)),
           ),
           TextButton(
             onPressed: () async {
               Navigator.pop(ctx);
               await _performDelete(id);
             },
-            child: const Text("삭제", style: TextStyle(color: Colors.redAccent)),
+            child: const Text(
+              "Delete",
+              style: TextStyle(color: Colors.redAccent),
+            ),
           ),
         ],
       ),
@@ -81,25 +86,26 @@ class _ListingPage extends State<ListingPage> {
           _listings.removeWhere((item) => item.id == id);
         });
         if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("매물이 삭제되었습니다.")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Listing deleted successfully.")),
+        );
       }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text("삭제 실패: $e")));
+      ).showSnackBar(SnackBar(content: Text("Failed to delete listing: $e")));
     }
   }
 
   // 수정 로직
   void _editListing(int id) {
-    // TODO: 수정 페이지로 이동 구현
     print("Edit Listing ID: $id");
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text("수정 페이지로 이동합니다 (구현 예정)")));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Redirecting to the edit page (coming soon)."),
+      ),
+    );
   }
 
   @override
@@ -154,30 +160,6 @@ class _ListingPage extends State<ListingPage> {
       return const Center(child: CircularProgressIndicator(color: green));
     }
 
-    // if (_hasError) {
-    //   return Center(
-    //     child: Column(
-    //       mainAxisAlignment: MainAxisAlignment.center,
-    //       children: [
-    //         const Text("매물 정보를 불러오지 못했습니다.", style: TextStyle(color: grey02)),
-    //         const SizedBox(height: 10),
-    //         TextButton(
-    //           onPressed: () {
-    //             setState(() {
-    //               _isLoading = true;
-    //             });
-    //             _loadData();
-    //           },
-    //           child: const Text(
-    //             "다시 시도",
-    //             style: TextStyle(color: dark, fontWeight: FontWeight.bold),
-    //           ),
-    //         ),
-    //       ],
-    //     ),
-    //   );
-    // }
-
     if (_listings.isEmpty || _hasError) {
       return Center(
         child: Column(
@@ -217,9 +199,9 @@ class _ListingPage extends State<ListingPage> {
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       itemCount: _listings.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 16),
+      separatorBuilder: (_, __) => const SizedBox(height: 17),
       itemBuilder: (context, index) {
         final item = _listings[index];
         return MyListingCard(
