@@ -106,7 +106,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       roomId: widget.roomId,
       senderId: widget.myMemberId,
       message: text,
-      messageType: 'TALK',
+      messageType: 'TEXT',
     );
 
     if (ok) {

@@ -275,7 +275,7 @@ class ChatSocketService {
     required int roomId,
     required int senderId,
     required String message,
-    String messageType = 'TALK',
+    String messageType = 'TEXT',
   }) {
     if (_client == null || !isConnected) {
       print('⚠️ 전송 실패: 소켓이 연결되어 있지 않음');
