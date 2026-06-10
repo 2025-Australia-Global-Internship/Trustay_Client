@@ -3,7 +3,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:front/constants/colors.dart';
 import 'package:front/models/search_model.dart';
 import 'package:front/models/sharehouse_model.dart';
-import 'package:front/services/search_service.dart';
 import 'package:front/services/sharehouse_service.dart';
 import 'package:front/widgets/house_card.dart';
 import 'package:front/widgets/custom_header.dart';
@@ -58,70 +57,92 @@ class _SearchPageState extends State<SearchPage> {
     }
   }
 
+  // 최근 검색어: 서버 API `/sharehouses/recent-searches` 사용
+  //   - 서버가 검색 호출(GET /sharehouses?keyword=...) 시 자동 기록.
+  //   - 미로그인/오류 시 빈 리스트 폴백.
   Future<void> _loadSearchHistory() async {
-    final history = await SearchService.getSearchHistory();
+    final history = await SharehouseService.fetchRecentSearches();
     if (!mounted) return;
     setState(() => _searchHistory = history);
   }
 
+  // 최근 본 매물: 서버 API `/sharehouses/recent` 사용
+  //   - 서버가 사용자 조회 이력을 기준으로 최근 5개를 내려준다.
+  //   - 미로그인/오류 시 빈 리스트 폴백.
   Future<void> _loadRecentViewed() async {
-    final list = await SearchService.getRecentViewed();
+    final list = await SharehouseService.fetchRecentSharehouses();
     if (!mounted) return;
     setState(() => _recentViewed = list);
   }
 
   // ──────────────────────────────────────────
-  // 검색 기록 조작
+  // 검색 기록 조작 (서버 API 기반)
   // ──────────────────────────────────────────
 
-  Future<void> _addSearchQuery(String query) async {
-    if (query.trim().isEmpty) return;
-    await SearchService.addSearchHistory(query);
-    await _loadSearchHistory();
-  }
+  // 검색어 등록 API 는 없다. 서버가 GET /sharehouses?keyword=... 호출 시
+  // 자동으로 기록하므로, 검색 실행 후 목록만 다시 받아오면 된다.
 
-  Future<void> _removeSearchQuery(String query) async {
-    await SearchService.removeSearchHistory(query);
-    await _loadSearchHistory();
+  Future<void> _removeSearchQuery(SearchHistory item) async {
+    // 서버에 등록되지 않은(=id 가 없는) 항목은 클라이언트 측에서만 제거.
+    if (item.id == null) {
+      if (!mounted) return;
+      setState(() => _searchHistory.removeWhere((h) => h.query == item.query));
+      return;
+    }
+    try {
+      await SharehouseService.deleteRecentSearch(item.id!);
+      await _loadSearchHistory();
+    } catch (e) {
+      debugPrint('Recent search delete error: $e');
+    }
   }
 
   Future<void> _clearAllHistory() async {
-    await SearchService.clearSearchHistory();
-    await _loadSearchHistory();
+    try {
+      await SharehouseService.deleteAllRecentSearches();
+      await _loadSearchHistory();
+    } catch (e) {
+      debugPrint('Recent searches clear error: $e');
+    }
   }
 
   // ──────────────────────────────────────────
-  // 최근 본 매물 조작
+  // 최근 본 매물은 서버에서 자동 집계되므로 클라이언트에서 삭제하지 않는다.
   // ──────────────────────────────────────────
 
-  Future<void> _clearRecentViewed() async {
-    await SearchService.clearRecentViewed();
-    await _loadRecentViewed();
-  }
-
   // ──────────────────────────────────────────
-  // 검색 실행
+  // 검색 실행 — 백엔드 /sharehouses (keyword) 호출
+  //   기존엔 클라이언트에서 _allHouses에 contains 매칭만 했지만,
+  //   서버 측 LIKE 검색 + 필터를 사용하도록 교체.
   // ──────────────────────────────────────────
 
-  void _performSearch(String query) {
+  Future<void> _performSearch(String query) async {
     final trimmed = query.trim();
     if (trimmed.isEmpty) return;
-
-    final q = trimmed.toLowerCase();
-    final results = _allHouses.where((house) {
-      return house.title.toLowerCase().contains(q) ||
-          house.address.toLowerCase().contains(q) ||
-          house.houseType.toLowerCase().contains(q);
-    }).toList();
 
     setState(() {
       _searchQuery = trimmed;
       _isSearching = true;
-      _searchResults = results;
+      _searchResults = const [];
     });
-
-    _addSearchQuery(trimmed);
     _searchFocus.unfocus();
+
+    try {
+      final results = await SharehouseService.fetchAllHouses(
+        keyword: trimmed,
+        size: 50,
+      );
+      if (!mounted) return;
+      setState(() => _searchResults = results);
+    } catch (e) {
+      if (!mounted) return;
+      // 서버 호출이 실패해도 사용자 흐름을 끊지 않도록 빈 결과만 표시
+      setState(() => _searchResults = const []);
+    }
+
+    // 서버가 검색 호출 시 자동으로 최근 검색어를 기록하므로,
+    // 별도 등록 API 호출 없이 목록만 다시 받아온다.
+    await _loadSearchHistory();
   }
 
   void _clearSearch() {
@@ -235,24 +256,31 @@ class _SearchPageState extends State<SearchPage> {
                     spacing: 8,
                     runSpacing: 8,
                     children: _searchHistory
-                        .map((h) => _buildSearchChip(h.query))
+                        .map((h) => _buildSearchChip(h))
                         .toList(),
                   ),
           ),
 
           const SizedBox(height: 24),
 
-          // 최근 본 매물
-          _buildSectionHeader(
-            title: 'Recently viewed',
-            isEmpty: _recentViewed.isEmpty,
-            onDeleteAll: () => _showDeleteDialog(
-              message: 'Delete all viewed history?',
-              onConfirm: _clearRecentViewed,
+          // 최근 본 매물 (서버 자동 집계 - 최신 5개)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+            child: Row(
+              children: const [
+                Text(
+                  'Recently viewed',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: dark,
+                  ),
+                ),
+              ],
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: _recentViewed.isEmpty
                 ? const Text(
                     'No recently viewed houses',
@@ -264,26 +292,54 @@ class _SearchPageState extends State<SearchPage> {
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
-                          mainAxisSpacing: 9,
-                          crossAxisSpacing: 11,
+                          mainAxisSpacing: 14,
+                          crossAxisSpacing: 12,
                           childAspectRatio: 0.68,
                         ),
-                    itemCount: _recentViewed.length > 4
-                        ? 4
-                        : _recentViewed.length,
+                    itemCount: _recentViewed.length,
                     itemBuilder: (context, index) {
                       final house = _recentViewed[index];
                       return GestureDetector(
-                        onTap: () {
-                          Navigator.push(
+                        onTap: () async {
+                          await Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) =>
+                              builder: (_) =>
                                   SharehouseDetailPage(houseId: house.id),
                             ),
                           );
+                          // 상세 페이지에서 돌아오면 최근 본 매물 목록도 갱신
+                          _loadRecentViewed();
                         },
-                        child: HouseCard(house: house, isGrid: true),
+                        child: HouseCard(
+                          house: house,
+                          isGrid: true,
+                          initialIsWished: house.wishedByMe,
+                          onWishChanged: (wished) {
+                            // 찜 상태 변경 시 로컬 모델도 동기화 (재진입 시 깜빡임 방지)
+                            // SharehouseModel.wishedByMe 가 final 이므로
+                            // 새 인스턴스로 교체한다.
+                            setState(() {
+                              _recentViewed[index] = SharehouseModel(
+                                id: house.id,
+                                title: house.title,
+                                address: house.address,
+                                houseType: house.houseType,
+                                imageUrls: house.imageUrls,
+                                rentPrice: house.rentPrice,
+                                bathroomCount: house.bathroomCount,
+                                roomCount: house.roomCount,
+                                currentResidents: house.currentResidents,
+                                viewCount: house.viewCount,
+                                wishCount: house.wishCount,
+                                wishedByMe: wished,
+                                approvalStatus: house.approvalStatus,
+                                lat: house.lat,
+                                lon: house.lon,
+                              );
+                            });
+                          },
+                        ),
                       );
                     },
                   ),
@@ -396,7 +452,8 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  Widget _buildSearchChip(String query) {
+  Widget _buildSearchChip(SearchHistory item) {
+    final query = item.query;
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -424,7 +481,7 @@ class _SearchPageState extends State<SearchPage> {
             ),
             const SizedBox(width: 8),
             GestureDetector(
-              onTap: () => _removeSearchQuery(query),
+              onTap: () => _removeSearchQuery(item),
               child: const Icon(Icons.close, size: 16, color: grey03),
             ),
           ],

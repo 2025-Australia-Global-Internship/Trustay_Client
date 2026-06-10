@@ -1,170 +1,220 @@
 import 'package:flutter/material.dart';
-import 'package:front/constants/colors.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:intl/intl.dart';
 
-class SocialCommPage extends StatelessWidget {
+import 'package:front/constants/colors.dart';
+import 'package:front/models/community_model.dart';
+import 'package:front/models/post_model.dart';
+import 'package:front/services/community_service.dart';
+import 'package:front/services/post_service.dart';
+
+class SocialCommPage extends StatefulWidget {
   const SocialCommPage({super.key});
+
+  @override
+  State<SocialCommPage> createState() => _SocialCommPageState();
+}
+
+class _SocialCommPageState extends State<SocialCommPage> {
+  // 내가 가입한 커뮤니티
+  List<CommunityModel> _myCommunities = [];
+  // 인기 커뮤니티 (Trending)
+  List<CommunityModel> _trending = [];
+  // 전체 피드 게시글 (Posts for you)
+  List<PostModel> _feedPosts = [];
+
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAll();
+  }
+
+  Future<void> _loadAll() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      // 인기 커뮤니티/피드는 로그인 없이도 조회 가능.
+      // 내가 가입한 커뮤니티는 토큰 필요. 미로그인 시 빈 리스트로 폴백.
+      final results = await Future.wait([
+        _safeJoined(),
+        CommunityService.fetchTrending(page: 0, size: 10),
+        PostService.getFeed(page: 0, size: 20),
+      ]);
+
+      if (!mounted) return;
+      setState(() {
+        _myCommunities = results[0] as List<CommunityModel>;
+        _trending = results[1] as List<CommunityModel>;
+        _feedPosts = results[2] as List<PostModel>;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = '데이터를 불러오지 못했어요.';
+        _isLoading = false;
+      });
+    }
+  }
+
+  // 미로그인 등으로 실패 시 빈 리스트 반환
+  Future<List<CommunityModel>> _safeJoined() async {
+    try {
+      return await CommunityService.fetchJoined();
+    } catch (_) {
+      return <CommunityModel>[];
+    }
+  }
+
+  Future<void> _onTapLike(PostModel post) async {
+    try {
+      final result = await PostService.toggleLike(post.id);
+      if (!mounted) return;
+      setState(() {
+        post.likedByMe = result.liked;
+        post.likeCount = result.likeCount;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('좋아요 처리 실패')));
+    }
+  }
+
+  /// ISO8601 → "8 hours ago" 형태로 변환
+  String _timeAgo(String? iso) {
+    if (iso == null || iso.isEmpty) return '';
+    try {
+      final raw = iso.endsWith('Z') ? iso : '${iso}Z';
+      final time = DateTime.parse(raw).toLocal();
+      final diff = DateTime.now().difference(time);
+
+      if (diff.inSeconds < 60) return 'Just now';
+      if (diff.inMinutes < 60) return '${diff.inMinutes} minutes ago';
+      if (diff.inHours < 24) return '${diff.inHours} hours ago';
+      if (diff.inDays < 7) return '${diff.inDays} days ago';
+      return DateFormat('MM/dd').format(time);
+    } catch (_) {
+      return '';
+    }
+  }
+
+  String _likesLabel(int count) {
+    if (count >= 1000) {
+      final k = (count / 1000).toStringAsFixed(count % 1000 == 0 ? 0 : 1);
+      return '${k}k';
+    }
+    return '$count';
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
-        child: Column(
+        child: RefreshIndicator(
+          color: green,
+          onRefresh: _loadAll,
+          child: _isLoading && _feedPosts.isEmpty
+              ? const Center(child: CircularProgressIndicator(color: green))
+              : _buildBody(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBody() {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 32, 16, 0),
+      children: [
+        if (_errorMessage != null) ...[
+          Center(
+            child: Text(
+              _errorMessage!,
+              style: const TextStyle(fontSize: 13, color: grey03),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+
+        // My community section
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: const [
+            Text(
+              'My community',
+              style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        SizedBox(height: 100, child: _buildMyCommunityList()),
+        const SizedBox(height: 24),
+
+        // Trending section
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 32, 16, 0),
-                children: [
-                  // My community section
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'My community',
-                        style: TextStyle(
-                          fontSize: 19,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    height: 100,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: [
-                        _buildAddCommunity(),
-                        _buildCommunityItem('assets/images/study.jpg', 'Study'),
-                        _buildCommunityItem('assets/images/cafe.jpg', 'Cafe'),
-                        _buildCommunityItem(
-                          'assets/images/running.jpg',
-                          'Running',
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Trending section
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Trending',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {},
-                        child: const Text(
-                          'See all',
-                          style: TextStyle(
-                            color: green,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  SizedBox(
-                    height: 180, // 카드 높이
-                    child: trendingCardList([
-                      {
-                        'title': 'Tennis',
-                        'subtitle': 'Active 3 hours ago',
-                        'count': '16',
-                        'imagePath': 'assets/images/tennis.jpg',
-                      },
-                      {
-                        'title': 'Baking',
-                        'subtitle': 'Active 12 hours ago',
-                        'count': '23',
-                        'imagePath': 'assets/images/baking.jpg',
-                      },
-                      {
-                        'title': 'Reading',
-                        'subtitle': 'Active 5 hours ago',
-                        'count': '12',
-                        'imagePath': 'assets/images/reading.jpg',
-                      },
-                    ]),
-                  ),
-
-                  const SizedBox(height: 36),
-
-                  // Posts for you
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Posts for you',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Post items
-                  _buildPostCard(
-                    'Claire',
-                    '8 hours ago',
-                    'Just finished my morning run! Feeling energized and ready for the day.',
-                    true,
-                    1,
-                    '1k',
-                    imagePath: 'assets/images/morning.jpg',
-                  ),
-                  _buildPostCard(
-                    'Ella',
-                    '9 hours ago',
-                    'Baked some chocolate chip cookies today, they turned out amazing!',
-                    true,
-                    10,
-                    '1k',
-                    imagePath: 'assets/images/cookies.jpg',
-                  ),
-                  _buildPostCard(
-                    'Hannah',
-                    '9 hours ago',
-                    'Reading a new mystery novel, can’t put it down!',
-                    false,
-                    18,
-                    '1k',
-                  ),
-                  _buildPostCard(
-                    'Annie',
-                    '9 hours ago',
-                    'Started learning guitar, fingers hurt but it’s fun!',
-                    true,
-                    10,
-                    '1k',
-                    imagePath: 'assets/images/guitar.jpg',
-                  ),
-                  _buildPostCard(
-                    'Charlotte',
-                    '9 hours ago',
-                    'Went for a hike today, the view from the top was breathtaking!',
-                    false,
-                    36,
-                    '1k',
-                  ),
-
-                  const SizedBox(height: 18),
-                ],
+            const Text(
+              'Trending',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            ),
+            TextButton(
+              onPressed: () {},
+              child: const Text(
+                'See all',
+                style: TextStyle(
+                  color: green,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ],
         ),
-      ),
+        const SizedBox(height: 4),
+        SizedBox(height: 180, child: _buildTrendingList()),
+
+        const SizedBox(height: 36),
+
+        // Posts for you
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: const [
+            Text(
+              'Posts for you',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+
+        _buildFeedSection(),
+
+        const SizedBox(height: 18),
+      ],
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // My community
+  // ---------------------------------------------------------------------------
+  Widget _buildMyCommunityList() {
+    return ListView(
+      scrollDirection: Axis.horizontal,
+      children: [
+        _buildAddCommunity(),
+        ..._myCommunities.map(
+          (c) => _buildCommunityItem(c.imageUrl, c.name),
+        ),
+      ],
     );
   }
 
@@ -197,16 +247,25 @@ class SocialCommPage extends StatelessWidget {
     );
   }
 
-  Widget _buildCommunityItem(String image, String label) {
+  Widget _buildCommunityItem(String? imageUrl, String label) {
+    final hasImage = imageUrl != null && imageUrl.isNotEmpty;
     return Container(
       margin: const EdgeInsets.only(right: 12),
       width: 70,
       child: Column(
         children: [
-          CircleAvatar(radius: 35, backgroundImage: AssetImage(image)),
+          CircleAvatar(
+            radius: 35,
+            backgroundColor: Colors.grey[300],
+            backgroundImage: hasImage
+                ? NetworkImage(imageUrl) as ImageProvider
+                : const AssetImage('assets/icons/default.png'),
+          ),
           const SizedBox(height: 8),
           Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
@@ -219,32 +278,47 @@ class SocialCommPage extends StatelessWidget {
     );
   }
 
-  Widget trendingCardList(List<Map<String, String>> items) {
-    return SizedBox(
-      height: 180, // 카드 높이 + 여유
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        clipBehavior: Clip.none,
-        itemCount: items.length,
-        itemBuilder: (context, index) {
-          final item = items[index];
-          return _buildTrendingCard(
-            item['title'] ?? '',
-            item['subtitle'] ?? '',
-            item['count'] ?? '0',
-            imagePath: item['imagePath'],
-          );
-        },
-      ),
+  // ---------------------------------------------------------------------------
+  // Trending
+  // ---------------------------------------------------------------------------
+  Widget _buildTrendingList() {
+    if (_trending.isEmpty) {
+      return Center(
+        child: Text(
+          _isLoading ? '' : 'No trending communities',
+          style: const TextStyle(
+            fontSize: 13,
+            color: grey03,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      );
+    }
+    return ListView.builder(
+      scrollDirection: Axis.horizontal,
+      clipBehavior: Clip.none,
+      itemCount: _trending.length,
+      itemBuilder: (context, index) {
+        final c = _trending[index];
+        return _buildTrendingCard(
+          title: c.name,
+          subtitle: _timeAgo(c.regTime).isEmpty
+              ? '${c.memberCount} members'
+              : 'Active ${_timeAgo(c.regTime)}',
+          count: '${c.memberCount}',
+          imageUrl: c.imageUrl,
+        );
+      },
     );
   }
 
-  Widget _buildTrendingCard(
-    String title,
-    String subtitle,
-    String count, {
-    String? imagePath,
+  Widget _buildTrendingCard({
+    required String title,
+    required String subtitle,
+    required String count,
+    String? imageUrl,
   }) {
+    final hasImage = imageUrl != null && imageUrl.isNotEmpty;
     return Container(
       width: 190,
       margin: const EdgeInsets.only(right: 12),
@@ -255,7 +329,7 @@ class SocialCommPage extends StatelessWidget {
           BoxShadow(
             color: Colors.black.withOpacity(0.14),
             blurRadius: 5,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -263,25 +337,34 @@ class SocialCommPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: Stack(
           children: [
-            // 이미지 영역
             Padding(
-              padding: EdgeInsets.all(6),
+              padding: const EdgeInsets.all(6),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(14),
-                child: imagePath != null && imagePath.isNotEmpty
-                    ? Image.asset(
-                        imagePath,
+                child: hasImage
+                    ? Image.network(
+                        imageUrl,
                         fit: BoxFit.cover,
                         width: double.infinity,
                         height: 110,
+                        errorBuilder: (_, __, ___) => Container(
+                          height: 110,
+                          color: grey01,
+                          child: const Center(
+                            child: Icon(Icons.image, color: grey02),
+                          ),
+                        ),
                       )
-                    : const Center(
-                        child: Icon(Icons.image, size: 50, color: Colors.grey),
+                    : Container(
+                        height: 110,
+                        color: grey01,
+                        child: const Center(
+                          child: Icon(Icons.image, size: 50, color: Colors.grey),
+                        ),
                       ),
               ),
             ),
 
-            // 우측 상단 count 박스
             Positioned(
               bottom: 69,
               right: 10,
@@ -315,7 +398,6 @@ class SocialCommPage extends StatelessWidget {
               ),
             ),
 
-            // 하단 텍스트 영역
             Positioned(
               bottom: 11,
               left: 13,
@@ -361,15 +443,36 @@ class SocialCommPage extends StatelessWidget {
     );
   }
 
-  Widget _buildPostCard(
-    String name,
-    String time,
-    String content,
-    bool hasImage,
-    int comments,
-    String likes, {
-    String? imagePath,
-  }) {
+  // ---------------------------------------------------------------------------
+  // Posts for you (feed)
+  // ---------------------------------------------------------------------------
+  Widget _buildFeedSection() {
+    if (_feedPosts.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 40),
+        child: Center(
+          child: Text(
+            _isLoading ? '' : 'No posts yet',
+            style: const TextStyle(
+              fontSize: 14,
+              color: grey03,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      );
+    }
+    return Column(
+      children: _feedPosts.map(_buildPostCard).toList(),
+    );
+  }
+
+  Widget _buildPostCard(PostModel post) {
+    final imageUrl = post.imageUrls.isNotEmpty ? post.imageUrls.first : null;
+    final hasImage = imageUrl != null && imageUrl.isNotEmpty;
+    final hasAvatar =
+        post.profileImageUrl != null && post.profileImageUrl!.isNotEmpty;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
       padding: const EdgeInsets.all(19),
@@ -380,7 +483,7 @@ class SocialCommPage extends StatelessWidget {
           BoxShadow(
             color: Colors.black.withOpacity(0.14),
             blurRadius: 5,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -392,7 +495,9 @@ class SocialCommPage extends StatelessWidget {
               CircleAvatar(
                 radius: 25,
                 backgroundColor: Colors.grey[300],
-                child: const Icon(Icons.person, color: Colors.grey),
+                backgroundImage: hasAvatar
+                    ? NetworkImage(post.profileImageUrl!) as ImageProvider
+                    : const AssetImage('assets/icons/default.png'),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -400,14 +505,17 @@ class SocialCommPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      name,
+                      post.authorName.isEmpty ? 'Unknown' : post.authorName,
                       style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 15,
                       ),
                     ),
                     const SizedBox(height: 5),
-                    Text(time, style: TextStyle(fontSize: 12, color: grey03)),
+                    Text(
+                      _timeAgo(post.regTime),
+                      style: const TextStyle(fontSize: 12, color: grey03),
+                    ),
                   ],
                 ),
               ),
@@ -424,8 +532,19 @@ class SocialCommPage extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
+          if (post.title.isNotEmpty) ...[
+            Text(
+              post.title,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                color: dark,
+              ),
+            ),
+            const SizedBox(height: 6),
+          ],
           Text(
-            content,
+            post.content,
             style: const TextStyle(
               fontSize: 14,
               height: 1.4,
@@ -437,28 +556,35 @@ class SocialCommPage extends StatelessWidget {
             const SizedBox(height: 16),
             ClipRRect(
               borderRadius: BorderRadius.circular(18),
-              child: Container(
+              child: SizedBox(
                 height: 200,
                 width: double.infinity,
-                child: imagePath != null && imagePath.isNotEmpty
-                    ? Image.asset(
-                        imagePath,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        height: double.infinity,
-                      )
-                    : const Center(
-                        child: Icon(Icons.image, size: 50, color: Colors.grey),
-                      ),
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    color: grey01,
+                    child: const Center(
+                      child: Icon(Icons.image, size: 50, color: Colors.grey),
+                    ),
+                  ),
+                ),
               ),
             ),
           ],
           const SizedBox(height: 14),
           Row(
             children: [
-              SvgPicture.asset('assets/icons/heart.svg'),
+              GestureDetector(
+                onTap: () => _onTapLike(post),
+                child: SvgPicture.asset(
+                  'assets/icons/heart.svg',
+                  color: post.likedByMe ? Colors.redAccent : null,
+                ),
+              ),
               const SizedBox(width: 4),
-              Text(likes, style: const TextStyle(fontSize: 14)),
+              Text(_likesLabel(post.likeCount),
+                  style: const TextStyle(fontSize: 14)),
               const SizedBox(width: 16),
               SvgPicture.asset(
                 'assets/icons/community.svg',
@@ -466,7 +592,8 @@ class SocialCommPage extends StatelessWidget {
                 height: 21,
               ),
               const SizedBox(width: 4),
-              Text('$comments', style: const TextStyle(fontSize: 14)),
+              Text('${post.commentCount}',
+                  style: const TextStyle(fontSize: 14)),
               const Spacer(),
               SvgPicture.asset(
                 'assets/icons/bookmark.svg',
