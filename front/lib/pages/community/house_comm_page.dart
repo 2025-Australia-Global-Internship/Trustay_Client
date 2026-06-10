@@ -330,8 +330,7 @@ class _HouseCommPageState extends State<HouseCommPage> {
                   backgroundImage:
                       (item.profileImageUrl != null &&
                           item.profileImageUrl!.isNotEmpty)
-                      ? NetworkImage(item.profileImageUrl!)
-                            as ImageProvider
+                      ? NetworkImage(item.profileImageUrl!) as ImageProvider
                       : const AssetImage('assets/icons/default.png'),
                 ),
                 SizedBox(width: 13),
