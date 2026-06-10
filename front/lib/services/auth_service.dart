@@ -276,32 +276,42 @@ class AuthService {
       throw Exception('토큰 없음');
     }
 
-    final Map<String, dynamic> body = {};
+    final body = <String, dynamic>{};
     if (birth != null && birth.isNotEmpty) body['birth'] = birth;
     if (phone != null && phone.isNotEmpty) body['phone'] = phone;
-    if (accountInfo != null && accountInfo.isNotEmpty) {
+    if (accountInfo != null && accountInfo.isNotEmpty)
       body['accountInfo'] = accountInfo;
-    }
     if (gender != null && gender.isNotEmpty) body['gender'] = gender;
     if (address != null && address.isNotEmpty) body['address'] = address;
 
     final response = await http.patch(
       Uri.parse(ApiEndpoints.profile),
       headers: {
-        'Content-Type': 'application/json; charset=UTF-8',
+        'Content-Type': 'application/json; charset=UTF-8', // 한글 지원
         'Authorization': 'Bearer $token',
       },
-      body: utf8.encode(jsonEncode(body)),
+      body: utf8.encode(jsonEncode(body)), // 한글 지원
     );
 
-    final decoded = jsonDecode(utf8.decode(response.bodyBytes));
-    final code = decoded['code'] ?? -1;
-    if (response.statusCode != 200 || code != 200) {
-      throw Exception(decoded['message'] ?? '프로필 수정 실패');
+    // 1. HTTP 상태 코드 먼저 확인 (200, 201 모두 허용)
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception('프로필 수정 실패 (${response.statusCode})');
     }
 
-    // 갱신 후 전역 사용자 정보 다시 동기화하여 반환
-    return await fetchProfile();
+    // 2. JSON 파싱 시 발생할 수 있는 에러 방어
+    try {
+      final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+      final code = decoded['code'] ?? 200;
+      if (code != 200) {
+        throw Exception(decoded['message'] ?? '프로필 수정 실패');
+      }
+    } catch (e) {
+      if (e is Exception) rethrow;
+      // 비-JSON 응답이 오더라도 HTTP 코드가 성공(200/201)이면 일단 진행
+    }
+
+    // 3. 불필요한 await 제거 후 Future 반환
+    return fetchProfile();
   }
 
   /// `assets/icons/default.png`를 임시 파일로 풀어 multipart 업로드.
@@ -309,8 +319,8 @@ class AuthService {
   static Future<void> _ensureDefaultProfileImageUploaded() {
     return _ensureDefaultImageFuture ??= _uploadDefaultProfileImageAsset()
         .whenComplete(() {
-      _ensureDefaultImageFuture = null;
-    });
+          _ensureDefaultImageFuture = null;
+        });
   }
 
   static Future<void> _uploadDefaultProfileImageAsset() async {
@@ -335,62 +345,6 @@ class AuthService {
         }
       } catch (_) {}
     }
-  }
-
-  /// 프로필 정보 수정 (전화번호, 생일, 계좌)
-  /// PATCH /api/trustay/members/profile
-  ///
-  /// null 또는 빈 문자열로 들어온 값은 전송에서 제외한다.
-  /// 성공 시 서버 최신 프로필을 다시 조회해 [currentUserNotifier] 까지 갱신한다.
-  static Future<User> updateProfile({
-    String? birth,
-    String? phone,
-    String? gender,
-    String? address,
-    String? accountInfo,
-  }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
-
-    if (token == null) {
-      throw Exception('토큰 없음');
-    }
-
-    final body = <String, dynamic>{};
-    if (birth != null && birth.isNotEmpty) body['birth'] = birth;
-    if (phone != null && phone.isNotEmpty) body['phone'] = phone;
-    if (gender != null && gender.isNotEmpty) body['gender'] = gender;
-    if (address != null && address.isNotEmpty) body['address'] = address;
-    if (accountInfo != null && accountInfo.isNotEmpty) {
-      body['accountInfo'] = accountInfo;
-    }
-
-    final res = await http.patch(
-      Uri.parse(ApiEndpoints.profile),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-      body: jsonEncode(body),
-    );
-
-    if (res.statusCode != 200 && res.statusCode != 201) {
-      throw Exception('프로필 수정 실패 (${res.statusCode}): ${res.body}');
-    }
-
-    try {
-      final decoded = jsonDecode(res.body);
-      final code = decoded['code'] ?? 200;
-      if (code != 200) {
-        throw Exception(decoded['message'] ?? '프로필 수정 실패');
-      }
-    } catch (e) {
-      if (e is Exception) rethrow;
-      // 응답 본문이 JSON이 아니어도 statusCode 200이면 성공으로 간주
-    }
-
-    // 최신 프로필을 서버에서 다시 받아 전역 상태까지 동기화
-    return fetchProfile();
   }
 
   /// 프로필 이미지 업로드
