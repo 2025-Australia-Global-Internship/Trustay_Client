@@ -9,6 +9,7 @@ import '../models/sharehouse_create_model.dart'; // 등록 요청 모델
 import '../models/sharehouse_model.dart'; // 홈 화면 목록용 모델
 import '../models/listing_model.dart'; // 마이페이지 목록용 모델 (MyListingItem)
 import '../models/sharehouse_detail_model.dart'; // 상세 조회용 모델
+import '../models/search_model.dart'; // 최근 검색어 (RecentSearchRes)
 
 import '../constants/api_constants.dart';
 import '../constants/api_endpoints.dart';
@@ -419,6 +420,82 @@ class SharehouseService {
       }
     } catch (e) {
       throw Exception('찜 목록 로드 중 오류: $e');
+    }
+  }
+
+  // ------------------------------------------------------------------------
+  // 9. 최근 본 매물 조회 (GET /sharehouses/recent)
+  //    서버가 사용자의 조회 이력을 기준으로 최근 5개를 반환한다.
+  //    미로그인 등으로 실패 시 빈 리스트 반환.
+  // ------------------------------------------------------------------------
+  static Future<List<SharehouseModel>> fetchRecentSharehouses() async {
+    try {
+      final token = await _getToken();
+      final uri = Uri.parse(ApiEndpoints.sharehousesRecent);
+      final response = await http.get(uri, headers: _getHeaders(token));
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+        final data = decoded['data'];
+        final List<dynamic> list = data is List
+            ? data
+            : (data is Map<String, dynamic>
+                ? (data['content'] as List<dynamic>? ?? <dynamic>[])
+                : <dynamic>[]);
+        return list
+            .map((e) => SharehouseModel.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+      return <SharehouseModel>[];
+    } catch (e) {
+      // 미로그인 등 호출 실패 시 화면이 끊기지 않도록 빈 리스트 폴백
+      return <SharehouseModel>[];
+    }
+  }
+
+  // ------------------------------------------------------------------------
+  // 10. 최근 검색어 목록 조회 (GET /sharehouses/recent-searches)
+  //    서버가 사용자의 검색 이력을 자동 기록하고 최대 10건을 반환한다.
+  //    검색어 추가는 별도 API가 아니라, GET /sharehouses?keyword=... 호출 시
+  //    서버가 자동으로 기록한다. (따라서 클라이언트의 별도 add 호출 불필요)
+  // ------------------------------------------------------------------------
+  static Future<List<SearchHistory>> fetchRecentSearches() async {
+    try {
+      final token = await _getToken();
+      final uri = Uri.parse(ApiEndpoints.sharehousesRecentSearches);
+      final response = await http.get(uri, headers: _getHeaders(token));
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+        final List<dynamic> list = (decoded['data'] as List<dynamic>?) ??
+            const <dynamic>[];
+        return list
+            .map((e) => SearchHistory.fromApi(e as Map<String, dynamic>))
+            .toList();
+      }
+      return <SearchHistory>[];
+    } catch (_) {
+      // 미로그인 등 호출 실패 시 빈 목록으로 폴백
+      return <SearchHistory>[];
+    }
+  }
+
+  /// 최근 검색어 1건 삭제 (칩 X 버튼). 본인 소유 레코드만 삭제됨.
+  static Future<void> deleteRecentSearch(int searchId) async {
+    final token = await _getToken();
+    final uri = Uri.parse(ApiEndpoints.sharehousesRecentSearchById(searchId));
+    final response = await http.delete(uri, headers: _getHeaders(token));
+    if (response.statusCode != 200) {
+      throw Exception('최근 검색어 삭제 실패: ${response.statusCode}');
+    }
+  }
+
+  /// "Delete all" — 내 최근 검색어 전부 삭제.
+  static Future<void> deleteAllRecentSearches() async {
+    final token = await _getToken();
+    final uri = Uri.parse(ApiEndpoints.sharehousesRecentSearches);
+    final response = await http.delete(uri, headers: _getHeaders(token));
+    if (response.statusCode != 200) {
+      throw Exception('최근 검색어 전체 삭제 실패: ${response.statusCode}');
     }
   }
 

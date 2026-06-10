@@ -7,7 +7,9 @@ class PostModel {
   final String content;
   final bool isNotice;
   final int viewCount;
-  final int likeCount;
+  int likeCount;
+  final int commentCount;
+  bool likedByMe;
   final String authorName;
   final String? authorEmail;
   final String? profileImageUrl;
@@ -24,6 +26,8 @@ class PostModel {
     this.isNotice = false,
     this.viewCount = 0,
     this.likeCount = 0,
+    this.commentCount = 0,
+    this.likedByMe = false,
     required this.authorName,
     this.authorEmail,
     this.profileImageUrl,
@@ -42,6 +46,10 @@ class PostModel {
       isNotice: json['isNotice'] ?? false,
       viewCount: json['viewCount'] ?? 0,
       likeCount: json['likeCount'] ?? 0,
+      commentCount: (json['commentCount'] is num)
+          ? (json['commentCount'] as num).toInt()
+          : 0,
+      likedByMe: json['likedByMe'] ?? false,
       authorName: json['authorName'] ?? '',
       authorEmail: json['authorEmail'] as String?,
       profileImageUrl: json['profileImageUrl'] as String?,

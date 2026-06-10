@@ -144,6 +144,25 @@ class PostService {
     }
   }
 
+  // 5. 좋아요 토글 → 새 상태/카운트 반환
+  static Future<({bool liked, int likeCount})> toggleLike(int postId) async {
+    final token = await _getToken();
+    final response = await http.post(
+      Uri.parse(ApiEndpoints.postLike(postId)),
+      headers: _authHeaders(token),
+    );
+    final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+    if (response.statusCode != 200 || decoded['code'] != 200) {
+      throw Exception(decoded['message'] ?? '좋아요 처리 실패');
+    }
+    final data = (decoded['data'] as Map<String, dynamic>?) ?? const {};
+    final liked = (data['liked'] as bool?) ?? false;
+    final count = (data['likeCount'] is num)
+        ? (data['likeCount'] as num).toInt()
+        : 0;
+    return (liked: liked, likeCount: count);
+  }
+
   // -------------------------------------------------------------------------
   // 내부 헬퍼: PageResponse<PostRes>를 List로 펴서 반환
   // -------------------------------------------------------------------------

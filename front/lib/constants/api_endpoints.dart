@@ -84,10 +84,17 @@ class ApiEndpoints {
       '$postsBase/sharehouse/$sharehouseId';
   static const String postsFeed = '$postsBase/feed';
   static const String myPosts = '$postsBase/me';
+  static String postLike(int postId) => '$postsBase/$postId/like';
+  static String postComments(int postId) => '$postsBase/$postId/comments';
 
   // Sharehouses
   static const String uploadImages = '$sharehousesBase/images';
   static const String sharehousesRoot = sharehousesBase;
+  static const String sharehousesRecent = '$sharehousesBase/recent';
+  static const String sharehousesRecentSearches =
+      '$sharehousesBase/recent-searches';
+  static String sharehousesRecentSearchById(int searchId) =>
+      '$sharehousesBase/recent-searches/$searchId';
   static String sharehouseById(int houseId) => '$sharehousesBase/$houseId';
   static String sharehouseMy(int houseId) => '$sharehousesBase/my/$houseId';
   static const String sharehousesMyList = '$sharehousesBase/my';
