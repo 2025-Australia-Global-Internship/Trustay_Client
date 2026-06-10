@@ -82,12 +82,14 @@ class _MyPageState extends State<MyPage> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('프로필 이미지가 변경되었습니다.')),
+        const SnackBar(content: Text('Your profile image has been updated.')),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('이미지 업로드 실패: $e')),
+        const SnackBar(
+          content: Text('Unable to upload image. Please try again.'),
+        ),
       );
     } finally {
       if (mounted) {
