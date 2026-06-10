@@ -21,8 +21,18 @@ class ChatService {
     return token;
   }
 
-  /// 채팅방 생성 (이미 존재하면 서버에서 기존 roomId 반환)
-  static Future<int> createOrGetChatRoom(int houseId, int senderId) async {
+  /// 채팅방 생성/조회 (idempotent).
+  ///
+  /// 서버 응답 스키마 변경(2026-06-10):
+  ///   기존: `data: number` (roomId 만)
+  ///   신규: `data: { roomId, houseId }` (`ChatRoomCreateRes`)
+  ///
+  /// 따라서 본 메서드는 `(roomId, houseId)` 레코드를 그대로 반환한다.
+  /// 화면 이동 후에도 별도 룩업 없이 `houseId` 를 보존할 수 있다.
+  static Future<({int roomId, int houseId})> createOrGetChatRoom(
+    int houseId,
+    int senderId,
+  ) async {
     final url = Uri.parse(ApiEndpoints.createRoom);
 
     print("🚀 [ChatService] 전송 데이터: houseId=$houseId, senderId=$senderId");
@@ -46,7 +56,21 @@ class ChatService {
       if (response.statusCode == 200) {
         final decodedBody = utf8.decode(response.bodyBytes);
         final jsonResponse = jsonDecode(decodedBody);
-        return jsonResponse['data'];
+        final dynamic data = jsonResponse['data'];
+
+        // 신규 스키마: 객체 { roomId, houseId }
+        if (data is Map<String, dynamic>) {
+          final int parsedRoomId =
+              (data['roomId'] as num?)?.toInt() ?? 0;
+          final int parsedHouseId =
+              (data['houseId'] as num?)?.toInt() ?? houseId;
+          return (roomId: parsedRoomId, houseId: parsedHouseId);
+        }
+        // 구 스키마(숫자 단독) 하위 호환: roomId 만 내려옴 → 요청 시 보낸 houseId 사용
+        if (data is num) {
+          return (roomId: data.toInt(), houseId: houseId);
+        }
+        throw Exception('채팅방 생성 응답 파싱 실패: $data');
       } else {
         print("❌ 서버 응답 에러: ${response.body}");
         throw Exception('채팅방 생성 실패: ${response.statusCode}');
@@ -113,6 +137,25 @@ class ChatService {
 
     final List<dynamic> dataList = jsonResponse['data'];
     return dataList.map((json) => ChatMessageModel.fromJson(json)).toList();
+  }
+
+  /// 채팅방 나가기 (POST /api/chat/room/{roomId}/leave?memberId=)
+  static Future<bool> leaveChatRoom(int roomId, int memberId) async {
+    final url = Uri.parse(ApiEndpoints.leaveChatRoom(roomId, memberId));
+    final token = await _getToken();
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('채팅방 나가기 실패: ${response.statusCode}');
+    }
+    return true;
   }
 
   static DateTime? _parseTimeOrNull(String? s) {
@@ -270,7 +313,11 @@ class ChatSocketService {
   }
 
   /// 메시지 전송: /pub/chat/send
-  /// messageType은 서버 Enum과 일치해야 함 (TALK / ENTER ...)
+  ///
+  /// `messageType` 은 서버 Enum 과 일치해야 한다.
+  ///   - `TEXT`     : 일반 텍스트
+  ///   - `IMAGE`    : 이미지 업로드 후 받은 URL 을 `message` 에 담아 전송
+  ///   - `CONTRACT` : 종이 계약서 스캔 후 받은 PDF URL 을 `message` 에 담아 전송
   bool sendMessage({
     required int roomId,
     required int senderId,

@@ -18,7 +18,16 @@ import 'package:front/pages/community/chat_room_page.dart'; // 경로 확인
 
 class SharehouseDetailPage extends StatefulWidget {
   final int houseId;
-  const SharehouseDetailPage({super.key, required this.houseId});
+
+  /// 본인이 등록한 매물 상세보기로 진입한 경우 true.
+  /// true 인 경우 백엔드 `/sharehouses/my/{houseId}` 를 호출해 **조회수가 올라가지 않는다**.
+  final bool isMyListing;
+
+  const SharehouseDetailPage({
+    super.key,
+    required this.houseId,
+    this.isMyListing = false,
+  });
 
   @override
   State<SharehouseDetailPage> createState() => _SharehouseDetailPageState();
@@ -40,9 +49,13 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
 
   Future<void> _loadDetail() async {
     try {
+      // 본인 매물(조회수 X) / 일반 상세(조회수 O) 분기
+      final detailFuture = widget.isMyListing
+          ? SharehouseService.getMySharehouseDetail(widget.houseId)
+          : SharehouseService.getSharehouseDetail(widget.houseId);
       // 두 개 동시에 호출
       final results = await Future.wait([
-        SharehouseService.getSharehouseDetail(widget.houseId),
+        detailFuture,
         SharehouseService.fetchWishStatus(widget.houseId),
       ]);
 
@@ -115,6 +128,7 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
   }
 
   // [수정된 채팅방 생성 로직]
+  // 서버 응답이 { roomId, houseId } 객체로 바뀌어 houseId 도 함께 보존한다.
   Future<bool> _handleCreateChat() async {
     print("🚀 Chatting Now Clicked");
     try {
@@ -122,20 +136,23 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
       final user = await AuthService.fetchProfile();
       print(" - My ID: ${user.memberId}");
 
-      // 2. 채팅방 생성 요청 (hostId 제거, houseId와 내 ID만 전송)
-      final int roomId = await ChatService.createOrGetChatRoom(
+      // 2. 채팅방 생성/조회 → ({roomId, houseId}) 레코드 반환
+      final created = await ChatService.createOrGetChatRoom(
         widget.houseId,
         user.memberId,
       );
 
-      print("✅ Room Created: $roomId");
+      print(
+        "✅ Room Created: roomId=${created.roomId}, houseId=${created.houseId}",
+      );
 
       if (mounted) {
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => ChatRoomPage(
-              roomId: roomId,
+              roomId: created.roomId,
+              // 상대방 이름은 현재 페이지의 호스트 이름으로 표시
               roomName: _house?.hostName ?? "Host",
               myMemberId: user.memberId,
             ),

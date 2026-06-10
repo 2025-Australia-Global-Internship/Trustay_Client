@@ -64,7 +64,8 @@ class SharehouseDetailModel {
       rentPrice: d['rentPrice'] ?? 0,
       roomCount: d['roomCount'] ?? 0,
       bathroomCount: d['bathroomCount'] ?? 0,
-      homeRules: d['homeRulse'], // 백엔드 필드명 유지
+      // 백엔드가 homeRules / homeRulse 둘 다 내려줄 가능성에 대비
+      homeRules: d['homeRules'] ?? d['homeRulse'],
       currentResidents: d['currentResidents'] ?? 0,
       features: d['features'],
       viewCount: d['viewCount'] ?? 0,
