@@ -130,7 +130,7 @@ class _HouseCommPageState extends State<HouseCommPage> {
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return [SliverToBoxAdapter(child: _buildHouseSubTabs())];
         },
-        body: Container(color: Color(0xFFFAFAFA), child: _buildContent()),
+        body: Container(child: _buildContent()),
       ),
       floatingActionButton: _houseSubTabIndex == 0
           ? _buildFloatingButton()

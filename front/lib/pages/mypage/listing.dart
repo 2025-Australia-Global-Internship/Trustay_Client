@@ -213,10 +213,8 @@ class _ListingPage extends State<ListingPage> {
               context,
               MaterialPageRoute(
                 // 본인이 등록한 매물이므로 조회수가 올라가지 않는 전용 상세 사용
-                builder: (context) => SharehouseDetailPage(
-                  houseId: item.id,
-                  isMyListing: true,
-                ),
+                builder: (context) =>
+                    SharehouseDetailPage(houseId: item.id, isMyListing: true),
               ),
             );
           },

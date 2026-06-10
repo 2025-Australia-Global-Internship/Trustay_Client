@@ -207,7 +207,7 @@ class MyListingCard extends StatelessWidget {
                               height: 15,
                               child: SvgPicture.asset(
                                 'assets/icons/trash.svg',
-                                color: Colors.redAccent,
+                                color: const Color(0xFFB24A4A),
                                 fit: BoxFit.contain,
                               ),
                             ),
@@ -217,7 +217,7 @@ class MyListingCard extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
-                                color: Colors.redAccent,
+                                color: const Color(0xFFB24A4A),
                               ),
                             ),
                           ],
