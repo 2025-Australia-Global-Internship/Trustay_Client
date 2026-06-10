@@ -100,28 +100,36 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   // ──────────────────────────────────────────
-  // 검색 실행
+  // 검색 실행 — 백엔드 /sharehouses (keyword) 호출
+  //   기존엔 클라이언트에서 _allHouses에 contains 매칭만 했지만,
+  //   서버 측 LIKE 검색 + 필터를 사용하도록 교체.
   // ──────────────────────────────────────────
 
-  void _performSearch(String query) {
+  Future<void> _performSearch(String query) async {
     final trimmed = query.trim();
     if (trimmed.isEmpty) return;
-
-    final q = trimmed.toLowerCase();
-    final results = _allHouses.where((house) {
-      return house.title.toLowerCase().contains(q) ||
-          house.address.toLowerCase().contains(q) ||
-          house.houseType.toLowerCase().contains(q);
-    }).toList();
 
     setState(() {
       _searchQuery = trimmed;
       _isSearching = true;
-      _searchResults = results;
+      _searchResults = const [];
     });
+    _searchFocus.unfocus();
+
+    try {
+      final results = await SharehouseService.fetchAllHouses(
+        keyword: trimmed,
+        size: 50,
+      );
+      if (!mounted) return;
+      setState(() => _searchResults = results);
+    } catch (e) {
+      if (!mounted) return;
+      // 서버 호출이 실패해도 사용자 흐름을 끊지 않도록 빈 결과만 표시
+      setState(() => _searchResults = const []);
+    }
 
     _addSearchQuery(trimmed);
-    _searchFocus.unfocus();
   }
 
   void _clearSearch() {

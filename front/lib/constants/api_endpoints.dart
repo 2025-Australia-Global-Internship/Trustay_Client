@@ -4,12 +4,17 @@ class ApiEndpoints {
   // base segments
   static const String authBase = '${ApiConstants.baseUrl}/api/trustay/auth';
   static const String chatBase = '${ApiConstants.baseUrl}/api/chat';
-  static const String communitiesBase = '${ApiConstants.baseUrl}/api/trustay/communities';
-  static const String membersBase = '${ApiConstants.baseUrl}/api/trustay/members';
-  static const String paperContractsBase = '${ApiConstants.baseUrl}/api/paper-contracts';
-  static const String paymentsBase = '${ApiConstants.baseUrl}/api/trustay/payments';
+  static const String communitiesBase =
+      '${ApiConstants.baseUrl}/api/trustay/communities';
+  static const String membersBase =
+      '${ApiConstants.baseUrl}/api/trustay/members';
+  static const String paperContractsBase =
+      '${ApiConstants.baseUrl}/api/paper-contracts';
+  static const String paymentsBase =
+      '${ApiConstants.baseUrl}/api/trustay/payments';
   static const String postsBase = '${ApiConstants.baseUrl}/api/trustay/posts';
-  static const String sharehousesBase = '${ApiConstants.baseUrl}/api/trustay/sharehouses';
+  static const String sharehousesBase =
+      '${ApiConstants.baseUrl}/api/trustay/sharehouses';
 
   // Auth
   static const String authLogin = '$authBase/login';
@@ -18,9 +23,11 @@ class ApiEndpoints {
 
   // Chat
   static const String createRoom = '$chatBase/room';
-  static String chatRoomMessages(int roomId, int memberId) => '$chatBase/room/$roomId/messages/$memberId';
+  static String chatRoomMessages(int roomId, int memberId) =>
+      '$chatBase/room/$roomId/messages/$memberId';
   static String myChatRooms(int memberId) => '$chatBase/rooms/$memberId';
-  static String leaveChatRoom(int roomId) => '$chatBase/room/$roomId/leave';
+  static String leaveChatRoom(int roomId, int memberId) =>
+      '$chatBase/room/$roomId/leave?memberId=$memberId';
 
   // STOMP (SockJS over HTTP)
   // - 백엔드가 `registry.addEndpoint("/ws-stomp").withSockJS()` 형태이므로
@@ -38,11 +45,16 @@ class ApiEndpoints {
   static const String communitiesTrending = '$communitiesBase/trending';
   static const String communitiesCreated = '$communitiesBase/created';
   static const String communitiesJoined = '$communitiesBase/joined';
-  static String communityById(int communityId) => '$communitiesBase/$communityId';
-  static String communityJoin(int communityId) => '$communitiesBase/$communityId/join';
-  static String communityLeave(int communityId) => '$communitiesBase/$communityId/leave';
-  static String communityUpdate(int communityId) => '$communitiesBase/$communityId';
-  static String communityDelete(int communityId) => '$communitiesBase/$communityId';
+  static String communityById(int communityId) =>
+      '$communitiesBase/$communityId';
+  static String communityJoin(int communityId) =>
+      '$communitiesBase/$communityId/join';
+  static String communityLeave(int communityId) =>
+      '$communitiesBase/$communityId/leave';
+  static String communityUpdate(int communityId) =>
+      '$communitiesBase/$communityId';
+  static String communityDelete(int communityId) =>
+      '$communitiesBase/$communityId';
 
   // Members
   static const String signup = '$membersBase/signup';
@@ -51,7 +63,9 @@ class ApiEndpoints {
 
   // Paper contracts
   static const String paperScan = '$paperContractsBase/scan';
-  static String paperDocument(String documentId) => '$paperContractsBase/$documentId';
+  static String paperDocument(String documentId) =>
+      '$paperContractsBase/$documentId';
+  static const String myPaperContracts = '$paperContractsBase/me';
 
   // Payments
   static const String tossClientConfig = '$paymentsBase/toss/client-config';
@@ -59,13 +73,17 @@ class ApiEndpoints {
   static const String dutchCreate = '$paymentsBase/dutch';
   static const String paymentConfirm = '$paymentsBase/confirm';
   static const String myPendingPayments = '$paymentsBase/me/pending';
+  static const String myPaymentHistory = '$paymentsBase/me/history';
 
   // Posts
   static const String postsRoot = postsBase;
   static String postById(int postId) => '$postsBase/$postId';
-  static String postsByCommunity(int communityId) => '$postsBase/community/$communityId';
-  static String postsBySharehouse(int sharehouseId) => '$postsBase/sharehouse/$sharehouseId';
+  static String postsByCommunity(int communityId) =>
+      '$postsBase/community/$communityId';
+  static String postsBySharehouse(int sharehouseId) =>
+      '$postsBase/sharehouse/$sharehouseId';
   static const String postsFeed = '$postsBase/feed';
+  static const String myPosts = '$postsBase/me';
 
   // Sharehouses
   static const String uploadImages = '$sharehousesBase/images';
@@ -73,7 +91,10 @@ class ApiEndpoints {
   static String sharehouseById(int houseId) => '$sharehousesBase/$houseId';
   static String sharehouseMy(int houseId) => '$sharehousesBase/my/$houseId';
   static const String sharehousesMyList = '$sharehousesBase/my';
-  static String sharehouseWish(int houseId) => '$sharehousesBase/$houseId/wish';
+  static const String sharehouseMyCurrent = '$sharehousesBase/me/current';
+  static String sharehouseWish(int houseId) =>
+      '$sharehousesBase/$houseId/wish';
   static const String sharehousesWishlist = '$sharehousesBase/wishlist';
-  static String sharehouseApproval(int houseId, String status) => '$sharehousesBase/$houseId/approval?status=$status';
+  static String sharehouseApproval(int houseId, String status) =>
+      '$sharehousesBase/$houseId/approval?status=$status';
 }

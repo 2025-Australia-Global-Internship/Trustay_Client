@@ -115,6 +115,25 @@ class ChatService {
     return dataList.map((json) => ChatMessageModel.fromJson(json)).toList();
   }
 
+  /// 채팅방 나가기 (POST /api/chat/room/{roomId}/leave?memberId=)
+  static Future<bool> leaveChatRoom(int roomId, int memberId) async {
+    final url = Uri.parse(ApiEndpoints.leaveChatRoom(roomId, memberId));
+    final token = await _getToken();
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('채팅방 나가기 실패: ${response.statusCode}');
+    }
+    return true;
+  }
+
   static DateTime? _parseTimeOrNull(String? s) {
     if (s == null || s.isEmpty) return null;
     try {

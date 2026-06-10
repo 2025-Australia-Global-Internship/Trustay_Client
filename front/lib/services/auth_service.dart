@@ -252,6 +252,58 @@ class AuthService {
     return User.fromJson(body['data']);
   }
 
+  /// 프로필 정보 수정 (PATCH /api/trustay/members/profile)
+  ///
+  /// 백엔드 [ProfileUpdateReq]는 다음 필드를 받으며 모두 선택값이다.
+  /// - birth        : `yyyy-MM-dd` (예: 2000-01-01)
+  /// - phone        : `0XX-XXXX-XXXX` (예: 010-1234-5678)
+  /// - accountInfo  : 숫자/하이픈 (예: 1234-5678)
+  /// - gender       : 자유 문자열 (25자 이내)
+  /// - address      : 자유 문자열 (255자 이내)
+  ///
+  /// null로 넘기면 해당 필드를 보내지 않으므로 서버 측 값을 유지한다.
+  /// 성공 시 갱신된 사용자 정보를 반환하고, 전역 노티파이어도 함께 갱신한다.
+  static Future<User> updateProfile({
+    String? birth,
+    String? phone,
+    String? accountInfo,
+    String? gender,
+    String? address,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    if (token == null) {
+      throw Exception('토큰 없음');
+    }
+
+    final Map<String, dynamic> body = {};
+    if (birth != null && birth.isNotEmpty) body['birth'] = birth;
+    if (phone != null && phone.isNotEmpty) body['phone'] = phone;
+    if (accountInfo != null && accountInfo.isNotEmpty) {
+      body['accountInfo'] = accountInfo;
+    }
+    if (gender != null && gender.isNotEmpty) body['gender'] = gender;
+    if (address != null && address.isNotEmpty) body['address'] = address;
+
+    final response = await http.patch(
+      Uri.parse(ApiEndpoints.profile),
+      headers: {
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+      body: utf8.encode(jsonEncode(body)),
+    );
+
+    final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+    final code = decoded['code'] ?? -1;
+    if (response.statusCode != 200 || code != 200) {
+      throw Exception(decoded['message'] ?? '프로필 수정 실패');
+    }
+
+    // 갱신 후 전역 사용자 정보 다시 동기화하여 반환
+    return await fetchProfile();
+  }
+
   /// `assets/icons/default.png`를 임시 파일로 풀어 multipart 업로드.
   /// 동시 호출이 발생해도 단일 Future로 메모이즈해 중복 업로드를 막는다.
   static Future<void> _ensureDefaultProfileImageUploaded() {

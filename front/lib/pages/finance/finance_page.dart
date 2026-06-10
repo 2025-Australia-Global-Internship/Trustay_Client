@@ -4,6 +4,8 @@ import 'package:front/constants/colors.dart';
 import 'package:front/widgets/custom_header.dart';
 import 'package:front/widgets/circle_icon_button.dart';
 import 'package:front/widgets/gradient_layout.dart';
+import 'package:front/services/payment_service.dart';
+import 'package:front/models/payment_model.dart';
 
 class TransactionItem {
   final String title;
@@ -32,55 +34,110 @@ class _FinancePageState extends State<FinancePage> {
   int _selectedFilter = 0;
   final List<String> _filters = ['All splits', 'You paid', 'Mate paid'];
 
+  /// 서버에서 받아온 결제 이력을 월별로 그룹핑한 결과.
+  /// API 호출 실패 또는 데이터가 없을 때는 빈 맵으로 둔다(=빈 상태 표시).
+  Map<String, List<TransactionItem>> _transactionsByMonth = {};
+  bool _isLoading = true;
+
   @override
   void initState() {
     super.initState();
     _currentMonth = DateTime.now();
     _selectedDay = DateTime.now().day;
+    _loadHistory();
   }
 
-  final Map<String, List<TransactionItem>> _transactionsByMonth = {
-    'Feb': [
-      const TransactionItem(
-        title: 'Split Bills',
-        subtitle: 'Emma → My wallet',
-        date: '2/4 · 03:28PM',
-        amount: 51,
-      ),
-      const TransactionItem(
-        title: 'Rent Due',
-        subtitle: 'My wallet → Olivia',
-        date: '2/2 · 09:40AM',
-        amount: -320,
-      ),
-      const TransactionItem(
-        title: 'Split Bills',
-        subtitle: 'My wallet → Rio',
-        date: '2/1 · 08:07PM',
-        amount: -13,
-      ),
-    ],
-    'Jan': [
-      const TransactionItem(
-        title: 'Split Bills',
-        subtitle: 'Rio → My wallet',
-        date: '1/21 · 03:28PM',
-        amount: 50,
-      ),
-      const TransactionItem(
-        title: 'Split Bills',
-        subtitle: 'My wallet → Emma',
-        date: '1/9 · 09:40AM',
-        amount: -24,
-      ),
-      const TransactionItem(
-        title: 'Rent Due',
-        subtitle: 'My wallet → Olivia',
-        date: '1/2 · 08:07AM',
-        amount: -320,
-      ),
-    ],
-  };
+  // ---------------------------------------------------------------------------
+  // 결제 이력 조회 (백엔드 GET /api/trustay/payments/me/history)
+  //   서버 응답을 화면용 TransactionItem 으로 매핑한다.
+  //   부호 규칙: 내가 송금자(=PaymentStatus.CONFIRMED 결제) → 음수 / 수취 → 양수
+  //   targetAccount 또는 paymentType 으로 표시할 subtitle 을 구성한다.
+  // ---------------------------------------------------------------------------
+  Future<void> _loadHistory() async {
+    try {
+      final list = await PaymentService.getMyHistory();
+      if (!mounted) return;
+      setState(() {
+        _transactionsByMonth = _groupByMonth(list);
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      // 미로그인/네트워크 실패 시에도 화면은 유지하고 더미 비우기
+      setState(() {
+        _transactionsByMonth = {};
+        _isLoading = false;
+      });
+    }
+  }
+
+  static const List<String> _monthLabels = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+
+  Map<String, List<TransactionItem>> _groupByMonth(
+    List<PaymentHistoryItem> items,
+  ) {
+    final result = <String, List<TransactionItem>>{};
+
+    // 최신순으로 정렬
+    final sorted = [...items]..sort((a, b) {
+      final ad = a.transactionDate ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final bd = b.transactionDate ?? DateTime.fromMillisecondsSinceEpoch(0);
+      return bd.compareTo(ad);
+    });
+
+    for (final p in sorted) {
+      final date = p.transactionDate;
+      if (date == null) continue;
+      final monthLabel = _monthLabels[date.month - 1];
+      final dateStr = _formatTxDate(date);
+      final title = _titleFor(p.paymentType);
+      final subtitle = _subtitleFor(p);
+      // 백엔드가 음/양 부호를 직접 주지 않으므로, 기본적으로 RENT/UTILITY/DUTCH 는 "내가 지불"로 간주.
+      // 추후 수금자/지불자 구분을 위해 백엔드 필드(direction)가 생기면 그에 맞춰 보정.
+      final amount = -p.amount.toDouble();
+
+      result.putIfAbsent(monthLabel, () => []).add(
+            TransactionItem(
+              title: title,
+              subtitle: subtitle,
+              date: dateStr,
+              amount: amount,
+            ),
+          );
+    }
+
+    return result;
+  }
+
+  String _titleFor(String paymentType) {
+    switch (paymentType) {
+      case 'RENT':
+        return 'Rent Due';
+      case 'UTILITY':
+        return 'Utility';
+      case 'DUTCH':
+        return 'Split Bills';
+      default:
+        return paymentType;
+    }
+  }
+
+  String _subtitleFor(PaymentHistoryItem p) {
+    final to = (p.targetAccount != null && p.targetAccount!.isNotEmpty)
+        ? p.targetAccount!
+        : 'Counterparty';
+    return 'My wallet → $to';
+  }
+
+  String _formatTxDate(DateTime d) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    final hour12 = d.hour == 0 ? 12 : (d.hour > 12 ? d.hour - 12 : d.hour);
+    final ampm = d.hour < 12 ? 'AM' : 'PM';
+    return '${d.month}/${d.day} · ${two(hour12)}:${two(d.minute)}$ampm';
+  }
 
   // 필터링된 거래 내역 가져오기
   Map<String, List<TransactionItem>> _getFilteredTransactions() {

@@ -11,6 +11,7 @@ import '../models/listing_model.dart'; // 마이페이지 목록용 모델 (MyLi
 import '../models/sharehouse_detail_model.dart'; // 상세 조회용 모델
 
 import '../constants/api_constants.dart';
+import '../constants/api_endpoints.dart';
 
 class SharehouseService {
   // baseUrl is provided by ApiConstants
@@ -133,31 +134,75 @@ class SharehouseService {
   }
 
   // ------------------------------------------------------------------------
-  // 3. 홈 화면: 쉐어하우스 전체 목록 조회 (GET)
+  // 3. 홈 화면: 쉐어하우스 전체 목록 조회 (GET /api/trustay/sharehouses)
+  //   백엔드 SharehouseSearchReq의 모든 필터를 지원한다.
   // ------------------------------------------------------------------------
   static Future<List<SharehouseModel>> fetchAllHouses({
     String? houseType,
     String? keyword,
+    String? address,
+    int? minPrice,
+    int? maxPrice,
+    int? minRoomCount,
+    int? minBathroomCount,
+    int? currentResidents,
+    List<String>? homeRules,
+    List<String>? features,
+    String? status,
+    int page = 0,
+    int size = 20,
+    String? sort,
   }) async {
     try {
-      final Map<String, String> queryParams = {};
+      final Map<String, dynamic> queryParams = {};
       if (houseType != null && houseType != 'ALL') {
         queryParams['houseType'] = houseType;
       }
       if (keyword != null && keyword.trim().isNotEmpty) {
         queryParams['keyword'] = keyword.trim();
       }
+      if (address != null && address.trim().isNotEmpty) {
+        queryParams['address'] = address.trim();
+      }
+      if (minPrice != null) queryParams['minPrice'] = '$minPrice';
+      if (maxPrice != null) queryParams['maxPrice'] = '$maxPrice';
+      if (minRoomCount != null) queryParams['minRoomCount'] = '$minRoomCount';
+      if (minBathroomCount != null) {
+        queryParams['minBathroomCount'] = '$minBathroomCount';
+      }
+      if (currentResidents != null) {
+        queryParams['currentResidents'] = '$currentResidents';
+      }
+      if (homeRules != null && homeRules.isNotEmpty) {
+        queryParams['homeRules'] = homeRules;
+      }
+      if (features != null && features.isNotEmpty) {
+        queryParams['features'] = features;
+      }
+      if (status != null && status.isNotEmpty) queryParams['status'] = status;
+      queryParams['page'] = '$page';
+      queryParams['size'] = '$size';
+      if (sort != null && sort.isNotEmpty) queryParams['sort'] = sort;
+
+      // 로그인 사용자라면 wishedByMe 계산을 위해 토큰 동봉 (없어도 호출은 가능)
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
 
       final uri = Uri.parse(
         '$_apiBase/sharehouses',
-      ).replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
-      final response = await http.get(uri);
+      ).replace(queryParameters: queryParams);
+      final response = await http.get(
+        uri,
+        headers: {
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
 
       if (response.statusCode == 200) {
         final decodedData = jsonDecode(utf8.decode(response.bodyBytes));
         final data = decodedData['data'];
 
-        // data가 List면 바로 사용, Map이면 content 키로 꺼내기
+        // data가 List면 바로 사용, Map이면 content 키로 꺼내기 (PageResponse)
         final List<dynamic> list = data is List
             ? data
             : (data['content'] as List<dynamic>? ?? []);
@@ -199,7 +244,7 @@ class SharehouseService {
   }
 
   // ------------------------------------------------------------------------
-  // 5. 쉐어하우스 상세 정보 조회 (GET)
+  // 5. 쉐어하우스 상세 정보 조회 (GET) — 조회수 1 증가
   // ------------------------------------------------------------------------
   static Future<SharehouseDetailModel> getSharehouseDetail(int houseId) async {
     try {
@@ -219,6 +264,67 @@ class SharehouseService {
       }
     } catch (e) {
       throw Exception('상세 정보 로드 중 오류: $e');
+    }
+  }
+
+  // ------------------------------------------------------------------------
+  // 5-1. 내가 등록한 쉐어하우스 상세 (GET /sharehouses/my/{houseId})
+  //    → 조회수가 올라가지 않는 본인 매물 전용 상세 조회
+  // ------------------------------------------------------------------------
+  static Future<SharehouseDetailModel> getMySharehouseDetail(int houseId) async {
+    try {
+      final token = await _getToken();
+      final uri = Uri.parse(ApiEndpoints.sharehouseMy(houseId));
+
+      final response = await http.get(uri, headers: _getHeaders(token));
+
+      if (response.statusCode == 200) {
+        final decodedBody = utf8.decode(response.bodyBytes);
+        final jsonResponse = json.decode(decodedBody);
+        return SharehouseDetailModel.fromJson(jsonResponse['data']);
+      } else {
+        throw Exception('내 매물 상세 조회 실패: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('내 매물 상세 로드 중 오류: $e');
+    }
+  }
+
+  // ------------------------------------------------------------------------
+  // 5-2. 현재 내가 거주중인 쉐어하우스 (GET /sharehouses/me/current)
+  //    → null 가능 (거주중인 매물이 없으면)
+  // ------------------------------------------------------------------------
+  static Future<SharehouseModel?> fetchMyCurrentSharehouse() async {
+    try {
+      final token = await _getToken();
+      final uri = Uri.parse(ApiEndpoints.sharehouseMyCurrent);
+      final response = await http.get(uri, headers: _getHeaders(token));
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+        final data = decoded['data'];
+        if (data == null) return null;
+        return SharehouseModel.fromJson(data as Map<String, dynamic>);
+      }
+      return null;
+    } catch (e) {
+      // 거주중 매물이 없을 때 서버에서 4041 등으로 응답할 수 있으므로 예외는 흡수
+      return null;
+    }
+  }
+
+  // ------------------------------------------------------------------------
+  // 5-3. (관리자) 매물 승인 / 거절 (PATCH /sharehouses/{houseId}/approval)
+  //    status: 'ACTIVE' | 'REJECTED' | 'PENDING'
+  // ------------------------------------------------------------------------
+  static Future<bool> approveSharehouse(int houseId, String status) async {
+    try {
+      final token = await _getToken();
+      final uri = Uri.parse(ApiEndpoints.sharehouseApproval(houseId, status));
+      final response = await http.patch(uri, headers: _getHeaders(token));
+      return response.statusCode == 200;
+    } catch (e) {
+      throw Exception('매물 승인 상태 변경 실패: $e');
     }
   }
 

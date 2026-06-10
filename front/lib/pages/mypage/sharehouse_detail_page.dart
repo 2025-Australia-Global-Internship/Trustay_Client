@@ -18,7 +18,16 @@ import 'package:front/pages/community/chat_room_page.dart'; // 경로 확인
 
 class SharehouseDetailPage extends StatefulWidget {
   final int houseId;
-  const SharehouseDetailPage({super.key, required this.houseId});
+
+  /// 본인이 등록한 매물 상세보기로 진입한 경우 true.
+  /// true 인 경우 백엔드 `/sharehouses/my/{houseId}` 를 호출해 **조회수가 올라가지 않는다**.
+  final bool isMyListing;
+
+  const SharehouseDetailPage({
+    super.key,
+    required this.houseId,
+    this.isMyListing = false,
+  });
 
   @override
   State<SharehouseDetailPage> createState() => _SharehouseDetailPageState();
@@ -40,9 +49,13 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
 
   Future<void> _loadDetail() async {
     try {
+      // 본인 매물(조회수 X) / 일반 상세(조회수 O) 분기
+      final detailFuture = widget.isMyListing
+          ? SharehouseService.getMySharehouseDetail(widget.houseId)
+          : SharehouseService.getSharehouseDetail(widget.houseId);
       // 두 개 동시에 호출
       final results = await Future.wait([
-        SharehouseService.getSharehouseDetail(widget.houseId),
+        detailFuture,
         SharehouseService.fetchWishStatus(widget.houseId),
       ]);
 
