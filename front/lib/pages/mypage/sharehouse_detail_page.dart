@@ -152,6 +152,7 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
           MaterialPageRoute(
             builder: (_) => ChatRoomPage(
               roomId: created.roomId,
+              houseId: created.houseId,
               // 상대방 이름은 현재 페이지의 호스트 이름으로 표시
               roomName: _house?.hostName ?? "Host",
               myMemberId: user.memberId,
