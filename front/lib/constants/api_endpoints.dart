@@ -28,6 +28,10 @@ class ApiEndpoints {
   static String myChatRooms(int memberId) => '$chatBase/rooms/$memberId';
   static String leaveChatRoom(int roomId, int memberId) =>
       '$chatBase/room/$roomId/leave?memberId=$memberId';
+  // 채팅 이미지 업로드: 서버가 IMAGE 타입 ChatMessage 로 저장 후
+  // /sub/chat/room/{roomId} 로 자동 브로드캐스트한다.
+  static String chatRoomImage(int roomId, int senderId) =>
+      '$chatBase/room/$roomId/image?senderId=$senderId';
 
   // STOMP (SockJS over HTTP)
   // - 백엔드가 `registry.addEndpoint("/ws-stomp").withSockJS()` 형태이므로
