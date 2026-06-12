@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:front/constants/colors.dart';
 import 'package:front/services/chat_service.dart';
@@ -6,6 +8,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:front/services/sharehouse_service.dart';
 import 'package:front/models/sharehouse_detail_model.dart';
+import 'package:front/pages/mypage/sharehouse_detail_page.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ChatRoomPage extends StatefulWidget {
   final int roomId;
@@ -41,6 +45,10 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   // ── 숙소 정보 관리 변수 추가 ──
   SharehouseDetailModel? _houseDetail;
   bool _isHouseLoading = true;
+
+  // ── 이미지 전송 관련 ──
+  final ImagePicker _imagePicker = ImagePicker();
+  bool _isUploadingImage = false;
 
   @override
   void initState() {
@@ -349,85 +357,197 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 10, 10, 10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            // 1. 좌측 원형 상대방(호스트) 프로필 이미지
-            Container(
-              width: 50,
-              height: 50,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Color(0xFFFAFAFA),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: _openHouseDetail,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(16, 10, 10, 10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(26),
-                child: hostProfile.isNotEmpty
-                    ? Image.network(hostProfile, fit: BoxFit.cover)
-                    : const Icon(Icons.person, color: grey02),
+            ],
+          ),
+          child: Row(
+            children: [
+              // 1. 좌측 원형 상대방(호스트) 프로필 이미지
+              Container(
+                width: 50,
+                height: 50,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color(0xFFFAFAFA),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(26),
+                  child: hostProfile.isNotEmpty
+                      ? Image.network(hostProfile, fit: BoxFit.cover)
+                      : const Icon(Icons.person, color: grey02),
+                ),
               ),
-            ),
-            const SizedBox(width: 14),
+              const SizedBox(width: 14),
 
-            // 2. 중앙 타이틀 및 작성자 텍스트 정보 (리뷰 영역 제외)
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: dark,
+              // 2. 중앙 타이틀 및 작성자 텍스트 정보 (리뷰 영역 제외)
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: dark,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 7),
-                  Text(
-                    "Posted by $hostName",
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: grey04,
+                    const SizedBox(height: 7),
+                    Text(
+                      "Posted by $hostName",
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: grey04,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 14),
+              const SizedBox(width: 14),
 
-            // 3. 우측 쉐어하우스 썸네일 이미지 (모서리가 둥근 사각형)
-            Container(
-              width: 84,
-              height: 74,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFAFAFA),
-                borderRadius: BorderRadius.circular(14),
+              // 3. 우측 쉐어하우스 썸네일 이미지 (모서리가 둥근 사각형)
+              Container(
+                width: 84,
+                height: 74,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFAFAFA),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: houseThumbnail.isNotEmpty
+                      ? Image.network(houseThumbnail, fit: BoxFit.cover)
+                      : const Icon(Icons.home, color: grey02),
+                ),
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(14),
-                child: houseThumbnail.isNotEmpty
-                    ? Image.network(houseThumbnail, fit: BoxFit.cover)
-                    : const Icon(Icons.home, color: grey02),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 하우스 카드 탭 시 쉐어하우스 상세 페이지로 이동
+  void _openHouseDetail() {
+    if (_isHouseLoading || _houseDetail == null) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SharehouseDetailPage(houseId: widget.houseId),
+      ),
+    );
+  }
+
+  // 플러스 메뉴 아이템 클릭 디스패치
+  void _handleMenuItemTap(String label) {
+    switch (label) {
+      case 'Image':
+        _pickAndSendImage(ImageSource.gallery);
+        break;
+      case 'Camera':
+        _pickAndSendImage(ImageSource.camera);
+        break;
+      default:
+        print("$label 클릭됨 — 아직 구현되지 않음");
+    }
+  }
+
+  // 갤러리/카메라에서 이미지 선택 → 채팅 이미지 업로드 REST 호출
+  //
+  // 백엔드가 IMAGE 타입 ChatMessage 로 저장 후 STOMP 구독 채널에
+  // 자동 브로드캐스트하기 때문에, 클라이언트는 별도의 WebSocket SEND 없이
+  // 기존 구독 콜백(_handleIncomingMessage)으로 새 메시지를 수신한다.
+  Future<void> _pickAndSendImage(ImageSource source) async {
+    if (_isUploadingImage) return;
+
+    try {
+      final XFile? picked = await _imagePicker.pickImage(
+        source: source,
+        imageQuality: 85,
+      );
+      if (picked == null) return; // 사용자가 취소
+
+      // 선택 후 메뉴는 자동으로 접어준다
+      if (mounted) {
+        setState(() {
+          _isMenuExpanded = false;
+          _isUploadingImage = true;
+        });
+      }
+
+      await ChatService.sendImageMessage(
+        roomId: widget.roomId,
+        senderId: widget.myMemberId,
+        imageFile: File(picked.path),
+      );
+      // 응답으로도 ChatMessageRes 가 내려오지만 STOMP 가 같은 메시지를
+      // 자동 브로드캐스트하므로 중복을 피하기 위해 응답은 무시한다.
+    } catch (e) {
+      print('❌ 이미지 전송 실패: $e');
+      _showSnack('이미지 전송에 실패했습니다.');
+    } finally {
+      if (mounted) setState(() => _isUploadingImage = false);
+    }
+  }
+
+  void _showSnack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
+    );
+  }
+
+  // IMAGE 메시지 탭 시 전체 화면 미리보기
+  void _showImagePreview(String url) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.92),
+      builder: (_) => Stack(
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Center(
+              child: InteractiveViewer(
+                child: Image.network(
+                  url,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const Icon(
+                    Icons.broken_image,
+                    color: Colors.white,
+                    size: 80,
+                  ),
+                ),
               ),
             ),
-          ],
-        ),
+          ),
+          Positioned(
+            top: 40,
+            right: 16,
+            child: SafeArea(
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 28),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -463,6 +583,14 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
 
   // ── 메시지 버블 ──
   Widget _buildMessageBubble(ChatMessageModel msg, bool isMe) {
+    final bool isImage = msg.messageType == 'IMAGE';
+    final BorderRadius bubbleRadius = BorderRadius.only(
+      topLeft: const Radius.circular(19),
+      topRight: const Radius.circular(19),
+      bottomLeft: Radius.circular(isMe ? 18 : 4),
+      bottomRight: Radius.circular(isMe ? 4 : 18),
+    );
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Align(
@@ -476,37 +604,9 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
               constraints: BoxConstraints(
                 maxWidth: MediaQuery.of(context).size.width * 0.65,
               ),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 22,
-                  vertical: 17,
-                ),
-                decoration: BoxDecoration(
-                  color: isMe ? green : Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(19),
-                    topRight: const Radius.circular(19),
-                    bottomLeft: Radius.circular(isMe ? 18 : 4),
-                    bottomRight: Radius.circular(isMe ? 4 : 18),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Text(
-                  msg.message,
-                  style: TextStyle(
-                    fontSize: 14,
-                    height: 1.4,
-                    fontWeight: FontWeight.w700,
-                    color: isMe ? Colors.white : dark,
-                  ),
-                ),
-              ),
+              child: isImage
+                  ? _buildImageBubble(msg, bubbleRadius)
+                  : _buildTextBubble(msg, isMe, bubbleRadius),
             ),
 
             const SizedBox(height: 6),
@@ -520,6 +620,77 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextBubble(
+    ChatMessageModel msg,
+    bool isMe,
+    BorderRadius radius,
+  ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 17),
+      decoration: BoxDecoration(
+        color: isMe ? green : Colors.white,
+        borderRadius: radius,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Text(
+        msg.message,
+        style: TextStyle(
+          fontSize: 14,
+          height: 1.4,
+          fontWeight: FontWeight.w700,
+          color: isMe ? Colors.white : dark,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageBubble(ChatMessageModel msg, BorderRadius radius) {
+    return GestureDetector(
+      onTap: () => _showImagePreview(msg.message),
+      child: ClipRRect(
+        borderRadius: radius,
+        child: Container(
+          color: const Color(0xFFFAFAFA),
+          constraints: const BoxConstraints(
+            minWidth: 120,
+            minHeight: 120,
+            maxHeight: 240,
+          ),
+          child: Image.network(
+            msg.message,
+            fit: BoxFit.cover,
+            loadingBuilder: (context, child, progress) {
+              if (progress == null) return child;
+              return const SizedBox(
+                width: 180,
+                height: 180,
+                child: Center(
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: green,
+                  ),
+                ),
+              );
+            },
+            errorBuilder: (context, error, stack) => const SizedBox(
+              width: 180,
+              height: 180,
+              child: Center(
+                child: Icon(Icons.broken_image, color: grey02, size: 36),
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -561,11 +732,13 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                     Padding(
                       padding: const EdgeInsets.only(left: 13),
                       child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _isMenuExpanded = !_isMenuExpanded;
-                          });
-                        },
+                        onTap: _isUploadingImage
+                            ? null
+                            : () {
+                                setState(() {
+                                  _isMenuExpanded = !_isMenuExpanded;
+                                });
+                              },
                         child: AnimatedRotation(
                           turns: 0,
                           duration: const Duration(milliseconds: 200),
@@ -577,11 +750,19 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                               shape: BoxShape.circle,
                               border: Border.all(color: green, width: 1.1),
                             ),
-                            child: const Icon(
-                              Icons.add,
-                              size: 20,
-                              color: green,
-                            ),
+                            child: _isUploadingImage
+                                ? const Padding(
+                                    padding: EdgeInsets.all(10),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: green,
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.add,
+                                    size: 20,
+                                    color: green,
+                                  ),
                           ),
                         ),
                       ),
@@ -731,10 +912,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
             final isMap = item['label'] == 'Location';
 
             return GestureDetector(
-              onTap: () {
-                print("${item['label']} 클릭됨");
-                // TODO: 각 메뉴 클릭 시 액션 정의
-              },
+              onTap: () => _handleMenuItemTap(item['label'] as String),
               child: Column(
                 children: [
                   // 원형 아이콘 배경
