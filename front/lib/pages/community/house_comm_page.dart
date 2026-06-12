@@ -100,20 +100,21 @@ class _HouseCommPageState extends State<HouseCommPage> {
     }
   }
 
-  Future<void> _onTapChatRoom(ChatRoomListModel room) async {
+  Future<void> _onTapChatRoom(ChatRoomListModel item) async {
     // 프로필 정보가 아직 없으면(예: 첫 호출 실패 후) 보강해서 가져오기
     final user = _currentUser ?? await AuthService.fetchProfile();
     if (!mounted) return;
     _currentUser = user;
 
-    await Navigator.push(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => ChatRoomPage(
-          roomId: room.roomId,
-          roomName: room.otherMemberName,
-          myMemberId: user.memberId,
-          otherProfileImageUrl: room.profileImageUrl,
+          roomId: item.roomId,
+          houseId: item.houseId, // 👈 모델에서 추출한 하우스 ID 전달
+          roomName: item.otherMemberName, // 👈 상대방 이름 표시
+          myMemberId: _currentUser!.memberId, // 👈 내 회원 고유 ID
+          otherProfileImageUrl: item.profileImageUrl, // 👈 상대방 프로필 이미지 URL
         ),
       ),
     );
@@ -130,7 +131,7 @@ class _HouseCommPageState extends State<HouseCommPage> {
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return [SliverToBoxAdapter(child: _buildHouseSubTabs())];
         },
-        body: Container(color: Color(0xFFFAFAFA), child: _buildContent()),
+        body: Container(child: _buildContent()),
       ),
       floatingActionButton: _houseSubTabIndex == 0
           ? _buildFloatingButton()
@@ -344,7 +345,7 @@ class _HouseCommPageState extends State<HouseCommPage> {
                           Text(
                             item.otherMemberName,
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 15,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
@@ -358,7 +359,7 @@ class _HouseCommPageState extends State<HouseCommPage> {
                           ),
                         ],
                       ),
-                      SizedBox(height: 7),
+                      SizedBox(height: 8),
                       Row(
                         children: [
                           Expanded(

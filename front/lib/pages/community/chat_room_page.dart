@@ -4,9 +4,12 @@ import 'package:front/services/chat_service.dart';
 import 'package:front/models/chat_message_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:front/services/sharehouse_service.dart';
+import 'package:front/models/sharehouse_detail_model.dart';
 
 class ChatRoomPage extends StatefulWidget {
   final int roomId;
+  final int houseId;
   final String roomName;
   final int myMemberId;
   final String? otherProfileImageUrl;
@@ -14,6 +17,7 @@ class ChatRoomPage extends StatefulWidget {
   const ChatRoomPage({
     super.key,
     required this.roomId,
+    required this.houseId,
     required this.roomName,
     required this.myMemberId,
     this.otherProfileImageUrl,
@@ -33,6 +37,10 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   bool _isConnected = false;
   String? _token;
 
+  // ── 숙소 정보 관리 변수 추가 ──
+  SharehouseDetailModel? _houseDetail;
+  bool _isHouseLoading = true;
+
   @override
   void initState() {
     super.initState();
@@ -41,13 +49,32 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
 
   Future<void> _bootstrap() async {
     await _loadToken();
-    await _loadChatHistory();
+    // 채팅 내역과 숙소 정보를 동시에 병렬로 로드합니다.
+    await Future.wait([_loadChatHistory(), _loadHouseDetail()]);
     await _connectAndSubscribe();
   }
 
   Future<void> _loadToken() async {
     final prefs = await SharedPreferences.getInstance();
     _token = prefs.getString('token');
+  }
+
+  // ── houseId로 숙소 상세 정보 가져오기 ──
+  Future<void> _loadHouseDetail() async {
+    try {
+      final detail = await SharehouseService.getSharehouseDetail(
+        widget.houseId,
+      );
+      if (!mounted) return;
+      setState(() {
+        _houseDetail = detail;
+        _isHouseLoading = false;
+      });
+    } catch (e) {
+      print('❌ 숙소 정보 로드 실패: $e');
+      if (!mounted) return;
+      setState(() => _isHouseLoading = false);
+    }
   }
 
   Future<void> _loadChatHistory() async {
@@ -130,49 +157,66 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
 
   @override
   Widget build(BuildContext context) {
-    final hasOtherImage =
-        widget.otherProfileImageUrl != null &&
-        widget.otherProfileImageUrl!.isNotEmpty;
-
     return Scaffold(
-      backgroundColor: Color(0xFFFAFAFA), // 연한 회색 배경
+      backgroundColor: const Color(0xFFFAFAFA), // 연한 회색 배경
       body: Column(
         children: [
+          // 1. 상단 헤더 고정 (Stack 밖에 있으므로 완전히 고정되며 배경을 뚫지 못합니다)
           _buildChatHeader(),
 
-          // ── 채팅 메시지 리스트 ──
+          // 2. 중앙 영역 (하우스 카드와 채팅 리스트가 겹치는 영역)
           Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    itemCount: _messages.length,
-                    itemBuilder: (context, index) {
-                      final msg = _messages[index];
-                      final isMe = msg.senderId == widget.myMemberId;
+            child: Stack(
+              children: [
+                // 바닥에 깔리는 채팅 메시지 리스트
+                Positioned.fill(
+                  child: _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : ListView.builder(
+                          controller: _scrollController,
+                          // ★ 중요: 하우스 카드가 가리는 높이(약 110px)만큼만 상단 패딩을 줍니다.
+                          // 헤더는 이제 Stack 밖에 있으므로 헤더 높이를 더해줄 필요가 없습니다.
+                          padding: const EdgeInsets.only(
+                            left: 16,
+                            right: 16,
+                            top: 110,
+                            bottom: 16,
+                          ),
+                          itemCount: _messages.length,
+                          itemBuilder: (context, index) {
+                            final msg = _messages[index];
+                            final isMe = msg.senderId == widget.myMemberId;
 
-                      // 날짜 구분선: 전 메시지와 날짜 다를 때
-                      final showDateDivider =
-                          index == 0 ||
-                          !_isSameDay(
-                            _parseTime(_messages[index - 1].regTime),
-                            _parseTime(msg.regTime),
-                          );
+                            final showDateDivider =
+                                index == 0 ||
+                                !_isSameDay(
+                                  _parseTime(_messages[index - 1].regTime),
+                                  _parseTime(msg.regTime),
+                                );
 
-                      return Column(
-                        children: [
-                          if (showDateDivider) _buildDateDivider(msg.regTime),
-                          _buildMessageBubble(msg, isMe),
-                        ],
-                      );
-                    },
-                  ),
+                            return Column(
+                              children: [
+                                if (showDateDivider)
+                                  _buildDateDivider(msg.regTime),
+                                _buildMessageBubble(msg, isMe),
+                              ],
+                            );
+                          },
+                        ),
+                ),
+
+                // 채팅 위에 고정되어 떠 있는 하우스 정보 카드
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: _buildHouseInfoCard(),
+                ),
+              ],
+            ),
           ),
-          // ── 입력창 ──
+
+          // 3. 하단 입력창 고정 (Stack 밖에 있으므로 완전히 고정됩니다)
           _buildInputArea(),
         ],
       ),
@@ -228,7 +272,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                   widget.roomName,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 17,
                     fontWeight: FontWeight.w800,
                     color: dark,
                   ),
@@ -274,6 +318,114 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHouseInfoCard() {
+    if (_isHouseLoading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+
+    if (_houseDetail == null) return const SizedBox.shrink();
+
+    // 데이터 바인딩 파트
+    final title = _houseDetail!.title;
+    final hostName = _houseDetail!.hostName;
+    final hasImages = _houseDetail!.imageUrls.isNotEmpty;
+    final houseThumbnail = hasImages ? _houseDetail!.imageUrls.first : "";
+    final hostProfile = widget.otherProfileImageUrl ?? "";
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 11, 11, 11),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            // 1. 좌측 원형 상대방(호스트) 프로필 이미지
+            Container(
+              width: 54,
+              height: 54,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0xFFFAFAFA),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(26),
+                child: hostProfile.isNotEmpty
+                    ? Image.network(hostProfile, fit: BoxFit.cover)
+                    : const Icon(Icons.person, color: grey02),
+              ),
+            ),
+            const SizedBox(width: 14),
+
+            // 2. 중앙 타이틀 및 작성자 텍스트 정보 (리뷰 영역 제외)
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: dark,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    "Posted by $hostName",
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: grey04,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 14),
+
+            // 3. 우측 쉐어하우스 썸네일 이미지 (모서리가 둥근 사각형)
+            Container(
+              width: 94,
+              height: 84,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFAFAFA),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: houseThumbnail.isNotEmpty
+                    ? Image.network(houseThumbnail, fit: BoxFit.cover)
+                    : const Icon(Icons.home, color: grey02),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -356,7 +508,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
               ),
             ),
 
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
 
             Text(
               _formatTimeOnly(msg.regTime),
@@ -415,7 +567,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
               // 세로 구분선
               Container(
                 width: 1.1,
-                height: 22,
+                height: 23,
                 color: grey01,
                 margin: const EdgeInsets.only(left: 15),
               ),
@@ -487,7 +639,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     if (s == null || s.isEmpty) return null;
     try {
       final utc = s.endsWith('Z') ? s : '${s}Z';
-      return DateTime.parse(utc).toLocal();
+      return DateTime.parse(utc);
     } catch (_) {
       return null;
     }

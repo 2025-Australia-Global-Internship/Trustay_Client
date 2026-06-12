@@ -198,7 +198,7 @@ class _SocialCommPageState extends State<SocialCommPage> {
 
         _buildFeedSection(),
 
-        const SizedBox(height: 18),
+        const SizedBox(height: 100),
       ],
     );
   }
@@ -211,9 +211,7 @@ class _SocialCommPageState extends State<SocialCommPage> {
       scrollDirection: Axis.horizontal,
       children: [
         _buildAddCommunity(),
-        ..._myCommunities.map(
-          (c) => _buildCommunityItem(c.imageUrl, c.name),
-        ),
+        ..._myCommunities.map((c) => _buildCommunityItem(c.imageUrl, c.name)),
       ],
     );
   }
@@ -359,7 +357,11 @@ class _SocialCommPageState extends State<SocialCommPage> {
                         height: 110,
                         color: grey01,
                         child: const Center(
-                          child: Icon(Icons.image, size: 50, color: Colors.grey),
+                          child: Icon(
+                            Icons.image,
+                            size: 50,
+                            color: Colors.grey,
+                          ),
                         ),
                       ),
               ),
@@ -454,7 +456,7 @@ class _SocialCommPageState extends State<SocialCommPage> {
           child: Text(
             _isLoading ? '' : 'No posts yet',
             style: const TextStyle(
-              fontSize: 14,
+              fontSize: 13,
               color: grey03,
               fontWeight: FontWeight.w500,
             ),
@@ -462,9 +464,7 @@ class _SocialCommPageState extends State<SocialCommPage> {
         ),
       );
     }
-    return Column(
-      children: _feedPosts.map(_buildPostCard).toList(),
-    );
+    return Column(children: _feedPosts.map(_buildPostCard).toList());
   }
 
   Widget _buildPostCard(PostModel post) {
@@ -583,8 +583,10 @@ class _SocialCommPageState extends State<SocialCommPage> {
                 ),
               ),
               const SizedBox(width: 4),
-              Text(_likesLabel(post.likeCount),
-                  style: const TextStyle(fontSize: 14)),
+              Text(
+                _likesLabel(post.likeCount),
+                style: const TextStyle(fontSize: 14),
+              ),
               const SizedBox(width: 16),
               SvgPicture.asset(
                 'assets/icons/community.svg',
@@ -592,8 +594,10 @@ class _SocialCommPageState extends State<SocialCommPage> {
                 height: 21,
               ),
               const SizedBox(width: 4),
-              Text('${post.commentCount}',
-                  style: const TextStyle(fontSize: 14)),
+              Text(
+                '${post.commentCount}',
+                style: const TextStyle(fontSize: 14),
+              ),
               const Spacer(),
               SvgPicture.asset(
                 'assets/icons/bookmark.svg',
