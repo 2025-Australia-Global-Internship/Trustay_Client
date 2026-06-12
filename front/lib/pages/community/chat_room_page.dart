@@ -35,6 +35,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   List<ChatMessageModel> _messages = [];
   bool _isLoading = true;
   bool _isConnected = false;
+  bool _isMenuExpanded = false; // 플러스 버튼 메뉴 오픈 여부
   String? _token;
 
   // ── 숙소 정보 관리 변수 추가 ──
@@ -349,7 +350,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
       child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 11, 11, 11),
+        padding: const EdgeInsets.fromLTRB(16, 10, 10, 10),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -365,8 +366,8 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           children: [
             // 1. 좌측 원형 상대방(호스트) 프로필 이미지
             Container(
-              width: 54,
-              height: 54,
+              width: 50,
+              height: 50,
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 color: Color(0xFFFAFAFA),
@@ -391,16 +392,16 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: FontWeight.w800,
                       color: dark,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 7),
                   Text(
                     "Posted by $hostName",
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 11,
                       fontWeight: FontWeight.w700,
                       color: grey04,
                     ),
@@ -412,8 +413,8 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
 
             // 3. 우측 쉐어하우스 썸네일 이미지 (모서리가 둥근 사각형)
             Container(
-              width: 94,
-              height: 84,
+              width: 84,
+              height: 74,
               decoration: BoxDecoration(
                 color: const Color(0xFFFAFAFA),
                 borderRadius: BorderRadius.circular(14),
@@ -527,108 +528,246 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   // ── 입력창 ──
   Widget _buildInputArea() {
     return Container(
-      color: Colors.transparent,
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-      child: SafeArea(
-        top: false,
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 68, maxHeight: 160),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(33),
+      color: Colors.transparent, // 배경을 흰색으로 고정하여 메시지가 가려지도록 설정
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 기존 입력창 영역
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+            child: SafeArea(
+              top: false,
+              bottom: !_isMenuExpanded, // 메뉴가 열리면 하단 SafeArea 여백을 메뉴 아래로 양보
+              child: Container(
+                constraints: const BoxConstraints(
+                  minHeight: 68,
+                  maxHeight: 160,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(33),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // + 버튼 (클릭 시 토글 및 애니메이션 효과)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 13),
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _isMenuExpanded = !_isMenuExpanded;
+                          });
+                        },
+                        child: AnimatedRotation(
+                          turns: 0,
+                          duration: const Duration(milliseconds: 200),
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: green, width: 1.1),
+                            ),
+                            child: const Icon(
+                              Icons.add,
+                              size: 20,
+                              color: green,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
 
-            // 보더 제거
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
+                    // 세로 구분선
+                    Container(
+                      width: 1.1,
+                      height: 23,
+                      color: grey01,
+                      margin: const EdgeInsets.only(left: 15),
+                    ),
+
+                    // 입력창
+                    Expanded(
+                      child: TextField(
+                        cursorColor: grey03,
+                        controller: _textController,
+                        maxLines: null,
+                        keyboardType: TextInputType.multiline,
+                        textInputAction: TextInputAction.newline,
+                        enabled: _isConnected,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: dark,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: _isConnected ? "Write..." : "Connecting...",
+                          hintStyle: const TextStyle(
+                            color: grey03,
+                            fontSize: 14,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 18,
+                          ),
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                        ),
+                      ),
+                    ),
+
+                    // 전송 버튼
+                    Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: GestureDetector(
+                        onTap: _sendMessage,
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: _isConnected ? green : grey01,
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(14, 12, 11, 12),
+                            child: SvgPicture.asset(
+                              'assets/icons/send.svg',
+                              width: 18,
+                              height: 18,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ],
+            ),
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // + 버튼
-              Padding(
-                padding: const EdgeInsets.only(left: 13),
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: green, width: 1.1),
-                  ),
-                  child: const Icon(Icons.add, size: 20, color: green),
-                ),
+
+          // ── 플러스 버튼 누르면 펼쳐지는 하단 확장 메뉴판 ──
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeInOut,
+            height: _isMenuExpanded ? 250 : 0,
+            decoration: const BoxDecoration(color: Colors.white),
+            child: FadeTransition(
+              opacity: AlwaysStoppedAnimation(_isMenuExpanded ? 1.0 : 0.0),
+              child: SingleChildScrollView(
+                physics: const NeverScrollableScrollPhysics(),
+                child: _buildExpandedMenu(),
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-              // 세로 구분선
-              Container(
-                width: 1.1,
-                height: 23,
-                color: grey01,
-                margin: const EdgeInsets.only(left: 15),
-              ),
+  Widget _buildExpandedMenu() {
+    // 메뉴 아이템 데이터 구조화
+    final List<Map<String, dynamic>> menuItems = [
+      {
+        'icon': 'assets/icons/image.svg',
+        'label': 'Image',
+        'defaultIcon': Icons.image,
+      },
+      {
+        'icon': 'assets/icons/camera.svg',
+        'label': 'Camera',
+        'defaultIcon': Icons.camera_alt,
+      },
+      {
+        'icon': 'assets/icons/contract-fill.svg',
+        'label': 'Contract',
+        'defaultIcon': Icons.description,
+      },
+      {
+        'icon': 'assets/icons/wallet.svg',
+        'label': 'Wallet',
+        'defaultIcon': Icons.account_balance_wallet,
+      },
+      {
+        'icon': 'assets/icons/schedule.svg',
+        'label': 'Schedule',
+        'defaultIcon': Icons.calendar_today,
+      },
+      {
+        'icon': 'assets/icons/map-chat.svg',
+        'label': 'Location',
+        'defaultIcon': Icons.location_on,
+      },
+    ];
 
-              // 입력창
-              Expanded(
-                child: TextField(
-                  cursorColor: grey03,
-                  controller: _textController,
-                  maxLines: null,
-                  keyboardType: TextInputType.multiline,
-                  textInputAction: TextInputAction.newline,
-                  enabled: _isConnected,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: dark,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: _isConnected ? "Write..." : "Connecting...",
-                    hintStyle: const TextStyle(color: grey03, fontSize: 14),
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 5),
+        child: GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: menuItems.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 4, // 한 줄에 4개씩 배치
+            mainAxisSpacing: 20,
+            crossAxisSpacing: 16,
+            mainAxisExtent: 85, // 아이템 하나의 세로 길이 제한
+          ),
+          itemBuilder: (context, index) {
+            final item = menuItems[index];
 
-                    // 높이 증가
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 18,
-                    ),
+            final isWallet = item['label'] == 'Wallet';
+            final isMap = item['label'] == 'Location';
 
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                  ),
-                ),
-              ),
-
-              // 전송 버튼
-              Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: GestureDetector(
-                  onTap: _sendMessage,
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
+            return GestureDetector(
+              onTap: () {
+                print("${item['label']} 클릭됨");
+                // TODO: 각 메뉴 클릭 시 액션 정의
+              },
+              child: Column(
+                children: [
+                  // 원형 아이콘 배경
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFAFAFA),
                       shape: BoxShape.circle,
-                      color: _isConnected ? green : grey01,
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(14, 12, 11, 12),
+                    child: Center(
                       child: SvgPicture.asset(
-                        'assets/icons/send.svg',
-                        width: 18,
-                        height: 18,
-                        color: Colors.white,
+                        item['icon'],
+                        width: isMap ? 24 : 22,
+                        height: isMap ? 24 : 22,
+                        color: isWallet ? darkgreen : null,
                       ),
                     ),
                   ),
-                ),
+                  const SizedBox(height: 10),
+                  // 하단 라벨 텍스트
+                  Text(
+                    item['label'],
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: darkgreen,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
