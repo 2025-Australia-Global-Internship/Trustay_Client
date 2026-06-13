@@ -1,2 +1,5 @@
 .idea/
 front/android/gradle.properties
+
+# 백엔드 디렉토리는 커밋에서 제외 (별도 레포로 관리)
+back/

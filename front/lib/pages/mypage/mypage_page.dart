@@ -269,6 +269,8 @@ class _MyPageState extends State<MyPage> {
                 MyPageMenuItem(
                   title: 'Current Stay',
                   leadingPath: 'assets/icons/house-user.svg',
+                  onTap: () =>
+                      Navigator.pushNamed(context, '/current_stay'),
                 ),
                 MyPageMenuItem(
                   title: 'Listings',
@@ -295,6 +297,7 @@ class _MyPageState extends State<MyPage> {
                 MyPageMenuItem(
                   title: 'My Contracts',
                   leadingPath: 'assets/icons/contract.svg',
+                  onTap: () => Navigator.pushNamed(context, '/my_contracts'),
                 ),
                 MyPageMenuItem(
                   title: 'Recently Viewed',
