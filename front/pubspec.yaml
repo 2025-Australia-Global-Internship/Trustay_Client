@@ -48,6 +48,12 @@ dependencies:
 
   image_picker: ^1.2.1
 
+  # ── 계약 서명용 (캔버스 손글씨 → PNG 캡쳐) ──
+  signature: ^6.3.0
+
+  # ── 외부 PDF/계약서 미리보기 (브라우저 등) ──
+  url_launcher: ^6.3.0
+
   mapbox_maps_flutter: ^2.18.0
 
   flutter_map: ^8.2.2

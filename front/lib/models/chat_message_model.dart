@@ -1,19 +1,11 @@
 /// 서버 `ChatMessageRes` 응답에 1:1 대응.
 ///
-/// 명세 (2026-06-10 변경: `roomId`, `houseId` 가 모든 메시지에 함께 옴):
-/// ```
-/// {
-///   "messageId": 101,
-///   "roomId": 42,
-///   "houseId": 12,
-///   "senderId": 7,
-///   "senderName": "Jeong",
-///   "message": "...",
-///   "messageType": "TEXT" | "IMAGE" | "CONTRACT",
-///   "regTime": "2026-06-10T20:23:11.123",
-///   "paperContractDocumentId": null | number
-/// }
-/// ```
+/// 메시지 타입은 백엔드 `MessageType` enum 과 동일:
+/// - `TEXT`              : 일반 텍스트
+/// - `IMAGE`             : 업로드된 이미지 URL
+/// - `CONTRACT`          : 종이 계약서 스캔 PDF URL (paperContractDocumentId 와 연결)
+/// - `CONTRACT_PROPOSAL` : 한쪽이 보낸 계약 제안. 본문은 요약 텍스트, contractId 와 연결
+/// - `CONTRACT_SIGNED`   : 양측 서명 완료된 계약. 본문은 서명 PDF URL, contractId 와 연결
 class ChatMessageModel {
   final int messageId;
 
@@ -26,17 +18,19 @@ class ChatMessageModel {
   final int senderId;
   final String senderName;
 
-  /// TEXT 이면 본문, IMAGE/CONTRACT 이면 업로드된 파일 URL.
+  /// TEXT/CONTRACT_PROPOSAL 이면 본문, IMAGE/CONTRACT/CONTRACT_SIGNED 이면 파일 URL.
   final String message;
 
-  /// 서버 enum 과 동일: `TEXT` / `IMAGE` / `CONTRACT`.
   final String messageType;
 
   /// ISO-8601 문자열 (예: `2026-06-10T20:23:11.123`).
   final String regTime;
 
-  /// `messageType == 'CONTRACT'` 이고 스캔된 종이 계약서 문서와 연결된 경우에만 값이 들어옴.
+  /// `messageType == 'CONTRACT'` 일 때 스캔 문서 ID.
   final int? paperContractDocumentId;
+
+  /// `messageType == 'CONTRACT_PROPOSAL' | 'CONTRACT_SIGNED'` 일 때 정식 계약 ID.
+  final int? contractId;
 
   ChatMessageModel({
     required this.messageId,
@@ -48,6 +42,7 @@ class ChatMessageModel {
     required this.messageType,
     required this.regTime,
     this.paperContractDocumentId,
+    this.contractId,
   });
 
   factory ChatMessageModel.fromJson(Map<String, dynamic> json) {
@@ -62,6 +57,7 @@ class ChatMessageModel {
       regTime: json['regTime'] ?? '',
       paperContractDocumentId:
           (json['paperContractDocumentId'] as num?)?.toInt(),
+      contractId: (json['contractId'] as num?)?.toInt(),
     );
   }
 }

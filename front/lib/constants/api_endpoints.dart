@@ -4,6 +4,7 @@ class ApiEndpoints {
   // base segments
   static const String authBase = '${ApiConstants.baseUrl}/api/trustay/auth';
   static const String chatBase = '${ApiConstants.baseUrl}/api/chat';
+  static const String contractsBase = '${ApiConstants.baseUrl}/api/contracts';
   static const String communitiesBase =
       '${ApiConstants.baseUrl}/api/trustay/communities';
   static const String membersBase =
@@ -70,6 +71,13 @@ class ApiEndpoints {
   static String paperDocument(String documentId) =>
       '$paperContractsBase/$documentId';
   static const String myPaperContracts = '$paperContractsBase/me';
+
+  // Contracts (정식 계약 제안/서명/조회)
+  static const String contractPropose = '$contractsBase/propose';
+  static String contractSign(int contractId) =>
+      '$contractsBase/$contractId/sign';
+  static String contractById(int contractId) => '$contractsBase/$contractId';
+  static const String myContracts = '$contractsBase/me';
 
   // Payments
   static const String tossClientConfig = '$paymentsBase/toss/client-config';

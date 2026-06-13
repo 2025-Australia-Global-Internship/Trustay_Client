@@ -11,6 +11,10 @@ import 'package:front/models/sharehouse_detail_model.dart';
 import 'package:front/pages/mypage/sharehouse_detail_page.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'contract_scan_upload_page.dart';
+import 'contract_detail_page.dart';
+import 'contract_view_page.dart';
+
 class ChatRoomPage extends StatefulWidget {
   final int roomId;
   final int houseId;
@@ -464,9 +468,66 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       case 'Camera':
         _pickAndSendImage(ImageSource.camera);
         break;
+      case 'Contract':
+        _openContractFlow();
+        break;
       default:
         print("$label 클릭됨 — 아직 구현되지 않음");
     }
+  }
+
+  /// "+" 메뉴 → Contract.
+  /// 종이 계약서를 스캔해서 채팅방에 공유하면 OCR + PDF + CONTRACT 메시지가 자동 broadcast 된다.
+  /// 그 다음 양측 합의 후 계약 제안/서명 흐름은 메시지 버블에서 이어진다.
+  Future<void> _openContractFlow() async {
+    setState(() => _isMenuExpanded = false);
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ContractScanUploadPage(
+          roomId: widget.roomId,
+          memberId: widget.myMemberId,
+        ),
+      ),
+    );
+    // 업로드 성공 시 서버가 CONTRACT 메시지를 broadcast → STOMP 구독 콜백이 자동으로 받음.
+  }
+
+  /// 현재 사용자가 이 매물(=채팅방)에서 어떤 역할로 계약에 참여하는지.
+  /// `LANDLORD` = 매물의 호스트, 그 외는 `TENANT`.
+  /// 매물 정보가 아직 로드되지 않았으면 TENANT 로 가정 (드물게 발생할 수 있으므로 안전한 기본값).
+  String get _myContractRole {
+    final hostId = _houseDetail?.hostId;
+    if (hostId != null && hostId == widget.myMemberId) return 'LANDLORD';
+    return 'TENANT';
+  }
+
+  /// CONTRACT 메시지(스캔본) 탭 → 스캔본 상세
+  void _openPaperContractDetail(int documentId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ContractDetailPage(
+          documentId: documentId,
+          memberId: widget.myMemberId,
+          roomId: widget.roomId,
+          iAm: _myContractRole,
+        ),
+      ),
+    );
+  }
+
+  /// CONTRACT_PROPOSAL / CONTRACT_SIGNED 메시지 탭 → 계약 상세
+  void _openContractView(int contractId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ContractViewPage(
+          contractId: contractId,
+          memberId: widget.myMemberId,
+        ),
+      ),
+    );
   }
 
   // 갤러리/카메라에서 이미지 선택 → 채팅 이미지 업로드 REST 호출
@@ -583,13 +644,32 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
 
   // ── 메시지 버블 ──
   Widget _buildMessageBubble(ChatMessageModel msg, bool isMe) {
-    final bool isImage = msg.messageType == 'IMAGE';
+    final type = msg.messageType;
     final BorderRadius bubbleRadius = BorderRadius.only(
       topLeft: const Radius.circular(19),
       topRight: const Radius.circular(19),
       bottomLeft: Radius.circular(isMe ? 18 : 4),
       bottomRight: Radius.circular(isMe ? 4 : 18),
     );
+
+    final Widget body;
+    final double maxWidthFactor;
+    if (type == 'IMAGE') {
+      body = _buildImageBubble(msg, bubbleRadius);
+      maxWidthFactor = 0.65;
+    } else if (type == 'CONTRACT') {
+      body = _buildContractScanBubble(msg, isMe, bubbleRadius);
+      maxWidthFactor = 0.78;
+    } else if (type == 'CONTRACT_PROPOSAL') {
+      body = _buildContractProposalBubble(msg, isMe, bubbleRadius);
+      maxWidthFactor = 0.78;
+    } else if (type == 'CONTRACT_SIGNED') {
+      body = _buildContractSignedBubble(msg, isMe, bubbleRadius);
+      maxWidthFactor = 0.78;
+    } else {
+      body = _buildTextBubble(msg, isMe, bubbleRadius);
+      maxWidthFactor = 0.65;
+    }
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
@@ -602,11 +682,9 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           children: [
             ConstrainedBox(
               constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.65,
+                maxWidth: MediaQuery.of(context).size.width * maxWidthFactor,
               ),
-              child: isImage
-                  ? _buildImageBubble(msg, bubbleRadius)
-                  : _buildTextBubble(msg, isMe, bubbleRadius),
+              child: body,
             ),
 
             const SizedBox(height: 6),
@@ -622,6 +700,66 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           ],
         ),
       ),
+    );
+  }
+
+  /// CONTRACT 타입 — 종이 계약서 스캔본(PDF) 도착 카드
+  Widget _buildContractScanBubble(
+    ChatMessageModel msg,
+    bool isMe,
+    BorderRadius radius,
+  ) {
+    return _ContractCardBase(
+      radius: radius,
+      isMe: isMe,
+      onTap: () {
+        if (msg.paperContractDocumentId != null) {
+          _openPaperContractDetail(msg.paperContractDocumentId!);
+        }
+      },
+      icon: Icons.document_scanner_outlined,
+      title: 'Contract scan shared',
+      subtitle: 'A scanned contract (OCR + PDF) is ready to review.',
+      ctaLabel: 'Open',
+    );
+  }
+
+  /// CONTRACT_PROPOSAL 타입 — 한쪽이 보낸 계약 조건 제안 카드
+  Widget _buildContractProposalBubble(
+    ChatMessageModel msg,
+    bool isMe,
+    BorderRadius radius,
+  ) {
+    return _ContractCardBase(
+      radius: radius,
+      isMe: isMe,
+      onTap: () {
+        if (msg.contractId != null) _openContractView(msg.contractId!);
+      },
+      icon: Icons.handshake_outlined,
+      title: 'Contract proposal',
+      subtitle: msg.message,
+      ctaLabel: isMe ? 'Review your proposal' : 'Review and sign',
+    );
+  }
+
+  /// CONTRACT_SIGNED 타입 — 양측 서명 완료 알림 카드
+  Widget _buildContractSignedBubble(
+    ChatMessageModel msg,
+    bool isMe,
+    BorderRadius radius,
+  ) {
+    return _ContractCardBase(
+      radius: radius,
+      isMe: isMe,
+      highlight: true,
+      onTap: () {
+        if (msg.contractId != null) _openContractView(msg.contractId!);
+      },
+      icon: Icons.verified,
+      title: 'Contract signed',
+      subtitle: 'Both parties have signed. The contract is now active.',
+      ctaLabel: 'View signed contract',
     );
   }
 
@@ -984,5 +1122,112 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     final m = dt.minute.toString().padLeft(2, '0');
     final period = dt.hour < 12 ? 'am' : 'pm';
     return '$h:$m $period';
+  }
+}
+
+/// 계약 관련 메시지(CONTRACT, CONTRACT_PROPOSAL, CONTRACT_SIGNED) 의 공통 카드 위젯.
+/// 일반 텍스트/이미지 버블과 구분되도록 흰색 카드 + 아이콘 + 제목/설명 + CTA 한 줄로 통일한다.
+class _ContractCardBase extends StatelessWidget {
+  final BorderRadius radius;
+  final bool isMe;
+  final bool highlight;
+  final VoidCallback onTap;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String ctaLabel;
+
+  const _ContractCardBase({
+    required this.radius,
+    required this.isMe,
+    required this.onTap,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.ctaLabel,
+    this.highlight = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final Color bg = highlight ? const Color(0xFFEFF6E5) : Colors.white;
+    final Color accent = highlight ? darkgreen : darkgreen;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: radius,
+        child: Ink(
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: radius,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: accent.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(icon, color: accent, size: 20),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: dark,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  fontSize: 12,
+                  height: 1.45,
+                  color: grey04,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    ctaLabel,
+                    style: TextStyle(
+                      color: accent,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(Icons.arrow_forward, size: 14, color: accent),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
