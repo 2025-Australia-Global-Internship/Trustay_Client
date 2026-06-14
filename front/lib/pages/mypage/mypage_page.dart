@@ -2,7 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:front/constants/colors.dart';
 import 'package:front/services/auth_service.dart';
+import 'package:front/services/sharehouse_service.dart';
 import 'package:front/models/user_model.dart';
+import 'package:front/pages/mypage/sharehouse_detail_page.dart';
 import 'package:front/widgets/gradient_layout.dart';
 import 'package:front/widgets/circle_icon_button.dart';
 import 'package:front/widgets/custom_header.dart';
@@ -59,6 +61,34 @@ class _MyPageState extends State<MyPage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('로그아웃 실패')));
+    }
+  }
+
+  /// Recently Viewed → 가장 최근에 본 매물 1건을 상세 페이지로 바로 연다.
+  /// 사용자 요청: 메뉴 진입 시 첫 번째(=가장 최근) 항목만 보여주기.
+  Future<void> _openMostRecentHouse() async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final list = await SharehouseService.fetchRecentSharehouses();
+      if (!mounted) return;
+      if (list.isEmpty) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('No recently viewed house yet.')),
+        );
+        return;
+      }
+      final first = list.first;
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SharehouseDetailPage(houseId: first.id),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Failed to load recently viewed.')),
+      );
     }
   }
 
@@ -302,6 +332,7 @@ class _MyPageState extends State<MyPage> {
                 MyPageMenuItem(
                   title: 'Recently Viewed',
                   leadingPath: 'assets/icons/view.svg',
+                  onTap: _openMostRecentHouse,
                 ),
               ],
             ),

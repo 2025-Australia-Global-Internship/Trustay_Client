@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:front/constants/colors.dart';
+import 'package:front/index.dart' show goToMyPageTab;
 import 'package:front/widgets/circle_icon_button.dart';
 import 'package:front/widgets/custom_header.dart';
 import 'package:front/widgets/gradient_layout.dart';
@@ -85,7 +86,7 @@ class _CommunityPageState extends State<CommunityPage> {
               svgAsset: 'assets/icons/profile.svg',
               iconColor: dark,
               iconSize: 23,
-              onPressed: () {},
+              onPressed: goToMyPageTab,
             ),
           ],
         ),

@@ -38,12 +38,20 @@ class _CurrentStayPageState extends State<CurrentStayPage> {
     try {
       // 화면 진입 시점 최신 프로필 확보 (memberId 가 비어 있을 가능성에 대비)
       _user ??= await AuthService.fetchProfile();
+      final myId = _user?.memberId;
 
       final list = await ContractService.getMyContracts();
       if (!mounted) return;
       setState(() {
-        // Current Stay 는 "지금 머무는/머물게 하는" 매물이라 ACTIVE 만 노출.
-        _contracts = list.where((c) => c.status == 'ACTIVE').toList();
+        // Current Stay 는 "현재 거주중인 곳" 이므로
+        //   1) ACTIVE 상태이고
+        //   2) 내가 세입자(tenant) 로 참여한 계약만 노출한다.
+        // 내가 임대인(landlord) 으로 참여한 계약은 Listings 쪽 책임이라 제외.
+        _contracts = list.where((c) {
+          if (c.status != 'ACTIVE') return false;
+          if (myId == null) return true; // memberId 불명일 땐 종전대로 모두 노출
+          return c.isTenant(myId);
+        }).toList();
         _isLoading = false;
         _hasError = false;
       });

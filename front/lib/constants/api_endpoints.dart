@@ -98,6 +98,8 @@ class ApiEndpoints {
   static const String myPosts = '$postsBase/me';
   static String postLike(int postId) => '$postsBase/$postId/like';
   static String postComments(int postId) => '$postsBase/$postId/comments';
+  static String postCommentById(int postId, int commentId) =>
+      '$postsBase/$postId/comments/$commentId';
 
   // Sharehouses
   static const String uploadImages = '$sharehousesBase/images';

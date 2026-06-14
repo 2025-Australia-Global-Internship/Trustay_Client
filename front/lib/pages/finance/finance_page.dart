@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:front/constants/colors.dart';
+import 'package:front/index.dart' show goToMyPageTab;
 import 'package:front/widgets/custom_header.dart';
 import 'package:front/widgets/circle_icon_button.dart';
 import 'package:front/widgets/gradient_layout.dart';
@@ -255,7 +256,7 @@ class _FinancePageState extends State<FinancePage> {
                       svgAsset: 'assets/icons/profile.svg',
                       iconSize: 23,
                       iconColor: dark,
-                      onPressed: () {},
+                      onPressed: goToMyPageTab,
                     ),
                   ],
                 ),
