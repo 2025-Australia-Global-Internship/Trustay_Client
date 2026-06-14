@@ -19,11 +19,28 @@ class PostService {
     return token;
   }
 
+  /// 토큰이 있으면 반환, 없으면 null. 비로그인 상태에서도 호출 가능한 API에 사용.
+  static Future<String?> _tryGetToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('token');
+  }
+
   static Map<String, String> _authHeaders(String token) => {
         'accept': '*/*',
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
       };
+
+  /// 토큰이 있으면 Bearer 헤더, 없으면 빈 헤더 (비로그인 허용 API에 사용).
+  static Map<String, String> _maybeAuthHeaders(String? token) {
+    if (token == null || token.isEmpty) {
+      return const {'accept': '*/*'};
+    }
+    return {
+      'accept': '*/*',
+      'Authorization': 'Bearer $token',
+    };
+  }
 
   // 1. 작성
   static Future<PostModel> createPost({
@@ -72,7 +89,7 @@ class PostService {
   static Future<List<PostModel>> getCommunityPosts(
     int communityId, {
     int page = 0,
-    int size = 20,
+    int size = 10,
   }) =>
       _pagedGet(
         Uri.parse(ApiEndpoints.postsByCommunity(communityId))
@@ -82,22 +99,28 @@ class PostService {
   static Future<List<PostModel>> getSharehousePosts(
     int sharehouseId, {
     int page = 0,
-    int size = 20,
+    int size = 10,
   }) =>
       _pagedGet(
         Uri.parse(ApiEndpoints.postsBySharehouse(sharehouseId))
             .replace(queryParameters: {'page': '$page', 'size': '$size'}),
       );
 
-  static Future<List<PostModel>> getFeed({int page = 0, int size = 20}) =>
-      _pagedGet(
-        Uri.parse(ApiEndpoints.postsFeed)
-            .replace(queryParameters: {'page': '$page', 'size': '$size'}),
-      );
+  /// Posts for you 피드. 백엔드는 로그인 사용자가 **가입한 커뮤니티**의
+  /// 게시글만 반환하므로, 토큰이 있으면 Authorization 헤더를 함께 보낸다.
+  /// (비로그인 상태에서는 빈 페이지가 반환된다)
+  static Future<List<PostModel>> getFeed({int page = 0, int size = 10}) async {
+    final token = await _tryGetToken();
+    return _pagedGet(
+      Uri.parse(ApiEndpoints.postsFeed)
+          .replace(queryParameters: {'page': '$page', 'size': '$size'}),
+      headers: _maybeAuthHeaders(token),
+    );
+  }
 
   static Future<List<PostModel>> getMyPosts({
     int page = 0,
-    int size = 20,
+    int size = 10,
   }) async {
     final token = await _getToken();
     return _pagedGet(
@@ -176,7 +199,7 @@ class PostService {
   static Future<List<PostCommentModel>> getComments(
     int postId, {
     int page = 0,
-    int size = 100,
+    int size = 10,
   }) async {
     final uri = Uri.parse(
       ApiEndpoints.postComments(postId),

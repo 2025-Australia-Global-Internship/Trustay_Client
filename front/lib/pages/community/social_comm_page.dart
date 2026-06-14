@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import 'package:front/constants/colors.dart';
 import 'package:front/models/community_model.dart';
 import 'package:front/models/post_model.dart';
+import 'package:front/pages/community/community_detail_page.dart';
+import 'package:front/pages/community/create_community_page.dart';
 import 'package:front/services/community_service.dart';
 import 'package:front/services/post_service.dart';
 
@@ -20,22 +22,50 @@ class _SocialCommPageState extends State<SocialCommPage> {
   List<CommunityModel> _myCommunities = [];
   // 인기 커뮤니티 (Trending)
   List<CommunityModel> _trending = [];
-  // 전체 피드 게시글 (Posts for you)
+  // Posts for you 피드 게시글
   List<PostModel> _feedPosts = [];
 
   bool _isLoading = true;
   String? _errorMessage;
 
+  // -------- Posts for you 페이징 상태 --------
+  static const int _feedPageSize = 10;
+  int _feedNextPage = 0; // 다음에 받아올 페이지 인덱스
+  bool _feedHasMore = true; // 마지막 페이지에 도달했는지
+  bool _isLoadingMoreFeed = false; // 추가 로드 중인지
+
+  late final ScrollController _scrollController;
+
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController()..addListener(_onScroll);
     _loadAll();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  /// 바닥에 가까워지면 다음 페이지를 미리 가져온다.
+  /// (마지막 ~300px 안쪽으로 들어오면 prefetch)
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final pos = _scrollController.position;
+    if (pos.pixels >= pos.maxScrollExtent - 300) {
+      _loadMoreFeed();
+    }
   }
 
   Future<void> _loadAll() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _feedNextPage = 0;
+      _feedHasMore = true;
     });
     try {
       // 인기 커뮤니티/피드는 로그인 없이도 조회 가능.
@@ -43,14 +73,17 @@ class _SocialCommPageState extends State<SocialCommPage> {
       final results = await Future.wait([
         _safeJoined(),
         CommunityService.fetchTrending(page: 0, size: 10),
-        PostService.getFeed(page: 0, size: 20),
+        PostService.getFeed(page: 0, size: _feedPageSize),
       ]);
 
       if (!mounted) return;
+      final feed = results[2] as List<PostModel>;
       setState(() {
         _myCommunities = results[0] as List<CommunityModel>;
         _trending = results[1] as List<CommunityModel>;
-        _feedPosts = results[2] as List<PostModel>;
+        _feedPosts = feed;
+        _feedNextPage = 1;
+        _feedHasMore = feed.length >= _feedPageSize;
         _isLoading = false;
       });
     } catch (e) {
@@ -59,6 +92,30 @@ class _SocialCommPageState extends State<SocialCommPage> {
         _errorMessage = '데이터를 불러오지 못했어요.';
         _isLoading = false;
       });
+    }
+  }
+
+  /// Posts for you 다음 페이지 가져오기.
+  /// - 이미 로딩 중이거나 더 이상 가져올 페이지가 없으면 무시.
+  /// - 응답 개수가 페이지 크기 미만이면 마지막 페이지로 마킹.
+  Future<void> _loadMoreFeed() async {
+    if (_isLoadingMoreFeed || !_feedHasMore || _isLoading) return;
+    setState(() => _isLoadingMoreFeed = true);
+    try {
+      final next = await PostService.getFeed(
+        page: _feedNextPage,
+        size: _feedPageSize,
+      );
+      if (!mounted) return;
+      setState(() {
+        _feedPosts.addAll(next);
+        _feedNextPage += 1;
+        _feedHasMore = next.length >= _feedPageSize;
+        _isLoadingMoreFeed = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isLoadingMoreFeed = false);
     }
   }
 
@@ -131,6 +188,7 @@ class _SocialCommPageState extends State<SocialCommPage> {
 
   Widget _buildBody() {
     return ListView(
+      controller: _scrollController,
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 32, 16, 0),
       children: [
@@ -166,17 +224,6 @@ class _SocialCommPageState extends State<SocialCommPage> {
               'Trending',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
             ),
-            TextButton(
-              onPressed: () {},
-              child: const Text(
-                'See all',
-                style: TextStyle(
-                  color: green,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
           ],
         ),
         const SizedBox(height: 4),
@@ -198,6 +245,30 @@ class _SocialCommPageState extends State<SocialCommPage> {
 
         _buildFeedSection(),
 
+        // 추가 페이지를 가져오는 동안 표시되는 인디케이터.
+        // 마지막 페이지에 도달했고 글도 비어있지 않으면 "End of feed" 안내.
+        if (_isLoadingMoreFeed)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(
+              child: SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(strokeWidth: 2.4, color: green),
+              ),
+            ),
+          )
+        else if (!_feedHasMore && _feedPosts.isNotEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(
+              child: Text(
+                "You're all caught up",
+                style: TextStyle(fontSize: 12, color: grey03),
+              ),
+            ),
+          ),
+
         const SizedBox(height: 100),
       ],
     );
@@ -211,38 +282,78 @@ class _SocialCommPageState extends State<SocialCommPage> {
       scrollDirection: Axis.horizontal,
       children: [
         _buildAddCommunity(),
-        ..._myCommunities.map((c) => _buildCommunityItem(c.imageUrl, c.name)),
+        ..._myCommunities.map(
+          (c) => GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => _openCommunityDetail(c),
+            child: _buildCommunityItem(c.imageUrl, c.name),
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildAddCommunity() {
-    return Container(
-      margin: const EdgeInsets.only(right: 12),
-      width: 70,
-      child: Column(
-        children: [
-          Container(
-            width: 70,
-            height: 70,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              border: Border.all(color: green, width: 1.2),
-            ),
-            child: Center(
-              child: SvgPicture.asset(
-                'assets/icons/plus.svg',
-                width: 20,
-                height: 20,
-                fit: BoxFit.contain,
-                color: green,
-              ),
-            ),
-          ),
-        ],
+  /// 커뮤니티 디테일 진입.
+  /// - 디테일에서 탈퇴 등으로 변경 사항이 있으면 true 가 반환되거나
+  ///   생성된 새 글이 있으면 화면 갱신을 위해 _loadAll 재호출.
+  Future<void> _openCommunityDetail(CommunityModel c) async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) =>
+            CommunityDetailPage(communityId: c.id, initial: c),
       ),
     );
+    if (!mounted) return;
+    if (result == true) {
+      _loadAll();
+    }
+  }
+
+  Widget _buildAddCommunity() {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _openCreateCommunity,
+      child: Container(
+        margin: const EdgeInsets.only(right: 12),
+        width: 70,
+        child: Column(
+          children: [
+            Container(
+              width: 70,
+              height: 70,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                border: Border.all(color: green, width: 1.2),
+              ),
+              child: Center(
+                child: SvgPicture.asset(
+                  'assets/icons/plus.svg',
+                  width: 20,
+                  height: 20,
+                  fit: BoxFit.contain,
+                  color: green,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// + 버튼 탭 → CreateCommunityPage 진입.
+  /// 생성 성공 시(Done 누르고 돌아옴) 결과를 받아 가입 목록을 즉시 갱신한다.
+  Future<void> _openCreateCommunity() async {
+    final created = await Navigator.of(context).push<CommunityModel>(
+      MaterialPageRoute(builder: (_) => const CreateCommunityPage()),
+    );
+    if (!mounted) return;
+    // 생성된 커뮤니티는 서버에서 자동으로 멤버에 추가되므로
+    // 목록/피드/트렌딩이 모두 영향을 받는다 → 전체 리로드.
+    if (created != null) {
+      _loadAll();
+    }
   }
 
   Widget _buildCommunityItem(String? imageUrl, String label) {
@@ -281,9 +392,11 @@ class _SocialCommPageState extends State<SocialCommPage> {
   // ---------------------------------------------------------------------------
   Widget _buildTrendingList() {
     if (_trending.isEmpty) {
+      // Trending = "아직 가입하지 않은 커뮤니티" 중 멤버 수가 많은 순.
+      // 비어 있다는 건 보여줄 미가입 커뮤니티가 더 없거나 아직 커뮤니티가 없다는 뜻.
       return Center(
         child: Text(
-          _isLoading ? '' : 'No trending communities',
+          _isLoading ? '' : "You've joined every community!",
           style: const TextStyle(
             fontSize: 13,
             color: grey03,
@@ -298,13 +411,17 @@ class _SocialCommPageState extends State<SocialCommPage> {
       itemCount: _trending.length,
       itemBuilder: (context, index) {
         final c = _trending[index];
-        return _buildTrendingCard(
-          title: c.name,
-          subtitle: _timeAgo(c.regTime).isEmpty
-              ? '${c.memberCount} members'
-              : 'Active ${_timeAgo(c.regTime)}',
-          count: '${c.memberCount}',
-          imageUrl: c.imageUrl,
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => _openCommunityDetail(c),
+          child: _buildTrendingCard(
+            title: c.name,
+            subtitle: _timeAgo(c.regTime).isEmpty
+                ? '${c.memberCount} members'
+                : 'Active ${_timeAgo(c.regTime)}',
+            count: '${c.memberCount}',
+            imageUrl: c.imageUrl,
+          ),
         );
       },
     );
@@ -450,11 +567,16 @@ class _SocialCommPageState extends State<SocialCommPage> {
   // ---------------------------------------------------------------------------
   Widget _buildFeedSection() {
     if (_feedPosts.isEmpty) {
+      // Posts for you = "내가 가입한 커뮤니티"의 게시글만 노출.
+      // 가입한 커뮤니티가 아예 없으면 다른 메시지를 보여준다.
+      final emptyText = _myCommunities.isEmpty
+          ? 'Join a community to see posts here'
+          : 'No posts in your communities yet';
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 40),
         child: Center(
           child: Text(
-            _isLoading ? '' : 'No posts yet',
+            _isLoading ? '' : emptyText,
             style: const TextStyle(
               fontSize: 13,
               color: grey03,
@@ -532,17 +654,7 @@ class _SocialCommPageState extends State<SocialCommPage> {
             ],
           ),
           const SizedBox(height: 12),
-          if (post.title.isNotEmpty) ...[
-            Text(
-              post.title,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
-                color: dark,
-              ),
-            ),
-            const SizedBox(height: 6),
-          ],
+          // 본문만 표시 (타이틀은 노출하지 않는다).
           Text(
             post.content,
             style: const TextStyle(

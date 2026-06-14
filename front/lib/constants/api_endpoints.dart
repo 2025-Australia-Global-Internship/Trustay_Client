@@ -50,8 +50,15 @@ class ApiEndpoints {
   static const String communitiesTrending = '$communitiesBase/trending';
   static const String communitiesCreated = '$communitiesBase/created';
   static const String communitiesJoined = '$communitiesBase/joined';
+  static const String communitiesRecent = '$communitiesBase/recent';
+  static const String communitiesRecentSearches =
+      '$communitiesBase/recent-searches';
+  static String communitiesRecentSearchById(int searchId) =>
+      '$communitiesBase/recent-searches/$searchId';
   static String communityById(int communityId) =>
       '$communitiesBase/$communityId';
+  static String communityMembers(int communityId) =>
+      '$communitiesBase/$communityId/members';
   static String communityJoin(int communityId) =>
       '$communitiesBase/$communityId/join';
   static String communityLeave(int communityId) =>

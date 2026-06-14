@@ -40,12 +40,38 @@ class _FinancePageState extends State<FinancePage> {
   Map<String, List<TransactionItem>> _transactionsByMonth = {};
   bool _isLoading = true;
 
+  // ── 결제 이력 페이징 ──
+  // 누적해 들어온 모든 페이지의 raw 항목을 보관한다(중복 합쳐진 뒤 다시 월별 그룹핑).
+  static const int _historyPageSize = 10;
+  final List<PaymentHistoryItem> _allHistoryItems = [];
+  int _historyNextPage = 0;
+  bool _historyHasMore = true;
+  bool _isLoadingMoreHistory = false;
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
     _currentMonth = DateTime.now();
     _selectedDay = DateTime.now().day;
+    _scrollController.addListener(_onScroll);
     _loadHistory();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  /// 화면 끝 200px 근처에 닿으면 다음 페이지를 prefetch.
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final pos = _scrollController.position;
+    if (pos.pixels >= pos.maxScrollExtent - 200) {
+      _loadMoreHistory();
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -56,19 +82,52 @@ class _FinancePageState extends State<FinancePage> {
   // ---------------------------------------------------------------------------
   Future<void> _loadHistory() async {
     try {
-      final list = await PaymentService.getMyHistory();
+      final list = await PaymentService.getMyHistory(
+        page: 0,
+        size: _historyPageSize,
+      );
       if (!mounted) return;
       setState(() {
-        _transactionsByMonth = _groupByMonth(list);
+        _allHistoryItems
+          ..clear()
+          ..addAll(list);
+        _transactionsByMonth = _groupByMonth(_allHistoryItems);
+        _historyNextPage = 1;
+        _historyHasMore = list.length >= _historyPageSize;
         _isLoading = false;
       });
     } catch (_) {
       if (!mounted) return;
       // 미로그인/네트워크 실패 시에도 화면은 유지하고 더미 비우기
       setState(() {
+        _allHistoryItems.clear();
         _transactionsByMonth = {};
+        _historyHasMore = false;
         _isLoading = false;
       });
+    }
+  }
+
+  /// 다음 페이지를 가져와 누적 리스트에 추가하고 월별 그룹핑을 다시 계산.
+  Future<void> _loadMoreHistory() async {
+    if (_isLoadingMoreHistory || !_historyHasMore || _isLoading) return;
+    setState(() => _isLoadingMoreHistory = true);
+    try {
+      final next = await PaymentService.getMyHistory(
+        page: _historyNextPage,
+        size: _historyPageSize,
+      );
+      if (!mounted) return;
+      setState(() {
+        _allHistoryItems.addAll(next);
+        _transactionsByMonth = _groupByMonth(_allHistoryItems);
+        _historyNextPage += 1;
+        _historyHasMore = next.length >= _historyPageSize;
+        _isLoadingMoreHistory = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isLoadingMoreHistory = false);
     }
   }
 
@@ -226,6 +285,7 @@ class _FinancePageState extends State<FinancePage> {
       backgroundColor: Color(0xFFFAFAFA),
       body: GradientLayout(
         child: CustomScrollView(
+          controller: _scrollController,
           physics: const BouncingScrollPhysics(),
           slivers: [
             SliverToBoxAdapter(
@@ -306,6 +366,32 @@ class _FinancePageState extends State<FinancePage> {
                           _buildTransactionList(entry.value),
                           const SizedBox(height: 20),
                         ],
+                      ),
+                    ),
+
+                  // 추가 페이지 로드 인디케이터 / 끝 안내
+                  if (_isLoadingMoreHistory)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Center(
+                        child: SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.4,
+                            color: green,
+                          ),
+                        ),
+                      ),
+                    )
+                  else if (!_historyHasMore && _allHistoryItems.isNotEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: Center(
+                        child: Text(
+                          'No more transactions',
+                          style: TextStyle(fontSize: 12, color: grey03),
+                        ),
                       ),
                     ),
 

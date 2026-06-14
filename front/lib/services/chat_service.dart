@@ -83,9 +83,18 @@ class ChatService {
     }
   }
 
-  /// 내 채팅방 목록 (lastMessageTime 내림차순 정렬)
-  static Future<List<ChatRoomListModel>> getMyChatRooms(int memberId) async {
-    final url = Uri.parse(ApiEndpoints.myChatRooms(memberId));
+  /// 내 채팅방 목록 (lastMessageTime 내림차순, 페이징)
+  ///
+  /// 백엔드는 PageResponse 로 응답한다 (`data.content[]`).
+  /// 호환을 위해 List 응답도 함께 처리한다.
+  static Future<List<ChatRoomListModel>> getMyChatRooms(
+    int memberId, {
+    int page = 0,
+    int size = 10,
+  }) async {
+    final url = Uri.parse(ApiEndpoints.myChatRooms(memberId)).replace(
+      queryParameters: {'page': '$page', 'size': '$size'},
+    );
 
     final token = await _getToken();
     final response = await http.get(url, headers: {
@@ -99,9 +108,14 @@ class ChatService {
 
     final decodedBody = utf8.decode(response.bodyBytes);
     final jsonResponse = jsonDecode(decodedBody);
-    if (jsonResponse['data'] == null) return [];
+    final dynamic data = jsonResponse['data'];
+    if (data == null) return [];
 
-    final List<dynamic> dataList = jsonResponse['data'];
+    final List<dynamic> dataList = data is List
+        ? data
+        : (data is Map<String, dynamic>
+              ? (data['content'] as List<dynamic>? ?? const <dynamic>[])
+              : const <dynamic>[]);
     final rooms =
         dataList.map((json) => ChatRoomListModel.fromJson(json)).toList();
 
@@ -118,10 +132,21 @@ class ChatService {
     return rooms;
   }
 
-  /// 채팅방 메시지 내역
+  /// 채팅방 메시지 내역 (페이징)
+  ///
+  /// 서버는 `regTime DESC` 로 페이지를 잘라준다 (page 0 = 가장 최근 N개).
+  /// UI 는 보통 과거→최신 순으로 화면에 쌓으므로, 본 메서드는 페이지 안에서
+  /// 한 번 reverse 해서 "오래된→최신" 순서로 반환한다.
+  /// 따라서 호출 측은 페이지를 위로 추가 로드할 때 받은 리스트를 기존 리스트
+  /// **앞쪽**에 prepend 하면 자연스러운 순서가 유지된다.
   static Future<List<ChatMessageModel>> getChatHistory(
-      int roomId, int memberId) async {
-    final url = Uri.parse(ApiEndpoints.chatRoomMessages(roomId, memberId));
+    int roomId,
+    int memberId, {
+    int page = 0,
+    int size = 15,
+  }) async {
+    final url = Uri.parse(ApiEndpoints.chatRoomMessages(roomId, memberId))
+        .replace(queryParameters: {'page': '$page', 'size': '$size'});
 
     final token = await _getToken();
     final response = await http.get(url, headers: {
@@ -135,10 +160,19 @@ class ChatService {
 
     final decodedBody = utf8.decode(response.bodyBytes);
     final jsonResponse = jsonDecode(decodedBody);
-    if (jsonResponse['data'] == null) return [];
+    final dynamic data = jsonResponse['data'];
+    if (data == null) return [];
 
-    final List<dynamic> dataList = jsonResponse['data'];
-    return dataList.map((json) => ChatMessageModel.fromJson(json)).toList();
+    final List<dynamic> dataList = data is List
+        ? data
+        : (data is Map<String, dynamic>
+              ? (data['content'] as List<dynamic>? ?? const <dynamic>[])
+              : const <dynamic>[]);
+
+    final messages =
+        dataList.map((json) => ChatMessageModel.fromJson(json)).toList();
+    // 서버는 최신→과거 순이므로 화면 표시용으로 뒤집어 과거→최신으로.
+    return messages.reversed.toList();
   }
 
   /// 채팅방에 이미지 메시지 전송.

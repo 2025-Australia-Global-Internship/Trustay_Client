@@ -54,9 +54,16 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   final ImagePicker _imagePicker = ImagePicker();
   bool _isUploadingImage = false;
 
+  // ── 메시지 페이징 (위로 스크롤 시 더 오래된 메시지 로드) ──
+  static const int _historyPageSize = 15;
+  int _historyNextPage = 0;
+  bool _historyHasMore = true;
+  bool _isLoadingMoreHistory = false;
+
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     _bootstrap();
   }
 
@@ -92,20 +99,78 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
 
   Future<void> _loadChatHistory() async {
     try {
+      // 첫 페이지(가장 최근 N개)
       final history = await ChatService.getChatHistory(
         widget.roomId,
         widget.myMemberId,
+        page: 0,
+        size: _historyPageSize,
       );
       if (!mounted) return;
       setState(() {
         _messages = history;
+        _historyNextPage = 1;
+        _historyHasMore = history.length >= _historyPageSize;
         _isLoading = false;
       });
-      _scrollToBottom();
+      // 첫 진입은 애니메이션 없이 즉시 가장 최근 메시지로.
+      _scrollToBottom(animate: false);
     } catch (e) {
       print('❌ 채팅 내역 로드 실패: $e');
       if (!mounted) return;
       setState(() => _isLoading = false);
+    }
+  }
+
+  /// 더 오래된 메시지 페이지를 가져와 리스트 **앞쪽**에 prepend.
+  /// 화면 점프를 막기 위해 prepend 후 동일한 메시지가 보이도록 스크롤 위치를 보정한다.
+  Future<void> _loadMoreHistory() async {
+    if (_isLoadingMoreHistory || !_historyHasMore || _isLoading) return;
+    setState(() => _isLoadingMoreHistory = true);
+    try {
+      final older = await ChatService.getChatHistory(
+        widget.roomId,
+        widget.myMemberId,
+        page: _historyNextPage,
+        size: _historyPageSize,
+      );
+      if (!mounted) return;
+      if (older.isEmpty) {
+        setState(() {
+          _historyHasMore = false;
+          _isLoadingMoreHistory = false;
+        });
+        return;
+      }
+
+      // 현재 스크롤 위치 보정 기준점.
+      final beforeMax = _scrollController.hasClients
+          ? _scrollController.position.maxScrollExtent
+          : 0.0;
+      final beforePixels = _scrollController.hasClients
+          ? _scrollController.position.pixels
+          : 0.0;
+
+      setState(() {
+        _messages.insertAll(0, older);
+        _historyNextPage += 1;
+        _historyHasMore = older.length >= _historyPageSize;
+        _isLoadingMoreHistory = false;
+      });
+
+      // 새 컨텐츠가 위에 추가됐으니, 사용자가 보고 있던 메시지가 그대로 보이도록
+      // (maxScrollExtent 증가분 만큼) 스크롤을 아래로 밀어준다.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!_scrollController.hasClients) return;
+        final delta = _scrollController.position.maxScrollExtent - beforeMax;
+        if (delta > 0) {
+          _scrollController.jumpTo(beforePixels + delta);
+        }
+      });
+    } catch (e) {
+      print('❌ 이전 메시지 로드 실패: $e');
+      if (!mounted) return;
+      setState(() => _isLoadingMoreHistory = false);
     }
   }
 
@@ -147,15 +212,36 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     if (ok) _textController.clear();
   }
 
-  void _scrollToBottom() {
-    if (!_scrollController.hasClients) return;
-    Future.delayed(const Duration(milliseconds: 100), () {
+  /// 메시지 리스트를 맨 아래(가장 최신)로 이동.
+  /// - [animate]: false 면 즉시 점프(첫 진입에 사용), true 면 부드럽게 스크롤.
+  ///
+  /// 처음 로드 직후엔 ListView 가 아직 컨트롤러에 attach 되기 전이라
+  /// `hasClients` 가 false 일 수 있다. 따라서 다음 프레임이 그려진 뒤에 실행한다.
+  /// 이미지 등으로 layout 이 한 번 더 늘어나는 경우를 위해 한 프레임 더 양보한다.
+  void _scrollToBottom({bool animate = true}) {
+    void jump() {
       if (!_scrollController.hasClients) return;
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
+      final target = _scrollController.position.maxScrollExtent;
+      if (animate) {
+        _scrollController.animateTo(
+          target,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+        );
+      } else {
+        _scrollController.jumpTo(target);
+      }
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      jump();
+      // 이미지 로드 등으로 maxScrollExtent 가 살짝 더 늘어나는 케이스를 위해
+      // 다음 프레임에 한 번 더 보정한다.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        jump();
+      });
     });
   }
 
@@ -164,8 +250,18 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     _socket.unsubscribeRoom(widget.roomId);
     _socket.disconnect();
     _textController.dispose();
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// 스크롤이 위쪽 ~80px 이내에 닿으면 더 오래된 페이지를 prefetch.
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final pos = _scrollController.position;
+    if (pos.pixels <= 80) {
+      _loadMoreHistory();
+    }
   }
 
   @override
@@ -225,6 +321,25 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                   right: 0,
                   child: _buildHouseInfoCard(),
                 ),
+
+                // 더 오래된 메시지를 가져오는 동안 표시되는 작은 인디케이터.
+                // 하우스 카드 바로 아래에 떠 있다.
+                if (_isLoadingMoreHistory)
+                  const Positioned(
+                    top: 116,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.4,
+                          color: green,
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),

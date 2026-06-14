@@ -68,6 +68,13 @@ class _HouseCommPageState extends State<HouseCommPage> {
   bool _isChatLoading = false;
   String? _chatError;
 
+  // 채팅방 목록 페이징
+  static const int _chatPageSize = 10;
+  int _chatNextPage = 0;
+  bool _chatHasMore = true;
+  bool _isLoadingMoreChats = false;
+  final ScrollController _chatScrollController = ScrollController();
+
   // ---------------------------------------------------------------------------
   // 라이프사이클
   // ---------------------------------------------------------------------------
@@ -75,6 +82,23 @@ class _HouseCommPageState extends State<HouseCommPage> {
   void initState() {
     super.initState();
     _bootstrapNoticeTab();
+    _chatScrollController.addListener(_onChatScroll);
+  }
+
+  @override
+  void dispose() {
+    _chatScrollController.removeListener(_onChatScroll);
+    _chatScrollController.dispose();
+    super.dispose();
+  }
+
+  /// 채팅방 목록이 끝에 가까워지면 다음 페이지를 prefetch.
+  void _onChatScroll() {
+    if (!_chatScrollController.hasClients) return;
+    final pos = _chatScrollController.position;
+    if (pos.pixels >= pos.maxScrollExtent - 200) {
+      _loadMoreChats();
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -275,23 +299,31 @@ class _HouseCommPageState extends State<HouseCommPage> {
   }
 
   // ---------------------------------------------------------------------------
-  // Chat 로드
+  // Chat 로드 (첫 페이지 + RefreshIndicator 진입점)
   // ---------------------------------------------------------------------------
   Future<void> _loadChats() async {
     if (_isChatLoading) return;
     setState(() {
       _isChatLoading = true;
       _chatError = null;
+      _chatNextPage = 0;
+      _chatHasMore = true;
     });
 
     try {
       final User user = _currentUser ?? await AuthService.fetchProfile();
-      final rooms = await ChatService.getMyChatRooms(user.memberId);
+      final rooms = await ChatService.getMyChatRooms(
+        user.memberId,
+        page: 0,
+        size: _chatPageSize,
+      );
 
       if (!mounted) return;
       setState(() {
         _currentUser = user;
         _chatRooms = rooms;
+        _chatNextPage = 1;
+        _chatHasMore = rooms.length >= _chatPageSize;
         _isChatLoading = false;
       });
     } catch (_) {
@@ -300,6 +332,32 @@ class _HouseCommPageState extends State<HouseCommPage> {
         _chatError = '채팅방을 불러오지 못했어요.';
         _isChatLoading = false;
       });
+    }
+  }
+
+  /// 채팅방 다음 페이지 가져와서 리스트에 append.
+  Future<void> _loadMoreChats() async {
+    if (_isLoadingMoreChats || !_chatHasMore || _isChatLoading) return;
+    final user = _currentUser;
+    if (user == null) return;
+
+    setState(() => _isLoadingMoreChats = true);
+    try {
+      final rooms = await ChatService.getMyChatRooms(
+        user.memberId,
+        page: _chatNextPage,
+        size: _chatPageSize,
+      );
+      if (!mounted) return;
+      setState(() {
+        _chatRooms.addAll(rooms);
+        _chatNextPage += 1;
+        _chatHasMore = rooms.length >= _chatPageSize;
+        _isLoadingMoreChats = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isLoadingMoreChats = false);
     }
   }
 
@@ -1116,11 +1174,40 @@ class _HouseCommPageState extends State<HouseCommPage> {
       );
     }
 
+    // 마지막 항목 다음에 로딩 인디케이터/끝 안내를 보여주기 위해 +1.
+    final int extraTail = (_isLoadingMoreChats || !_chatHasMore) ? 1 : 0;
     return ListView.builder(
+      controller: _chatScrollController,
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(vertical: 8),
-      itemCount: _chatRooms.length,
+      itemCount: _chatRooms.length + extraTail,
       itemBuilder: (context, index) {
+        if (index >= _chatRooms.length) {
+          if (_isLoadingMoreChats) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(
+                child: SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.4,
+                    color: green,
+                  ),
+                ),
+              ),
+            );
+          }
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(
+              child: Text(
+                'No more chats',
+                style: TextStyle(fontSize: 12, color: grey03),
+              ),
+            ),
+          );
+        }
         final item = _chatRooms[index];
         final unreadCount = 0;
 

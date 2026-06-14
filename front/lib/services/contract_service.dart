@@ -122,18 +122,32 @@ class ContractService {
     return ContractModel.fromJson(decoded['data'] as Map<String, dynamic>);
   }
 
-  /// 내가 참여한 모든 계약 목록.
-  static Future<List<ContractModel>> getMyContracts() async {
+  /// 내가 참여한 계약 목록 (페이징).
+  ///
+  /// 백엔드는 `PageResponse<ContractRes>` 로 응답한다 (`data.content[]`).
+  /// 호환을 위해 List 응답도 함께 처리한다.
+  static Future<List<ContractModel>> getMyContracts({
+    int page = 0,
+    int size = 10,
+  }) async {
     final token = await _getToken();
+    final uri = Uri.parse(ApiEndpoints.myContracts).replace(
+      queryParameters: {'page': '$page', 'size': '$size'},
+    );
     final response = await http.get(
-      Uri.parse(ApiEndpoints.myContracts),
+      uri,
       headers: {'Authorization': 'Bearer $token'},
     );
     final decoded = jsonDecode(utf8.decode(response.bodyBytes));
     if (response.statusCode != 200 || decoded['code'] != 200) {
       throw Exception(decoded['message'] ?? 'Failed to load my contracts');
     }
-    final list = decoded['data'] as List<dynamic>? ?? [];
+    final dynamic data = decoded['data'];
+    final List<dynamic> list = data is List
+        ? data
+        : (data is Map<String, dynamic>
+              ? (data['content'] as List<dynamic>? ?? const <dynamic>[])
+              : const <dynamic>[]);
     return list
         .map((e) => ContractModel.fromJson(e as Map<String, dynamic>))
         .toList();
