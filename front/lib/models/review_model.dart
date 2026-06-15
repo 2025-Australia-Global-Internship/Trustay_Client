@@ -2,6 +2,12 @@
 class ReviewModel {
   final int id;
   final int? houseId;
+  /// 대상 매물 제목 (My Reviews 카드 노출용). 매물 삭제 시 null.
+  final String? houseTitle;
+  /// 대상 매물 주소. 매물 삭제 시 null.
+  final String? houseAddress;
+  /// 대상 매물 대표 이미지 URL.
+  final String? houseImageUrl;
   final int authorId;
   final String authorName;
   final String? authorProfileImageUrl;
@@ -13,6 +19,9 @@ class ReviewModel {
   ReviewModel({
     required this.id,
     required this.houseId,
+    required this.houseTitle,
+    required this.houseAddress,
+    required this.houseImageUrl,
     required this.authorId,
     required this.authorName,
     required this.authorProfileImageUrl,
@@ -26,6 +35,9 @@ class ReviewModel {
     return ReviewModel(
       id: (json['id'] as num?)?.toInt() ?? 0,
       houseId: (json['houseId'] as num?)?.toInt(),
+      houseTitle: json['houseTitle'] as String?,
+      houseAddress: json['houseAddress'] as String?,
+      houseImageUrl: json['houseImageUrl'] as String?,
       authorId: (json['authorId'] as num?)?.toInt() ?? 0,
       authorName: json['authorName']?.toString() ?? '',
       authorProfileImageUrl: json['authorProfileImageUrl'] as String?,
