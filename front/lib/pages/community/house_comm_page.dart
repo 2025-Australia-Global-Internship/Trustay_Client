@@ -425,6 +425,8 @@ class _HouseCommPageState extends State<HouseCommPage> with RouteAware {
     if (!mounted) return;
     _currentUser = user;
 
+    // ChatRoomPage 가 pop 될 때까지 기다린 뒤 목록을 새로고침해야 한다.
+    // (await 없이 부르면 push 직후에 새로고침이 도는 바람에 실질적으로 갱신되지 않음)
     await Navigator.push(
       context,
       MaterialPageRoute(

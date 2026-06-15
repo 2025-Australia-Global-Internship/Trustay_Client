@@ -420,7 +420,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
                     crossAxisCount: 2,
                     mainAxisSpacing: 9,
                     crossAxisSpacing: 11,
-                    childAspectRatio: 0.68,
+                    childAspectRatio: 0.58,
                   ),
                 ),
               ),

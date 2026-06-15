@@ -357,7 +357,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
         child: Container(
-          height: 75,
+          height: 70,
           padding: const EdgeInsets.symmetric(horizontal: 10),
           decoration: BoxDecoration(
             color: Colors.white,
@@ -385,8 +385,8 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                   onPressed: () => Navigator.pop(context),
                   icon: SvgPicture.asset(
                     'assets/icons/arrow_back.svg',
-                    width: 25,
-                    height: 25,
+                    width: 22,
+                    height: 22,
                     color: dark,
                   ),
                 ),
@@ -419,13 +419,13 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                   onPressed: () {},
                   icon: SvgPicture.asset(
                     'assets/icons/call.svg',
-                    width: 29,
-                    height: 29,
+                    width: 26,
+                    height: 26,
                   ),
                 ),
               ),
 
-              const SizedBox(width: 8),
+              const SizedBox(width: 7),
 
               // 영상통화
               Container(
@@ -439,8 +439,8 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                   onPressed: () {},
                   icon: SvgPicture.asset(
                     'assets/icons/video-call.svg',
-                    width: 29,
-                    height: 29,
+                    width: 26,
+                    height: 26,
                   ),
                 ),
               ),
@@ -965,11 +965,11 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
               child: Container(
                 constraints: const BoxConstraints(
                   minHeight: 68,
-                  maxHeight: 160,
+                  maxHeight: 155,
                 ),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(33),
+                  borderRadius: BorderRadius.circular(43),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.05),

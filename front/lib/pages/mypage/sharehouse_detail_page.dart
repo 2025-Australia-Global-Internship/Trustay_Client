@@ -304,7 +304,7 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
         ),
         CustomHeader(showBack: true, backButtonStyle: BackButtonStyle.light),
         Positioned(
-          top: 24,
+          top: 30,
           right: 16,
           child: Column(
             children: [
@@ -986,7 +986,7 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
 
   Widget _buildChatButton() {
     return Positioned(
-      bottom: 20,
+      bottom: 30,
       left: 20,
       right: 20,
       child: PrimaryButton(

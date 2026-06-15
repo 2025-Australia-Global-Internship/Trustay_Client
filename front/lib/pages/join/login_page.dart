@@ -61,6 +61,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: darkgreen,
       body: Stack(
         children: [
           /// 배경 이미지
@@ -94,228 +95,232 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
 
-          /// UI 영역
+          /// UI 영역 (키보드 대응을 위해 SingleChildScrollView 적용)
           SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CustomHeader(
-                  backButtonStyle: BackButtonStyle.dark,
-                  iconSize: 38,
-                  center: const Text(
-                    'Welcome Back',
-                    style: TextStyle(
-                      color: yellow,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
+            child: SingleChildScrollView(
+              physics:
+                  const ClampingScrollPhysics(), // 스크롤 시 배경이 찢어져 보이지 않게 바운스 방지
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CustomHeader(
+                    backButtonStyle: BackButtonStyle.dark,
+                    iconSize: 38,
+                    center: const Text(
+                      'Welcome Back',
+                      style: TextStyle(
+                        color: yellow,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
-                ),
 
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 24),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 24),
 
-                        AuthTextField(
-                          label: 'Email',
-                          hintText: 'Enter your email',
-                          validator: (v) =>
-                              v == null || v.isEmpty ? '이메일을 입력하세요' : null,
-                          onSaved: (v) => email = v!,
-                        ),
+                          AuthTextField(
+                            label: 'Email',
+                            hintText: 'Enter your email',
+                            validator: (v) =>
+                                v == null || v.isEmpty ? '이메일을 입력하세요' : null,
+                            onSaved: (v) => email = v!,
+                          ),
 
-                        AuthTextField(
-                          label: 'Password',
-                          hintText: 'Enter your password',
-                          bottomPadding: 14,
-                          obscureText: true,
-                          validator: (v) =>
-                              v == null || v.isEmpty ? '비밀번호를 입력하세요' : null,
-                          onSaved: (v) => password = v!,
-                        ),
+                          AuthTextField(
+                            label: 'Password',
+                            hintText: 'Enter your password',
+                            bottomPadding: 14,
+                            obscureText: true,
+                            validator: (v) =>
+                                v == null || v.isEmpty ? '비밀번호를 입력하세요' : null,
+                            onSaved: (v) => password = v!,
+                          ),
 
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              isAgree = !isAgree;
-                            });
-                          },
-                          child: Row(
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    width: 20,
-                                    height: 20,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(6),
-                                      border: Border.all(color: Colors.white),
-                                      color: isAgree
-                                          ? Colors.white
-                                          : Colors.transparent,
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                isAgree = !isAgree;
+                              });
+                            },
+                            child: Row(
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      width: 20,
+                                      height: 20,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(color: Colors.white),
+                                        color: isAgree
+                                            ? Colors.white
+                                            : Colors.transparent,
+                                      ),
+                                      child: isAgree
+                                          ? const Icon(
+                                              Icons.check,
+                                              size: 16,
+                                              color: Colors.black,
+                                            )
+                                          : null,
                                     ),
-                                    child: isAgree
-                                        ? const Icon(
-                                            Icons.check,
-                                            size: 16,
-                                            color: Colors.black,
-                                          )
-                                        : null,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  const Text(
-                                    'Remember me',
+                                    const SizedBox(width: 10),
+                                    const Text(
+                                      'Remember me',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                const Spacer(),
+                                GestureDetector(
+                                  onTap: () {
+                                    // TODO: 비밀번호 찾기 이동
+                                  },
+                                  child: const Text(
+                                    'Forgot your password?',
                                     style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w700,
+                                      color: yellow,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w800,
                                     ),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
+                            ),
+                          ),
 
-                              const Spacer(),
+                          const SizedBox(height: 35),
+
+                          PrimaryButton(
+                            formKey: _formKey,
+                            text: 'Login',
+                            isLoading: isLoading,
+                            onAction: _handleLogin,
+                            successMessage: '로그인 성공',
+                            failMessage: '',
+                            nextRoute: '/index',
+                            navigationType: NavigationType.clearStack,
+                          ),
+
+                          const SizedBox(height: 35),
+
+                          Row(
+                            children: const [
+                              Expanded(
+                                child: Divider(
+                                  color: Colors.white54,
+                                  thickness: 1,
+                                ),
+                              ),
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 10),
+                                child: Text(
+                                  'or sign up with',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Divider(
+                                  color: Colors.white54,
+                                  thickness: 1,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 40),
+
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              CircleIconButton(
+                                svgAsset: 'assets/icons/apple.svg',
+                                iconColor: Colors.white,
+                                backgroundColor: Colors.transparent,
+                                size: 52,
+                                iconSize: 24,
+                                borderWidth: 1,
+                                borderColor: Colors.white,
+                                applySvgColor: false,
+                                onPressed: () {},
+                              ),
+                              const SizedBox(width: 25),
+                              CircleIconButton(
+                                svgAsset: 'assets/icons/google.svg',
+                                backgroundColor: Colors.transparent,
+                                size: 52,
+                                iconSize: 20,
+                                borderWidth: 1,
+                                borderColor: Colors.white,
+                                applySvgColor: false,
+                                onPressed: () {},
+                              ),
+                              const SizedBox(width: 25),
+                              CircleIconButton(
+                                svgAsset: 'assets/icons/facebook.svg',
+                                backgroundColor: Colors.transparent,
+                                size: 52,
+                                iconSize: 26,
+                                borderWidth: 1,
+                                borderColor: Colors.white,
+                                applySvgColor: false,
+                                onPressed: () {},
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 40),
+
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text(
+                                "Don't have an account? ",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12,
+                                ),
+                              ),
                               GestureDetector(
                                 onTap: () {
-                                  // TODO: 비밀번호 찾기 이동
+                                  Navigator.pushNamed(context, '/signup');
                                 },
                                 child: const Text(
-                                  'Forgot your password?',
+                                  'Register now',
                                   style: TextStyle(
                                     color: yellow,
-                                    fontSize: 13,
+                                    fontSize: 12,
                                     fontWeight: FontWeight.w800,
+                                    decoration: TextDecoration.underline,
+                                    decorationColor: yellow,
                                   ),
                                 ),
                               ),
                             ],
                           ),
-                        ),
-
-                        const SizedBox(height: 35),
-
-                        PrimaryButton(
-                          formKey: _formKey,
-                          text: 'Login',
-                          isLoading: isLoading,
-                          onAction: _handleLogin,
-                          successMessage: '로그인 성공',
-                          failMessage: '',
-                          nextRoute: '/index',
-                          navigationType: NavigationType.clearStack,
-                        ),
-
-                        const SizedBox(height: 35),
-
-                        Row(
-                          children: const [
-                            Expanded(
-                              child: Divider(
-                                color: Colors.white54,
-                                thickness: 1,
-                              ),
-                            ),
-                            Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 10),
-                              child: Text(
-                                'or sign up with',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: Divider(
-                                color: Colors.white54,
-                                thickness: 1,
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 40),
-
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            CircleIconButton(
-                              svgAsset: 'assets/icons/apple.svg',
-                              iconColor: Colors.white,
-                              backgroundColor: Colors.transparent,
-                              size: 52,
-                              iconSize: 24,
-                              borderWidth: 1,
-                              borderColor: Colors.white,
-                              applySvgColor: false,
-                              onPressed: () {},
-                            ),
-                            const SizedBox(width: 25),
-                            CircleIconButton(
-                              svgAsset: 'assets/icons/google.svg',
-                              backgroundColor: Colors.transparent,
-                              size: 52,
-                              iconSize: 20,
-                              borderWidth: 1,
-                              borderColor: Colors.white,
-                              applySvgColor: false,
-                              onPressed: () {},
-                            ),
-                            const SizedBox(width: 25),
-                            CircleIconButton(
-                              svgAsset: 'assets/icons/facebook.svg',
-                              backgroundColor: Colors.transparent,
-                              size: 52,
-                              iconSize: 26,
-                              borderWidth: 1,
-                              borderColor: Colors.white,
-                              applySvgColor: false,
-                              onPressed: () {},
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 40),
-
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text(
-                              "Don't have an account? ",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 12,
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.pushNamed(context, '/signup');
-                              },
-                              child: const Text(
-                                'Register now',
-                                style: TextStyle(
-                                  color: yellow,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w800,
-                                  decoration: TextDecoration.underline,
-                                  decorationColor: yellow,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],

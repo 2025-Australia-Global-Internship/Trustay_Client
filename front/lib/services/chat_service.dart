@@ -235,6 +235,66 @@ class ChatService {
     return MediaType('application', 'octet-stream');
   }
 
+  /// 채팅방에 이미지 메시지 전송.
+  ///
+  /// `POST /api/chat/room/{roomId}/image?senderId={senderId}` (multipart/form-data).
+  /// - form field: `image` (단일 파일)
+  /// - 허용 확장자: jpg / jpeg / png / heic / heif, 최대 20MB
+  ///
+  /// 서버가 IMAGE 타입 ChatMessage 로 저장한 뒤 STOMP 구독 채널
+  /// `/sub/chat/room/{roomId}` 로 자동 브로드캐스트한다. 따라서 호출 측은
+  /// 별도의 WebSocket SEND 를 하지 않아도 되며, 동일한 구독 콜백으로
+  /// 새 메시지가 수신된다. 응답 payload 도 동일한 `ChatMessageRes` 형식.
+  static Future<ChatMessageModel> sendImageMessage({
+    required int roomId,
+    required int senderId,
+    required File imageFile,
+  }) async {
+    final url = Uri.parse(ApiEndpoints.chatRoomImage(roomId, senderId));
+    final token = await _getToken();
+
+    final request = http.MultipartRequest('POST', url);
+    request.headers['Authorization'] = 'Bearer $token';
+
+    final fileName = imageFile.path.split(Platform.pathSeparator).last;
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'image', // 명세상 단수
+        imageFile.path,
+        filename: fileName,
+        contentType: _chatImageContentTypeFor(imageFile),
+      ),
+    );
+
+    final streamed = await request.send();
+    final responseBody = await streamed.stream.bytesToString();
+
+    if (streamed.statusCode != 200) {
+      throw Exception(
+        '이미지 전송 실패: ${streamed.statusCode} $responseBody',
+      );
+    }
+
+    final decoded = jsonDecode(responseBody);
+    final dynamic data = decoded['data'];
+    if (data is! Map<String, dynamic>) {
+      throw Exception('이미지 전송 응답 파싱 실패: $data');
+    }
+    return ChatMessageModel.fromJson(data);
+  }
+
+  static MediaType _chatImageContentTypeFor(File imageFile) {
+    final path = imageFile.path.toLowerCase();
+    if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
+      return MediaType('image', 'jpeg');
+    }
+    if (path.endsWith('.png')) return MediaType('image', 'png');
+    if (path.endsWith('.heic')) return MediaType('image', 'heic');
+    if (path.endsWith('.heif')) return MediaType('image', 'heif');
+    // 서버가 거부할 수도 있으나 기본값 fallback
+    return MediaType('application', 'octet-stream');
+  }
+
   /// 채팅방 나가기 (POST /api/chat/room/{roomId}/leave?memberId=)
   static Future<bool> leaveChatRoom(int roomId, int memberId) async {
     final url = Uri.parse(ApiEndpoints.leaveChatRoom(roomId, memberId));
