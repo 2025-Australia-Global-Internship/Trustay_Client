@@ -223,10 +223,12 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
                       const SizedBox(height: 24),
                       if (_house!.address != null) ...[
                         _buildLocationSection(_house!),
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 30),
                       ],
                       _buildHostSection(_house!),
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 50),
+                      _buildReviewsSection(),
+                      const SizedBox(height: 50),
                       const Text(
                         'Description',
                         style: TextStyle(
@@ -244,8 +246,6 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
                           height: 1.5,
                         ),
                       ),
-                      const SizedBox(height: 28),
-                      _buildReviewsSection(),
                       const SizedBox(height: 35),
                       _buildPropertyDetails(_house!),
                       const SizedBox(height: 36),
@@ -546,7 +546,7 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 10),
         Container(
           height: 160,
           decoration: BoxDecoration(
@@ -626,7 +626,7 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
         const SizedBox(width: 12),
         Text(
           "Posted by ${house.hostName}",
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: const TextStyle(fontWeight: FontWeight.w700),
         ),
       ],
     );
@@ -826,21 +826,16 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Reviews',
-          style: TextStyle(
-            color: dark,
-            fontWeight: FontWeight.w700,
-            fontSize: 15,
-          ),
-        ),
-        const SizedBox(height: 12),
         if (reviews.isEmpty)
           Container(
             padding: const EdgeInsets.symmetric(vertical: 22),
             alignment: Alignment.center,
-            decoration: BoxDecoration(
-              border: Border(top: BorderSide(color: grey01, width: 1)),
+            // [기존 유지] 비어있을 때 상단 가로선과 아래 가로선(Border.차이)을 한 번에 제어
+            decoration: const BoxDecoration(
+              border: Border(
+                top: BorderSide(color: grey01, width: 1),
+                bottom: BorderSide(color: grey01, width: 1), // 빈 화면일 때 밑선 추가
+              ),
             ),
             child: const Text(
               'No reviews yet.',
@@ -852,12 +847,16 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
             ),
           )
         else ...[
+          // 리뷰 카드 반복 출력 (각 카드 상단에 border가 있어서 자동으로 이어짐)
           for (int i = 0; i < reviews.length; i++)
-            _reviewCard(
-              reviews[i],
-              showSummary: i == 0,
-              summary: summary,
+            _reviewCard(reviews[i], showSummary: i == 0, summary: summary),
+
+          // [핵심 추가] 리뷰 리스트가 끝난 직후 맨 밑을 닫아주는 가로선
+          Container(
+            decoration: const BoxDecoration(
+              border: Border(top: BorderSide(color: grey01, width: 1)),
             ),
+          ),
         ],
       ],
     );
@@ -883,7 +882,7 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               CircleAvatar(
-                radius: 22,
+                radius: 21,
                 backgroundColor: grey01,
                 backgroundImage: (profileUrl != null && profileUrl.isNotEmpty)
                     ? NetworkImage(profileUrl)
@@ -902,7 +901,7 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 15,
+                        fontSize: 14,
                         fontWeight: FontWeight.w700,
                         color: dark,
                       ),
@@ -910,7 +909,7 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        _starRow(review.rating.toDouble(), size: 18),
+                        _starRow(review.rating.toDouble(), size: 22),
                         if (showSummary && summary.reviewCount > 0) ...[
                           const Spacer(),
                           Text.rich(
@@ -920,7 +919,7 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
                                   text:
                                       '${summary.averageRating.toStringAsFixed(1)} Ratings',
                                   style: const TextStyle(
-                                    fontSize: 13,
+                                    fontSize: 12,
                                     color: dark,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -929,7 +928,7 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
                                   text:
                                       ' (${summary.reviewCount} ${summary.reviewCount == 1 ? 'review' : 'reviews'})',
                                   style: const TextStyle(
-                                    fontSize: 13,
+                                    fontSize: 12,
                                     color: grey03,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -947,12 +946,11 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
           ),
           if (review.content != null && review.content!.trim().isNotEmpty) ...[
             const SizedBox(height: 14),
-            Text(
-              review.content!,
-              style: const TextStyle(
-                fontSize: 15,
-                color: dark,
-                height: 1.45,
+            Padding(
+              padding: EdgeInsets.only(left: 5),
+              child: Text(
+                review.content!,
+                style: const TextStyle(fontSize: 15, color: dark, height: 1.45),
               ),
             ),
           ],
@@ -963,23 +961,20 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
 
   /// 별 5개 행. 정수 별점은 꽉 찬/빈 별로, 0.5 단위는 half 로 표시.
   /// 작성 화면은 정수만 받지만, 평균 평점 표시용으로 half 지원.
-  Widget _starRow(double rating, {double size = 18}) {
+  Widget _starRow(double rating, {double size = 22}) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(5, (i) {
         final pos = i + 1;
         IconData icon;
         if (rating >= pos) {
-          icon = Icons.star_rounded;
+          icon = Icons.star;
         } else if (rating >= pos - 0.5) {
-          icon = Icons.star_half_rounded;
+          icon = Icons.star_half;
         } else {
-          icon = Icons.star_border_rounded;
+          icon = Icons.star_border;
         }
-        return Padding(
-          padding: const EdgeInsets.only(right: 2),
-          child: Icon(icon, size: size, color: green),
-        );
+        return Icon(icon, size: size, color: green);
       }),
     );
   }

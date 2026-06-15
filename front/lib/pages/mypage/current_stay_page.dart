@@ -71,10 +71,7 @@ class _CurrentStayPageState extends State<CurrentStayPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ContractViewPage(
-          contractId: c.id,
-          memberId: memberId,
-        ),
+        builder: (_) => ContractViewPage(contractId: c.id, memberId: memberId),
       ),
     ).then((_) => _loadData());
   }
@@ -123,10 +120,8 @@ class _CurrentStayPageState extends State<CurrentStayPage> {
         await Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => WriteReviewPage(
-              houseId: houseId,
-              houseTitle: c.houseTitle,
-            ),
+            builder: (_) =>
+                WriteReviewPage(houseId: houseId, houseTitle: c.houseTitle),
           ),
         );
       } else {
@@ -136,9 +131,9 @@ class _CurrentStayPageState extends State<CurrentStayPage> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to leave: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to leave: $e')));
     } finally {
       if (mounted) _loadData();
     }
@@ -227,14 +222,14 @@ class _CurrentStayPageState extends State<CurrentStayPage> {
             style: const TextStyle(
               fontSize: 14,
               color: grey02,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w400,
             ),
           ),
           const SizedBox(height: 6),
           Text(
             subtitle,
             style: const TextStyle(
-              fontSize: 13,
+              fontSize: 14,
               color: grey02,
               fontWeight: FontWeight.w400,
             ),

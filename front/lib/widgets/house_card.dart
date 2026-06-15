@@ -29,7 +29,7 @@ class HouseCard extends StatelessWidget {
         : 'https://via.placeholder.com/400x300';
 
     return Container(
-      width: isGrid ? double.infinity : 300,
+      width: isGrid ? double.infinity : 280,
       margin: EdgeInsets.only(right: isGrid ? 0 : 14, bottom: isGrid ? 16 : 0),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -55,11 +55,11 @@ class HouseCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(14),
                   child: Image.network(
                     imageUrl,
-                    height: 140,
+                    height: isGrid ? 120 : 140,
                     width: double.infinity,
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => Container(
-                      height: 140,
+                      height: isGrid ? 120 : 140,
                       width: double.infinity,
                       color: grey01,
                       child: const Icon(Icons.home, size: 50, color: grey02),
@@ -83,7 +83,9 @@ class HouseCard extends StatelessWidget {
           ),
           // 카드 내용 영역
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 7, 16, 10),
+            padding: isGrid
+                ? EdgeInsets.fromLTRB(10, 7, 10, 10)
+                : EdgeInsets.fromLTRB(16, 7, 16, 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -98,7 +100,7 @@ class HouseCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontSize: isGrid ? 13 : 15,
+                          fontSize: isGrid ? 13 : 17,
                           fontWeight: FontWeight.w800,
                           color: dark,
                           height: 1.2,
@@ -109,7 +111,7 @@ class HouseCard extends StatelessWidget {
                     Text(
                       '\$${house.rentPrice}', // .price 대신 .rentPrice
                       style: TextStyle(
-                        fontSize: isGrid ? 12 : 13,
+                        fontSize: isGrid ? 12 : 15,
                         fontWeight: FontWeight.w800,
                         color: dark,
                         height: 1.2,
@@ -138,8 +140,8 @@ class HouseCard extends StatelessWidget {
                         house.address,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 12,
+                        style: TextStyle(
+                          fontSize: isGrid ? 12 : 13,
                           fontWeight: FontWeight.w400,
                           color: grey04,
                           height: 1.2,
@@ -153,7 +155,7 @@ class HouseCard extends StatelessWidget {
 
                 // 아이콘 영역 (서버 모델 필드명에 맞게 수정)
                 Wrap(
-                  spacing: 6,
+                  spacing: isGrid ? 4 : 6,
                   runSpacing: 3,
                   children: [
                     _iconChip(
@@ -191,7 +193,7 @@ Widget _iconChip({
 }) {
   return Container(
     padding: EdgeInsets.symmetric(
-      horizontal: isGrid ? 8.65 : 14,
+      horizontal: isGrid ? 8 : 14,
       vertical: isGrid ? 7 : 8,
     ),
     decoration: BoxDecoration(
@@ -203,8 +205,8 @@ Widget _iconChip({
       children: [
         SvgPicture.asset(
           svg,
-          width: isGrid ? 13 : 18,
-          height: isGrid ? 13 : 18,
+          width: isGrid ? 12 : 18,
+          height: isGrid ? 12 : 18,
           colorFilter: const ColorFilter.mode(dark, BlendMode.srcIn),
         ),
         SizedBox(width: isGrid ? 6 : 10),
