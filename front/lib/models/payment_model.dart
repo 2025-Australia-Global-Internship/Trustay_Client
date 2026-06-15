@@ -145,6 +145,15 @@ class PaymentHistoryItem {
   final int? contractId;
   final int? dutchPayGroupId;
 
+  /// 거래 방향. 백엔드가 미응답하면 "OUT" 으로 가정 (=내가 송금).
+  ///   - 'OUT' : 내 지갑 → 상대방
+  ///   - 'IN'  : 상대방 → 내 지갑 (Mate paid)
+  final String direction;
+
+  /// 거래 상대방 표시 이름. 백엔드가 채워주는 값.
+  /// 없으면 fallback 으로 `targetAccount` 를 사용한다.
+  final String? counterpartyName;
+
   PaymentHistoryItem({
     required this.paymentId,
     required this.orderId,
@@ -156,7 +165,11 @@ class PaymentHistoryItem {
     this.autoTransfer = false,
     this.contractId,
     this.dutchPayGroupId,
+    this.direction = 'OUT',
+    this.counterpartyName,
   });
+
+  bool get isIncoming => direction == 'IN';
 
   factory PaymentHistoryItem.fromJson(Map<String, dynamic> json) {
     DateTime? parsedDate;
@@ -169,7 +182,7 @@ class PaymentHistoryItem {
       }
     }
     return PaymentHistoryItem(
-      paymentId: json['paymentId'] ?? 0,
+      paymentId: (json['paymentId'] as num?)?.toInt() ?? 0,
       orderId: json['orderId']?.toString() ?? '',
       amount: (json['amount'] is int)
           ? json['amount'] as int
@@ -179,8 +192,10 @@ class PaymentHistoryItem {
       targetAccount: json['targetAccount'] as String?,
       transactionDate: parsedDate,
       autoTransfer: json['autoTransfer'] ?? false,
-      contractId: json['contractId'] as int?,
-      dutchPayGroupId: json['dutchPayGroupId'] as int?,
+      contractId: (json['contractId'] as num?)?.toInt(),
+      dutchPayGroupId: (json['dutchPayGroupId'] as num?)?.toInt(),
+      direction: json['direction']?.toString() ?? 'OUT',
+      counterpartyName: json['counterpartyName'] as String?,
     );
   }
 }

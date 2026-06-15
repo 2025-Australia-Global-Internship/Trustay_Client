@@ -16,6 +16,12 @@ void goToMyPageTab() {
   indexTabNotifier.value = 4;
 }
 
+/// Finance 탭(=3)으로 이동시키는 헬퍼.
+/// 마이페이지의 My Wallet → "See all activity" 등에서 사용한다.
+void goToFinanceTab() {
+  indexTabNotifier.value = 3;
+}
+
 class IndexPage extends StatefulWidget {
   const IndexPage({super.key});
 

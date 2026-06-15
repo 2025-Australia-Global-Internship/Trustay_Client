@@ -126,6 +126,37 @@ class ReviewService {
     }
   }
 
+  /// 내가 작성한 리뷰 목록 (최신순, 페이징).
+  ///
+  /// `/api/trustay/reviews/me` 응답은 `PageResponse<ReviewRes>` 형태이므로
+  /// `data.content[]` 로 접근. 호환을 위해 list 응답도 함께 처리.
+  static Future<List<ReviewModel>> getMyReviews({
+    int page = 0,
+    int size = 20,
+  }) async {
+    final token = await _token();
+    final uri = Uri.parse(ApiEndpoints.myReviews).replace(
+      queryParameters: {'page': '$page', 'size': '$size'},
+    );
+    final response = await http.get(
+      uri,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+    if (response.statusCode != 200 || decoded['code'] != 200) {
+      throw Exception(decoded['message'] ?? 'Failed to load my reviews');
+    }
+    final dynamic data = decoded['data'];
+    final List<dynamic> list = data is List
+        ? data
+        : (data is Map<String, dynamic>
+            ? (data['content'] as List<dynamic>? ?? const <dynamic>[])
+            : const <dynamic>[]);
+    return list
+        .map((e) => ReviewModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
   /// 본인 리뷰 삭제.
   static Future<void> deleteReview(int reviewId) async {
     final token = await _token();

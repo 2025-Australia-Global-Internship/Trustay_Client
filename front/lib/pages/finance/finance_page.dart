@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:intl/intl.dart';
 import 'package:front/constants/colors.dart';
 import 'package:front/index.dart' show goToMyPageTab;
 import 'package:front/widgets/custom_header.dart';
@@ -7,18 +8,25 @@ import 'package:front/widgets/circle_icon_button.dart';
 import 'package:front/widgets/gradient_layout.dart';
 import 'package:front/services/payment_service.dart';
 import 'package:front/models/payment_model.dart';
+import 'create_split_bill_page.dart';
+import 'split_bills_page.dart';
 
 class TransactionItem {
   final String title;
   final String subtitle;
   final String date;
   final double amount;
+  final String paymentType; // RENT / UTILITY / DUTCH
+  /// true 면 "Mate paid" (양수, 초록색), false 면 "You paid" (음수)
+  final bool isIncoming;
 
   const TransactionItem({
     required this.title,
     required this.subtitle,
     required this.date,
     required this.amount,
+    required this.paymentType,
+    required this.isIncoming,
   });
 }
 
@@ -155,16 +163,20 @@ class _FinancePageState extends State<FinancePage> {
       final dateStr = _formatTxDate(date);
       final title = _titleFor(p.paymentType);
       final subtitle = _subtitleFor(p);
-      // 백엔드가 음/양 부호를 직접 주지 않으므로, 기본적으로 RENT/UTILITY/DUTCH 는 "내가 지불"로 간주.
-      // 추후 수금자/지불자 구분을 위해 백엔드 필드(direction)가 생기면 그에 맞춰 보정.
-      final amount = -p.amount.toDouble();
+      // 백엔드 direction 필드 사용:
+      // - IN  : 내가 받음 (Mate paid) → 양수
+      // - OUT : 내가 보냄 (You paid) → 음수
+      final double signed =
+          p.isIncoming ? p.amount.toDouble() : -p.amount.toDouble();
 
       result.putIfAbsent(monthLabel, () => []).add(
             TransactionItem(
               title: title,
               subtitle: subtitle,
               date: dateStr,
-              amount: amount,
+              amount: signed,
+              paymentType: p.paymentType,
+              isIncoming: p.isIncoming,
             ),
           );
     }
@@ -186,17 +198,32 @@ class _FinancePageState extends State<FinancePage> {
   }
 
   String _subtitleFor(PaymentHistoryItem p) {
-    final to = (p.targetAccount != null && p.targetAccount!.isNotEmpty)
-        ? p.targetAccount!
-        : 'Counterparty';
-    return 'My wallet → $to';
+    // 디자인:
+    //   - You paid : "My wallet → {상대방}"
+    //   - Mate paid: "{상대방} → My wallet"
+    final counterparty = (p.counterpartyName != null &&
+            p.counterpartyName!.isNotEmpty)
+        ? p.counterpartyName!
+        : ((p.targetAccount != null && p.targetAccount!.isNotEmpty)
+            ? p.targetAccount!
+            : 'Counterparty');
+    if (p.isIncoming) {
+      return '$counterparty → My wallet';
+    }
+    return 'My wallet → $counterparty';
   }
 
   String _formatTxDate(DateTime d) {
-    String two(int n) => n.toString().padLeft(2, '0');
-    final hour12 = d.hour == 0 ? 12 : (d.hour > 12 ? d.hour - 12 : d.hour);
-    final ampm = d.hour < 12 ? 'AM' : 'PM';
-    return '${d.month}/${d.day} · ${two(hour12)}:${two(d.minute)}$ampm';
+    // 디자인: "09 May · 09:40AM"
+    return DateFormat('dd MMM · hh:mma').format(d);
+  }
+
+  String _fmtAud(num v) {
+    return NumberFormat.currency(
+      locale: 'en_AU',
+      symbol: '\$',
+      decimalDigits: 0,
+    ).format(v);
   }
 
   // 필터링된 거래 내역 가져오기
@@ -310,7 +337,7 @@ class _FinancePageState extends State<FinancePage> {
                       iconSize: 17,
                       iconColor: dark,
                       padding: const EdgeInsets.only(right: 8),
-                      onPressed: () {},
+                      onPressed: _openCreateSplitBill,
                     ),
                     CircleIconButton(
                       svgAsset: 'assets/icons/profile.svg',
@@ -590,11 +617,26 @@ class _FinancePageState extends State<FinancePage> {
     );
   }
 
+  Future<void> _openSplitBills() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const SplitBillsPage()),
+    );
+    if (!mounted) return;
+    _loadHistory();
+  }
+
+  Future<void> _openCreateSplitBill() async {
+    final created = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => const CreateSplitBillPage()),
+    );
+    if (created == true && mounted) _loadHistory();
+  }
+
   Widget _buildSplitBillsButton() {
     return GestureDetector(
-      onTap: () {
-        // TODO: Split Bills 페이지로 이동
-      },
+      onTap: _openSplitBills,
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -739,6 +781,20 @@ class _FinancePageState extends State<FinancePage> {
   }
 
   Widget _buildTransactionRow(TransactionItem item) {
+    // 디자인 매핑:
+    //   - RENT  : 동전 아이콘 (assets/icons/coin-fill.svg)
+    //   - DUTCH : 지갑 아이콘 (assets/icons/wallet.svg)
+    //   - 기타  : 동전 아이콘
+    final isRent = item.paymentType == 'RENT';
+    final String leadingIcon =
+        isRent ? 'assets/icons/coin-fill.svg' : 'assets/icons/wallet.svg';
+    // 금액 색: Mate paid(+) 는 짙은 초록, You paid(−) 는 dark
+    final Color amountColor = item.isIncoming ? darkgreen : dark;
+    // 부호 + 호주 달러 포맷
+    final String sign = item.amount >= 0 ? '' : '- ';
+    final String moneyText =
+        '$sign${_fmtAud(item.amount.abs().toInt())}';
+
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
       leading: Container(
@@ -747,10 +803,11 @@ class _FinancePageState extends State<FinancePage> {
         decoration: const BoxDecoration(color: green, shape: BoxShape.circle),
         alignment: Alignment.center,
         child: SvgPicture.asset(
-          'assets/icons/coin-fill.svg',
-          width: 23,
-          height: 23,
+          leadingIcon,
+          width: 20,
+          height: 20,
           fit: BoxFit.contain,
+          color: yellow,
         ),
       ),
       title: Text(
@@ -774,11 +831,11 @@ class _FinancePageState extends State<FinancePage> {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Text(
-            '${item.amount >= 0 ? '+' : '-'} \$${item.amount.abs().toInt()}',
-            style: const TextStyle(
+            moneyText,
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w800,
-              color: dark,
+              color: amountColor,
             ),
           ),
           const SizedBox(height: 6),

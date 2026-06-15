@@ -319,10 +319,12 @@ class _MyPageState extends State<MyPage> {
                 MyPageMenuItem(
                   title: 'My Reviews',
                   leadingPath: 'assets/icons/review.svg',
+                  onTap: () => Navigator.pushNamed(context, '/my_reviews'),
                 ),
                 MyPageMenuItem(
                   title: 'My Wallet',
                   leadingPath: 'assets/icons/wallet-line.svg',
+                  onTap: () => Navigator.pushNamed(context, '/my_wallet'),
                 ),
                 MyPageMenuItem(
                   title: 'My Contracts',

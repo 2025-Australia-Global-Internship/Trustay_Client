@@ -7,6 +7,8 @@ class AppRoutes {
   static const listing = '/listing';
   static const currentStay = '/current_stay';
   static const savedListings = '/saved_listings';
+  static const myReviews = '/my_reviews';
+  static const myWallet = '/my_wallet';
   static const myContracts = '/my_contracts';
   static const editProfile = '/edit_profile';
   static const personalDetails = '/person_details';
