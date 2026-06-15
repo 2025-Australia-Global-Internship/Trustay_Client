@@ -14,6 +14,8 @@ class ApiEndpoints {
   static const String paymentsBase =
       '${ApiConstants.baseUrl}/api/trustay/payments';
   static const String postsBase = '${ApiConstants.baseUrl}/api/trustay/posts';
+  static const String reviewsBase =
+      '${ApiConstants.baseUrl}/api/trustay/reviews';
   static const String sharehousesBase =
       '${ApiConstants.baseUrl}/api/trustay/sharehouses';
 
@@ -85,6 +87,18 @@ class ApiEndpoints {
       '$contractsBase/$contractId/sign';
   static String contractById(int contractId) => '$contractsBase/$contractId';
   static const String myContracts = '$contractsBase/me';
+  static String contractLeave(int contractId) =>
+      '$contractsBase/$contractId/leave';
+
+  // Reviews
+  static const String reviewsRoot = reviewsBase;
+  static String reviewById(int reviewId) => '$reviewsBase/$reviewId';
+  static String houseReviews(int houseId) => '$reviewsBase/house/$houseId';
+  static String houseReviewSummary(int houseId) =>
+      '$reviewsBase/house/$houseId/summary';
+  static String houseTopReviews(int houseId, {int limit = 3}) =>
+      '$reviewsBase/house/$houseId/top?limit=$limit';
+  static const String myReviews = '$reviewsBase/me';
 
   // Payments
   static const String tossClientConfig = '$paymentsBase/toss/client-config';

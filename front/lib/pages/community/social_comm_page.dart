@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 
 import 'package:front/constants/colors.dart';
+import 'package:front/main.dart' show routeObserver;
 import 'package:front/models/community_model.dart';
 import 'package:front/models/post_model.dart';
 import 'package:front/pages/community/community_detail_page.dart';
@@ -17,7 +18,8 @@ class SocialCommPage extends StatefulWidget {
   State<SocialCommPage> createState() => _SocialCommPageState();
 }
 
-class _SocialCommPageState extends State<SocialCommPage> {
+class _SocialCommPageState extends State<SocialCommPage>
+    with RouteAware {
   // 내가 가입한 커뮤니티
   List<CommunityModel> _myCommunities = [];
   // 인기 커뮤니티 (Trending)
@@ -44,10 +46,32 @@ class _SocialCommPageState extends State<SocialCommPage> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 라우트 옵저버에 구독해 둔다.
+    // - 디테일/생성/검색 등 push 되었다가 pop 되어 돌아오면 didPopNext 가 호출된다.
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
   void dispose() {
+    routeObserver.unsubscribe(this);
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// 스택에 push 된 화면이 pop 되어 이 화면이 다시 보이게 됐을 때 호출.
+  ///
+  /// 커뮤니티 디테일/생성 화면에서 어떤 변경(가입, 탈퇴, 글 작성, 이미지 변경 등)이
+  /// 일어났는지 굳이 결과로 받지 않고, 일괄 새로고침으로 단순화한다.
+  @override
+  void didPopNext() {
+    if (!mounted) return;
+    _loadAll();
   }
 
   /// 바닥에 가까워지면 다음 페이지를 미리 가져온다.
@@ -294,19 +318,15 @@ class _SocialCommPageState extends State<SocialCommPage> {
   }
 
   /// 커뮤니티 디테일 진입.
-  /// - 디테일에서 탈퇴 등으로 변경 사항이 있으면 true 가 반환되거나
-  ///   생성된 새 글이 있으면 화면 갱신을 위해 _loadAll 재호출.
+  ///
+  /// 새로고침은 [didPopNext] 에서 일괄 처리하므로 여기서는 push 만 한다.
   Future<void> _openCommunityDetail(CommunityModel c) async {
-    final result = await Navigator.of(context).push(
+    await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) =>
             CommunityDetailPage(communityId: c.id, initial: c),
       ),
     );
-    if (!mounted) return;
-    if (result == true) {
-      _loadAll();
-    }
   }
 
   Widget _buildAddCommunity() {
@@ -343,17 +363,12 @@ class _SocialCommPageState extends State<SocialCommPage> {
   }
 
   /// + 버튼 탭 → CreateCommunityPage 진입.
-  /// 생성 성공 시(Done 누르고 돌아옴) 결과를 받아 가입 목록을 즉시 갱신한다.
+  ///
+  /// 새로고침은 [didPopNext] 에서 일괄 처리하므로 여기서는 push 만 한다.
   Future<void> _openCreateCommunity() async {
-    final created = await Navigator.of(context).push<CommunityModel>(
+    await Navigator.of(context).push<CommunityModel>(
       MaterialPageRoute(builder: (_) => const CreateCommunityPage()),
     );
-    if (!mounted) return;
-    // 생성된 커뮤니티는 서버에서 자동으로 멤버에 추가되므로
-    // 목록/피드/트렌딩이 모두 영향을 받는다 → 전체 리로드.
-    if (created != null) {
-      _loadAll();
-    }
   }
 
   Widget _buildCommunityItem(String? imageUrl, String label) {

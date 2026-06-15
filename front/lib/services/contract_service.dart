@@ -122,6 +122,24 @@ class ContractService {
     return ContractModel.fromJson(decoded['data'] as Map<String, dynamic>);
   }
 
+  /// 홈스테이 나가기 — 세입자(tenant) 가 ACTIVE 계약을 EXPIRED 로 종료.
+  ///
+  /// 성공 시 갱신된 계약(상태가 EXPIRED 가 된) 응답을 돌려준다.
+  /// 권한이 없거나 ACTIVE 가 아닐 때는 백엔드가 code != 200 (FORBIDDEN) 으로
+  /// 응답하므로 메시지를 그대로 예외로 전환한다.
+  static Future<ContractModel> leave(int contractId) async {
+    final token = await _getToken();
+    final response = await http.post(
+      Uri.parse(ApiEndpoints.contractLeave(contractId)),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+    if (response.statusCode != 200 || decoded['code'] != 200) {
+      throw Exception(decoded['message'] ?? 'Failed to leave homestay');
+    }
+    return ContractModel.fromJson(decoded['data'] as Map<String, dynamic>);
+  }
+
   /// 내가 참여한 계약 목록 (페이징).
   ///
   /// 백엔드는 `PageResponse<ContractRes>` 로 응답한다 (`data.content[]`).

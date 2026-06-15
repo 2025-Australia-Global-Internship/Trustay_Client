@@ -6,7 +6,9 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import 'package:front/constants/colors.dart';
+import 'package:front/models/review_model.dart';
 import 'package:front/models/sharehouse_detail_model.dart';
+import 'package:front/services/review_service.dart';
 import 'package:front/services/sharehouse_service.dart';
 import 'package:front/widgets/custom_header.dart';
 import 'package:front/widgets/circle_icon_button.dart';
@@ -41,10 +43,15 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
   bool _isLoadingLocation = false;
   int _currentImageIndex = 0;
 
+  // Reviews 섹션 데이터: 평균 평점/개수 + 별점 높은 순 상위 3건
+  RatingSummary _ratingSummary = RatingSummary.empty;
+  List<ReviewModel> _topReviews = const <ReviewModel>[];
+
   @override
   void initState() {
     super.initState();
     _loadDetail();
+    _loadReviews();
   }
 
   Future<void> _loadDetail() async {
@@ -72,6 +79,20 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  /// 매물 상세 리뷰 미리보기. 별점 높은 순 상위 3건 + 평균 평점/개수.
+  /// 실패해도 화면 자체는 계속 보여줘야 하므로 silent fallback.
+  Future<void> _loadReviews() async {
+    final results = await Future.wait([
+      ReviewService.getTopHouseReviews(widget.houseId, limit: 3),
+      ReviewService.getHouseRatingSummary(widget.houseId),
+    ]);
+    if (!mounted) return;
+    setState(() {
+      _topReviews = results[0] as List<ReviewModel>;
+      _ratingSummary = results[1] as RatingSummary;
+    });
   }
 
   Future<void> _geocodeAddress(String address) async {
@@ -223,6 +244,8 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
                           height: 1.5,
                         ),
                       ),
+                      const SizedBox(height: 28),
+                      _buildReviewsSection(),
                       const SizedBox(height: 35),
                       _buildPropertyDetails(_house!),
                       const SizedBox(height: 36),
@@ -565,11 +588,40 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
   }
 
   Widget _buildHostSection(SharehouseDetailModel house) {
+    final profileUrl = house.hostProfileImageUrl;
+    final hasImage = profileUrl != null && profileUrl.isNotEmpty;
     return Row(
       children: [
-        const CircleAvatar(
+        CircleAvatar(
+          radius: 20,
           backgroundColor: grey01,
-          child: Icon(Icons.person, color: Colors.white),
+          // backgroundImage 를 함께 쓰지 않고 child 로 직접 그려야
+          // 네트워크 오류 시 fallback 아이콘으로 깔끔하게 전환된다.
+          child: hasImage
+              ? ClipOval(
+                  child: Image.network(
+                    profileUrl,
+                    width: 40,
+                    height: 40,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) =>
+                        const Icon(Icons.person, color: Colors.white),
+                    loadingBuilder: (context, child, progress) {
+                      if (progress == null) return child;
+                      return const Center(
+                        child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                )
+              : const Icon(Icons.person, color: Colors.white),
         ),
         const SizedBox(width: 12),
         Text(
@@ -758,6 +810,177 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
           ),
         ],
       ),
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────────────
+  // Reviews 섹션
+  //   - 별점 높은 순으로 최대 3건
+  //   - 첫 번째 카드 헤더 우측에 "X.X Ratings (N reviews)" 표기 (이미지와 동일)
+  //   - 사진/이미지 첨부 없음
+  // ──────────────────────────────────────────────────────────────────────
+  Widget _buildReviewsSection() {
+    final summary = _ratingSummary;
+    final reviews = _topReviews;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Reviews',
+          style: TextStyle(
+            color: dark,
+            fontWeight: FontWeight.w700,
+            fontSize: 15,
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (reviews.isEmpty)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 22),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              border: Border(top: BorderSide(color: grey01, width: 1)),
+            ),
+            child: const Text(
+              'No reviews yet.',
+              style: TextStyle(
+                color: grey03,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          )
+        else ...[
+          for (int i = 0; i < reviews.length; i++)
+            _reviewCard(
+              reviews[i],
+              showSummary: i == 0,
+              summary: summary,
+            ),
+        ],
+      ],
+    );
+  }
+
+  /// 한 건의 리뷰 카드. 디자인은 사용자가 첨부한 이미지와 동일하게 맞췄다.
+  /// `showSummary` 가 true 면 헤더 우측에 "X.X Ratings (N reviews)" 가 노출된다.
+  Widget _reviewCard(
+    ReviewModel review, {
+    required bool showSummary,
+    required RatingSummary summary,
+  }) {
+    final profileUrl = review.authorProfileImageUrl;
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: grey01, width: 1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 22,
+                backgroundColor: grey01,
+                backgroundImage: (profileUrl != null && profileUrl.isNotEmpty)
+                    ? NetworkImage(profileUrl)
+                    : null,
+                child: (profileUrl == null || profileUrl.isEmpty)
+                    ? const Icon(Icons.person, color: Colors.white, size: 22)
+                    : null,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Posted by ${review.authorName}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: dark,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        _starRow(review.rating.toDouble(), size: 18),
+                        if (showSummary && summary.reviewCount > 0) ...[
+                          const Spacer(),
+                          Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(
+                                  text:
+                                      '${summary.averageRating.toStringAsFixed(1)} Ratings',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: dark,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text:
+                                      ' (${summary.reviewCount} ${summary.reviewCount == 1 ? 'review' : 'reviews'})',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: grey03,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (review.content != null && review.content!.trim().isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Text(
+              review.content!,
+              style: const TextStyle(
+                fontSize: 15,
+                color: dark,
+                height: 1.45,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// 별 5개 행. 정수 별점은 꽉 찬/빈 별로, 0.5 단위는 half 로 표시.
+  /// 작성 화면은 정수만 받지만, 평균 평점 표시용으로 half 지원.
+  Widget _starRow(double rating, {double size = 18}) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(5, (i) {
+        final pos = i + 1;
+        IconData icon;
+        if (rating >= pos) {
+          icon = Icons.star_rounded;
+        } else if (rating >= pos - 0.5) {
+          icon = Icons.star_half_rounded;
+        } else {
+          icon = Icons.star_border_rounded;
+        }
+        return Padding(
+          padding: const EdgeInsets.only(right: 2),
+          child: Icon(icon, size: size, color: green),
+        );
+      }),
     );
   }
 

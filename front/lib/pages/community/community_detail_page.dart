@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import 'package:front/constants/colors.dart';
+import 'package:front/main.dart' show routeObserver;
 import 'package:front/models/community_member_model.dart';
 import 'package:front/models/community_model.dart';
 import 'package:front/models/post_model.dart';
@@ -44,7 +45,7 @@ class CommunityDetailPage extends StatefulWidget {
 }
 
 class _CommunityDetailPageState extends State<CommunityDetailPage>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, RouteAware {
   // ---------------------------------------------------------------------------
   // 데이터 상태
   // ---------------------------------------------------------------------------
@@ -99,12 +100,40 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
   void dispose() {
+    routeObserver.unsubscribe(this);
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     super.dispose();
+  }
+
+  /// 글쓰기 / 멤버 시트 / 이미지 변경 등 push 된 화면에서 돌아오면
+  /// 헤더 + 현재 탭의 첫 페이지를 다시 받는다.
+  ///
+  /// (글 작성 후 _onTapWritePost 가 자체 갱신을 하긴 하지만,
+  /// 다른 푸시 흐름에서도 동일하게 동작하도록 통일한다.)
+  @override
+  void didPopNext() {
+    if (!mounted) return;
+    _loadHeader();
+    if (_tabController.index == 0) {
+      _loadFirstPostPage();
+    } else {
+      _albumsInitialized = false;
+      _albumPosts.clear();
+      _loadFirstAlbumPage();
+    }
   }
 
   void _onTabChanged() {

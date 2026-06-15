@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:front/constants/colors.dart';
+import 'package:front/main.dart' show routeObserver;
 import 'package:front/models/community_model.dart';
 import 'package:front/models/search_model.dart';
 import 'package:front/pages/community/community_detail_page.dart';
@@ -24,7 +25,8 @@ class CommunitySearchPage extends StatefulWidget {
   State<CommunitySearchPage> createState() => _CommunitySearchPageState();
 }
 
-class _CommunitySearchPageState extends State<CommunitySearchPage> {
+class _CommunitySearchPageState extends State<CommunitySearchPage>
+    with RouteAware {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocus = FocusNode();
 
@@ -44,10 +46,32 @@ class _CommunitySearchPageState extends State<CommunitySearchPage> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
   void dispose() {
+    routeObserver.unsubscribe(this);
     _searchController.dispose();
     _searchFocus.dispose();
     super.dispose();
+  }
+
+  /// 디테일 화면에서 돌아오면 검색 결과/최근본/최근 검색어를 함께 갱신한다.
+  /// (검색 모드면 결과까지, 비검색 모드면 최근 두 가지만)
+  @override
+  void didPopNext() {
+    if (!mounted) return;
+    _loadRecentViewed();
+    _loadSearchHistory();
+    if (_isSearching && _searchQuery.isNotEmpty) {
+      _performSearch(_searchQuery);
+    }
   }
 
   // ──────────────────────────────────────────
@@ -141,14 +165,13 @@ class _CommunitySearchPageState extends State<CommunitySearchPage> {
   }
 
   Future<void> _openCommunityDetail(CommunityModel c) async {
+    // 상세에서 돌아오면 [didPopNext] 가 자동으로 검색 결과/최근본/최근 검색어를
+    // 다시 받아 화면을 갱신한다. 여기서는 push 만 하면 된다.
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => CommunityDetailPage(communityId: c.id, initial: c),
       ),
     );
-    if (!mounted) return;
-    // 상세에서 돌아오면 최근 본 목록은 갱신될 가능성이 있다.
-    _loadRecentViewed();
   }
 
   // ──────────────────────────────────────────

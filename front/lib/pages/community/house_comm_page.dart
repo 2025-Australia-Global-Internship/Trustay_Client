@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 
 // [중요] MyPage처럼 AuthService와 모델을 import 합니다.
+import 'package:front/main.dart' show routeObserver;
 import 'package:front/services/auth_service.dart';
 import 'package:front/models/user_model.dart';
 
@@ -30,7 +31,7 @@ class HouseCommPage extends StatefulWidget {
   State<HouseCommPage> createState() => _HouseCommPageState();
 }
 
-class _HouseCommPageState extends State<HouseCommPage> {
+class _HouseCommPageState extends State<HouseCommPage> with RouteAware {
   int _houseSubTabIndex = 0; // 0: Notice, 1: Chat
 
   // ---------------------------------------------------------------------------
@@ -86,10 +87,39 @@ class _HouseCommPageState extends State<HouseCommPage> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
   void dispose() {
+    routeObserver.unsubscribe(this);
     _chatScrollController.removeListener(_onChatScroll);
     _chatScrollController.dispose();
     super.dispose();
+  }
+
+  /// 다른 화면(채팅방/공지 작성/공지 상세 등)에서 돌아왔을 때 자동 새로고침.
+  ///
+  /// 활성화된 서브탭(Notice / Chat)에 맞춰 필요한 데이터만 다시 받는다.
+  @override
+  void didPopNext() {
+    if (!mounted) return;
+    if (_houseSubTabIndex == 0) {
+      // Notice 탭: 호스팅/스테잉 역할별로 알맞은 목록만 다시 받는다.
+      if (_noticeRole == _NoticeRole.hosting) {
+        _loadHostingNotices();
+      } else {
+        _loadStayingNotices();
+      }
+    } else {
+      // Chat 탭: 마지막 메시지/시간이 바뀌었을 수 있으므로 첫 페이지부터.
+      _loadChats();
+    }
   }
 
   /// 채팅방 목록이 끝에 가까워지면 다음 페이지를 prefetch.
