@@ -254,6 +254,45 @@ class ChatService {
     return true;
   }
 
+  /// 채팅방의 안 읽은 메시지를 한 번에 읽음 처리.
+  ///
+  /// - 채팅방 진입 직후: 서버가 [getChatHistory] 호출 시 자동 처리하므로
+  ///   기본 흐름에서는 호출이 필수가 아니다.
+  /// - 채팅방을 열어둔 상태에서 STOMP 로 새 메시지가 도착했을 때:
+  ///   즉시 호출해 unread 뱃지를 0 으로 유지한다.
+  ///
+  /// 새로 읽음 처리된 메시지 수를 반환한다 (이미 모두 읽혀 있었으면 0).
+  static Future<int> markRoomAsRead(int roomId, int memberId) async {
+    final url = Uri.parse(ApiEndpoints.chatRoomRead(roomId, memberId));
+    final token = await _getToken();
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('채팅 읽음 처리 실패: ${response.statusCode}');
+    }
+    try {
+      final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+      if (decoded is Map && decoded['code'] != 200) {
+        throw Exception(decoded['message'] ?? '채팅 읽음 처리 실패');
+      }
+      final updated =
+          ((decoded['data'] as Map<String, dynamic>?)?['updated'] as num?)
+                  ?.toInt() ??
+              0;
+      return updated;
+    } catch (_) {
+      // 본문 파싱 실패해도 statusCode 200 이면 성공으로 간주.
+      return 0;
+    }
+  }
+
   static DateTime? _parseTimeOrNull(String? s) {
     if (s == null || s.isEmpty) return null;
     try {

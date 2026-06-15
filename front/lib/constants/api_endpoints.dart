@@ -18,6 +18,8 @@ class ApiEndpoints {
       '${ApiConstants.baseUrl}/api/trustay/reviews';
   static const String sharehousesBase =
       '${ApiConstants.baseUrl}/api/trustay/sharehouses';
+  static const String notificationsBase =
+      '${ApiConstants.baseUrl}/api/trustay/notifications';
 
   // Auth
   static const String authLogin = '$authBase/login';
@@ -35,6 +37,11 @@ class ApiEndpoints {
   // /sub/chat/room/{roomId} 로 자동 브로드캐스트한다.
   static String chatRoomImage(int roomId, int senderId) =>
       '$chatBase/room/$roomId/image?senderId=$senderId';
+  // 채팅방의 안 읽은 메시지를 한 번에 읽음 처리.
+  // - 채팅방 진입 시(getChatHistory 호출)에는 서버가 자동 처리하므로 옵션.
+  // - 채팅방을 열어둔 상태에서 STOMP 로 새 메시지가 도착했을 때 즉시 호출.
+  static String chatRoomRead(int roomId, int memberId) =>
+      '$chatBase/room/$roomId/read?memberId=$memberId';
 
   // STOMP (SockJS over HTTP)
   // - 백엔드가 `registry.addEndpoint("/ws-stomp").withSockJS()` 형태이므로
@@ -81,7 +88,8 @@ class ApiEndpoints {
       '$paperContractsBase/$documentId';
   static const String myPaperContracts = '$paperContractsBase/me';
 
-  // Contracts (정식 계약 제안/서명/조회)
+  // Contracts (정식 계약 요청/제안/서명/조회)
+  static const String contractRequest = '$contractsBase/request';
   static const String contractPropose = '$contractsBase/propose';
   static String contractSign(int contractId) =>
       '$contractsBase/$contractId/sign';
@@ -139,4 +147,21 @@ class ApiEndpoints {
   static const String sharehousesWishlist = '$sharehousesBase/wishlist';
   static String sharehouseApproval(int houseId, String status) =>
       '$sharehousesBase/$houseId/approval?status=$status';
+
+  // Notifications
+  // 서버: com.maritel.trustay.controller.NotificationController
+  // - GET    /api/trustay/notifications                : 내 알림 목록 (페이지)
+  // - GET    /api/trustay/notifications/unread-count   : 안 읽은 개수
+  // - PATCH  /api/trustay/notifications/{id}/read      : 단건 읽음 처리
+  // - POST   /api/trustay/notifications/read-all       : 전체 읽음 처리
+  // - DELETE /api/trustay/notifications/{id}           : 단건 삭제
+  // - POST   /api/trustay/notifications/fcm-token      : FCM 토큰 등록/갱신
+  // - DELETE /api/trustay/notifications/fcm-token      : FCM 토큰 제거
+  static const String notificationsRoot = notificationsBase;
+  static const String notificationsUnreadCount =
+      '$notificationsBase/unread-count';
+  static const String notificationsReadAll = '$notificationsBase/read-all';
+  static const String notificationsFcmToken = '$notificationsBase/fcm-token';
+  static String notificationsRead(int id) => '$notificationsBase/$id/read';
+  static String notificationById(int id) => '$notificationsBase/$id';
 }

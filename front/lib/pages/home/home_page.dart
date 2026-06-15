@@ -7,6 +7,8 @@ import 'package:front/models/user_model.dart';
 import 'package:front/models/sharehouse_model.dart';
 import 'package:front/services/auth_service.dart';
 import 'package:front/services/sharehouse_service.dart';
+import 'package:front/services/notification_service.dart';
+import 'package:front/routes/app_routes.dart';
 import 'package:front/widgets/circle_icon_button.dart';
 import 'package:front/widgets/house_card.dart';
 // 상세 페이지 이동을 위해 import 추가
@@ -38,6 +40,8 @@ class _HomePageState extends State<HomePage> with RouteAware {
 
     _loadProfile();
     _loadHouses();
+    // 종 아이콘의 빨간 뱃지를 위해 안 읽은 개수를 미리 받아둔다.
+    NotificationService.fetchUnreadCount();
   }
 
   @override
@@ -58,6 +62,8 @@ class _HomePageState extends State<HomePage> with RouteAware {
   @override
   void didPopNext() {
     _loadHouses(); // ← 여기서 실행됨
+    // 알림 페이지에서 돌아오는 경우를 포함해 뱃지 갱신.
+    NotificationService.fetchUnreadCount();
   }
 
   // 전역 사용자 정보가 갱신될 때 호출되는 리스너
@@ -192,11 +198,13 @@ class _HomePageState extends State<HomePage> with RouteAware {
                           Navigator.pushNamed(context, '/search');
                         },
                       ),
-                      CircleIconButton(
-                        svgAsset: 'assets/icons/bell.svg',
-                        iconSize: 22,
-                        iconColor: dark,
-                        onPressed: () {},
+                      _NotificationBellButton(
+                        onPressed: () {
+                          Navigator.pushNamed(
+                            context,
+                            AppRoutes.notifications,
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -476,6 +484,60 @@ class _HomePageState extends State<HomePage> with RouteAware {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// 종 아이콘 + 안 읽은 알림 개수 빨간 뱃지.
+/// 뱃지는 [NotificationService.unreadCountNotifier] 를 구독하여
+/// 새로고침 없이도 즉시 반영된다.
+class _NotificationBellButton extends StatelessWidget {
+  final VoidCallback onPressed;
+
+  const _NotificationBellButton({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<int>(
+      valueListenable: NotificationService.unreadCountNotifier,
+      builder: (context, unread, _) {
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            CircleIconButton(
+              svgAsset: 'assets/icons/bell.svg',
+              iconSize: 22,
+              iconColor: dark,
+              onPressed: onPressed,
+            ),
+            if (unread > 0)
+              Positioned(
+                right: 2,
+                top: 2,
+                child: Container(
+                  constraints:
+                      const BoxConstraints(minWidth: 18, minHeight: 18),
+                  padding: const EdgeInsets.symmetric(horizontal: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white, width: 1.5),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    unread > 99 ? '99+' : '$unread',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      height: 1.0,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }

@@ -10,6 +10,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import '../constants/api_endpoints.dart';
+import 'notification_service.dart';
 
 class AuthService {
   // Use ApiEndpoints for endpoint URLs
@@ -203,6 +204,10 @@ class AuthService {
 
     // 서버 성공/실패 상관없이 토큰 삭제
     await prefs.remove('token');
+
+    // 로그아웃 시 알림 관련 전역 캐시도 초기화한다.
+    NotificationService.unreadCountNotifier.value = 0;
+    currentUserNotifier.value = null;
   }
 
   /// 프로필 조회
