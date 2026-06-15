@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:front/constants/colors.dart';
+import 'package:front/index.dart' show goToMyPageTab;
 import 'package:front/widgets/circle_icon_button.dart';
 import 'package:front/widgets/custom_header.dart';
 import 'package:front/widgets/gradient_layout.dart';
+import 'community_search_page.dart';
 import 'house_comm_page.dart';
 import 'social_comm_page.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -72,7 +74,13 @@ class _CommunityPageState extends State<CommunityPage> {
                 iconSize: 23,
                 iconColor: dark,
                 padding: const EdgeInsets.only(right: 8),
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const CommunitySearchPage(),
+                    ),
+                  );
+                },
               ),
             CircleIconButton(
               svgAsset: 'assets/icons/bell.svg',
@@ -85,7 +93,7 @@ class _CommunityPageState extends State<CommunityPage> {
               svgAsset: 'assets/icons/profile.svg',
               iconColor: dark,
               iconSize: 23,
-              onPressed: () {},
+              onPressed: goToMyPageTab,
             ),
           ],
         ),

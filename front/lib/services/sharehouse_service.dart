@@ -151,7 +151,7 @@ class SharehouseService {
     List<String>? features,
     String? status,
     int page = 0,
-    int size = 20,
+    int size = 10,
     String? sort,
   }) async {
     try {

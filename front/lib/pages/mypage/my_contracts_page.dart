@@ -25,10 +25,42 @@ class _MyContractsPageState extends State<MyContractsPage> {
   bool _hasError = false;
   String? _errorMessage;
 
+  // 페이징 상태
+  static const int _pageSize = 10;
+  int _nextPage = 0;
+  bool _hasMore = true;
+  bool _isLoadingMore = false;
+  late final ScrollController _scrollController;
+
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController()..addListener(_onScroll);
     _load();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final pos = _scrollController.position;
+    if (pos.pixels >= pos.maxScrollExtent - 250) {
+      _loadMore();
+    }
+  }
+
+  /// 정렬 헬퍼: regTime 내림차순.
+  void _sortByRegTimeDesc(List<ContractModel> list) {
+    list.sort((a, b) {
+      final ar = a.regTime ?? '';
+      final br = b.regTime ?? '';
+      return br.compareTo(ar);
+    });
   }
 
   Future<void> _load() async {
@@ -36,18 +68,18 @@ class _MyContractsPageState extends State<MyContractsPage> {
       _loading = true;
       _hasError = false;
       _errorMessage = null;
+      _nextPage = 0;
+      _hasMore = true;
     });
     try {
-      final list = await ContractService.getMyContracts();
-      // 최신순(regTime 내림차순) 정렬. regTime 이 없으면 뒤로 보냄.
-      list.sort((a, b) {
-        final ar = a.regTime ?? '';
-        final br = b.regTime ?? '';
-        return br.compareTo(ar);
-      });
+      final list =
+          await ContractService.getMyContracts(page: 0, size: _pageSize);
+      _sortByRegTimeDesc(list);
       if (!mounted) return;
       setState(() {
         _contracts = list;
+        _nextPage = 1;
+        _hasMore = list.length >= _pageSize;
         _loading = false;
       });
     } catch (e) {
@@ -57,6 +89,31 @@ class _MyContractsPageState extends State<MyContractsPage> {
         _errorMessage = e.toString();
         _loading = false;
       });
+    }
+  }
+
+  /// 다음 페이지 로드 후 list에 append. 서버가 이미 정렬해 보내주지만
+  /// 안전을 위해 로컬에서도 다시 한 번 정렬한다.
+  Future<void> _loadMore() async {
+    if (_isLoadingMore || !_hasMore || _loading) return;
+    setState(() => _isLoadingMore = true);
+    try {
+      final next = await ContractService.getMyContracts(
+        page: _nextPage,
+        size: _pageSize,
+      );
+      if (!mounted) return;
+      final merged = <ContractModel>[..._contracts, ...next];
+      _sortByRegTimeDesc(merged);
+      setState(() {
+        _contracts = merged;
+        _nextPage += 1;
+        _hasMore = next.length >= _pageSize;
+        _isLoadingMore = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isLoadingMore = false);
     }
   }
 
@@ -186,12 +243,41 @@ class _MyContractsPageState extends State<MyContractsPage> {
       );
     }
 
+    // 마지막 항목 다음에 로딩/끝 안내를 보여주기 위한 tail 슬롯.
+    final int extraTail = (_isLoadingMore || !_hasMore) ? 1 : 0;
     return ListView.separated(
+      controller: _scrollController,
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 30),
-      itemCount: _contracts.length,
+      itemCount: _contracts.length + extraTail,
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
+        if (index >= _contracts.length) {
+          if (_isLoadingMore) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Center(
+                child: SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.4,
+                    color: green,
+                  ),
+                ),
+              ),
+            );
+          }
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Center(
+              child: Text(
+                'No more contracts',
+                style: TextStyle(fontSize: 12, color: grey03),
+              ),
+            ),
+          );
+        }
         return _ContractCard(
           contract: _contracts[index],
           onTap: () => _openDetail(_contracts[index]),

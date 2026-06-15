@@ -11,12 +11,16 @@ class CurrentStayCard extends StatelessWidget {
   final ContractModel contract;
   final int myMemberId;
   final VoidCallback? onTap;
+  /// 사용자가 세입자(tenant) 로서 이 매물에서 "나가기" 를 눌렀을 때.
+  /// null 이면 버튼을 노출하지 않는다.
+  final VoidCallback? onLeave;
 
   const CurrentStayCard({
     super.key,
     required this.contract,
     required this.myMemberId,
     this.onTap,
+    this.onLeave,
   });
 
   Color _statusColor(String status) {
@@ -196,6 +200,33 @@ class CurrentStayCard extends StatelessWidget {
                     ],
                   ),
                 ),
+                if (!isLandlord &&
+                    contract.isActive &&
+                    onLeave != null) ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 42,
+                    child: OutlinedButton.icon(
+                      onPressed: onLeave,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: darkgreen,
+                        side: const BorderSide(color: darkgreen, width: 1.2),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(22),
+                        ),
+                      ),
+                      icon: const Icon(Icons.logout_rounded, size: 16),
+                      label: const Text(
+                        'Leave homestay',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

@@ -18,6 +18,9 @@ class SharehouseModel {
   final double? lat;
   final double? lon;
 
+  /// 집주인 ID. SharehouseRes 응답에 포함될 때만 채워지며, 없으면 null.
+  final int? hostId;
+
   SharehouseModel({
     required this.id,
     required this.title,
@@ -34,6 +37,7 @@ class SharehouseModel {
     this.approvalStatus,
     this.lat,
     this.lon,
+    this.hostId,
   });
 
   factory SharehouseModel.fromJson(Map<String, dynamic> json) {
@@ -55,6 +59,7 @@ class SharehouseModel {
       approvalStatus: json['approvalStatus']?.toString(),
       lat: (json['lat'] as num?)?.toDouble(),
       lon: (json['lon'] as num?)?.toDouble(),
+      hostId: (json['hostId'] as num?)?.toInt(),
     );
   }
 
@@ -75,6 +80,7 @@ class SharehouseModel {
       'approvalStatus': approvalStatus,
       'lat': lat,
       'lon': lon,
+      'hostId': hostId,
     };
   }
 }

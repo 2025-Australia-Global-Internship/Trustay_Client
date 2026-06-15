@@ -122,18 +122,50 @@ class ContractService {
     return ContractModel.fromJson(decoded['data'] as Map<String, dynamic>);
   }
 
-  /// 내가 참여한 모든 계약 목록.
-  static Future<List<ContractModel>> getMyContracts() async {
+  /// 홈스테이 나가기 — 세입자(tenant) 가 ACTIVE 계약을 EXPIRED 로 종료.
+  ///
+  /// 성공 시 갱신된 계약(상태가 EXPIRED 가 된) 응답을 돌려준다.
+  /// 권한이 없거나 ACTIVE 가 아닐 때는 백엔드가 code != 200 (FORBIDDEN) 으로
+  /// 응답하므로 메시지를 그대로 예외로 전환한다.
+  static Future<ContractModel> leave(int contractId) async {
     final token = await _getToken();
+    final response = await http.post(
+      Uri.parse(ApiEndpoints.contractLeave(contractId)),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+    if (response.statusCode != 200 || decoded['code'] != 200) {
+      throw Exception(decoded['message'] ?? 'Failed to leave homestay');
+    }
+    return ContractModel.fromJson(decoded['data'] as Map<String, dynamic>);
+  }
+
+  /// 내가 참여한 계약 목록 (페이징).
+  ///
+  /// 백엔드는 `PageResponse<ContractRes>` 로 응답한다 (`data.content[]`).
+  /// 호환을 위해 List 응답도 함께 처리한다.
+  static Future<List<ContractModel>> getMyContracts({
+    int page = 0,
+    int size = 10,
+  }) async {
+    final token = await _getToken();
+    final uri = Uri.parse(ApiEndpoints.myContracts).replace(
+      queryParameters: {'page': '$page', 'size': '$size'},
+    );
     final response = await http.get(
-      Uri.parse(ApiEndpoints.myContracts),
+      uri,
       headers: {'Authorization': 'Bearer $token'},
     );
     final decoded = jsonDecode(utf8.decode(response.bodyBytes));
     if (response.statusCode != 200 || decoded['code'] != 200) {
       throw Exception(decoded['message'] ?? 'Failed to load my contracts');
     }
-    final list = decoded['data'] as List<dynamic>? ?? [];
+    final dynamic data = decoded['data'];
+    final List<dynamic> list = data is List
+        ? data
+        : (data is Map<String, dynamic>
+              ? (data['content'] as List<dynamic>? ?? const <dynamic>[])
+              : const <dynamic>[]);
     return list
         .map((e) => ContractModel.fromJson(e as Map<String, dynamic>))
         .toList();

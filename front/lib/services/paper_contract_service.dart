@@ -94,19 +94,30 @@ class PaperContractService {
   }
 
   // -------------------------------------------------------------------------
-  // 3. 내 계약서 목록 (GET /api/paper-contracts/me)
+  // 3. 내 계약서 목록 (GET /api/paper-contracts/me, 페이징)
   // -------------------------------------------------------------------------
-  static Future<List<PaperContractDocumentModel>> getMyDocuments() async {
+  static Future<List<PaperContractDocumentModel>> getMyDocuments({
+    int page = 0,
+    int size = 10,
+  }) async {
     final token = await _getToken();
+    final uri = Uri.parse(ApiEndpoints.myPaperContracts).replace(
+      queryParameters: {'page': '$page', 'size': '$size'},
+    );
     final response = await http.get(
-      Uri.parse(ApiEndpoints.myPaperContracts),
+      uri,
       headers: {'Authorization': 'Bearer $token'},
     );
     final decoded = jsonDecode(utf8.decode(response.bodyBytes));
     if (response.statusCode != 200 || decoded['code'] != 200) {
       throw Exception(decoded['message'] ?? '내 계약서 목록 조회 실패');
     }
-    final list = decoded['data'] as List<dynamic>? ?? [];
+    final dynamic data = decoded['data'];
+    final List<dynamic> list = data is List
+        ? data
+        : (data is Map<String, dynamic>
+              ? (data['content'] as List<dynamic>? ?? const <dynamic>[])
+              : const <dynamic>[]);
     return list
         .map((e) =>
             PaperContractDocumentModel.fromJson(e as Map<String, dynamic>))

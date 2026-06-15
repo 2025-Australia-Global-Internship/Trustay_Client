@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants/api_endpoints.dart';
+import '../models/post_comment_model.dart';
 import '../models/post_model.dart';
 
 /// `/api/trustay/posts` REST 호출 모음.
@@ -18,11 +19,28 @@ class PostService {
     return token;
   }
 
+  /// 토큰이 있으면 반환, 없으면 null. 비로그인 상태에서도 호출 가능한 API에 사용.
+  static Future<String?> _tryGetToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('token');
+  }
+
   static Map<String, String> _authHeaders(String token) => {
         'accept': '*/*',
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
       };
+
+  /// 토큰이 있으면 Bearer 헤더, 없으면 빈 헤더 (비로그인 허용 API에 사용).
+  static Map<String, String> _maybeAuthHeaders(String? token) {
+    if (token == null || token.isEmpty) {
+      return const {'accept': '*/*'};
+    }
+    return {
+      'accept': '*/*',
+      'Authorization': 'Bearer $token',
+    };
+  }
 
   // 1. 작성
   static Future<PostModel> createPost({
@@ -71,7 +89,7 @@ class PostService {
   static Future<List<PostModel>> getCommunityPosts(
     int communityId, {
     int page = 0,
-    int size = 20,
+    int size = 10,
   }) =>
       _pagedGet(
         Uri.parse(ApiEndpoints.postsByCommunity(communityId))
@@ -81,22 +99,28 @@ class PostService {
   static Future<List<PostModel>> getSharehousePosts(
     int sharehouseId, {
     int page = 0,
-    int size = 20,
+    int size = 10,
   }) =>
       _pagedGet(
         Uri.parse(ApiEndpoints.postsBySharehouse(sharehouseId))
             .replace(queryParameters: {'page': '$page', 'size': '$size'}),
       );
 
-  static Future<List<PostModel>> getFeed({int page = 0, int size = 20}) =>
-      _pagedGet(
-        Uri.parse(ApiEndpoints.postsFeed)
-            .replace(queryParameters: {'page': '$page', 'size': '$size'}),
-      );
+  /// Posts for you 피드. 백엔드는 로그인 사용자가 **가입한 커뮤니티**의
+  /// 게시글만 반환하므로, 토큰이 있으면 Authorization 헤더를 함께 보낸다.
+  /// (비로그인 상태에서는 빈 페이지가 반환된다)
+  static Future<List<PostModel>> getFeed({int page = 0, int size = 10}) async {
+    final token = await _tryGetToken();
+    return _pagedGet(
+      Uri.parse(ApiEndpoints.postsFeed)
+          .replace(queryParameters: {'page': '$page', 'size': '$size'}),
+      headers: _maybeAuthHeaders(token),
+    );
+  }
 
   static Future<List<PostModel>> getMyPosts({
     int page = 0,
-    int size = 20,
+    int size = 10,
   }) async {
     final token = await _getToken();
     return _pagedGet(
@@ -161,6 +185,93 @@ class PostService {
         ? (data['likeCount'] as num).toInt()
         : 0;
     return (liked: liked, likeCount: count);
+  }
+
+  // -------------------------------------------------------------------------
+  // 6. 댓글 (Comments)
+  //   백엔드 PostController 의 /{postId}/comments[/{commentId}] 매핑.
+  //   - 목록은 PageResponse<CommentRes> 형태로 옴 (작성시각 오름차순)
+  //   - 삭제는 soft delete (작성자 본인만 가능). 응답이 200 이어도 isDeleted=true 로 표시됨.
+  // -------------------------------------------------------------------------
+
+  /// 특정 게시글의 댓글 목록을 작성 시간 오름차순으로 조회한다.
+  /// (백엔드는 PageResponse<CommentRes> 형태로 응답한다)
+  static Future<List<PostCommentModel>> getComments(
+    int postId, {
+    int page = 0,
+    int size = 10,
+  }) async {
+    final uri = Uri.parse(
+      ApiEndpoints.postComments(postId),
+    ).replace(queryParameters: {'page': '$page', 'size': '$size'});
+
+    final response = await http.get(uri);
+    final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+    if (response.statusCode != 200 || decoded['code'] != 200) {
+      throw Exception(decoded['message'] ?? '댓글 조회 실패');
+    }
+    final data = decoded['data'];
+    final List<dynamic> list = data is List
+        ? data
+        : (data is Map<String, dynamic>
+              ? (data['content'] as List<dynamic>? ?? const [])
+              : const []);
+    return list
+        .map((e) => PostCommentModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// 새 댓글 작성.
+  static Future<PostCommentModel> createComment({
+    required int postId,
+    required String content,
+  }) async {
+    final token = await _getToken();
+    final response = await http.post(
+      Uri.parse(ApiEndpoints.postComments(postId)),
+      headers: _authHeaders(token),
+      body: utf8.encode(jsonEncode({'content': content})),
+    );
+    final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+    if (response.statusCode != 200 || decoded['code'] != 200) {
+      throw Exception(decoded['message'] ?? '댓글 작성 실패');
+    }
+    return PostCommentModel.fromJson(decoded['data'] as Map<String, dynamic>);
+  }
+
+  /// 댓글 수정. **작성자 본인만 가능.**
+  static Future<PostCommentModel> updateComment({
+    required int postId,
+    required int commentId,
+    required String content,
+  }) async {
+    final token = await _getToken();
+    final response = await http.put(
+      Uri.parse(ApiEndpoints.postCommentById(postId, commentId)),
+      headers: _authHeaders(token),
+      body: utf8.encode(jsonEncode({'content': content})),
+    );
+    final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+    if (response.statusCode != 200 || decoded['code'] != 200) {
+      throw Exception(decoded['message'] ?? '댓글 수정 실패');
+    }
+    return PostCommentModel.fromJson(decoded['data'] as Map<String, dynamic>);
+  }
+
+  /// 댓글 삭제 (soft delete). **작성자 본인만 가능.**
+  static Future<void> deleteComment({
+    required int postId,
+    required int commentId,
+  }) async {
+    final token = await _getToken();
+    final response = await http.delete(
+      Uri.parse(ApiEndpoints.postCommentById(postId, commentId)),
+      headers: _authHeaders(token),
+    );
+    final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+    if (response.statusCode != 200 || decoded['code'] != 200) {
+      throw Exception(decoded['message'] ?? '댓글 삭제 실패');
+    }
   }
 
   // -------------------------------------------------------------------------

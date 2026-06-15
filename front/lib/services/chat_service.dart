@@ -83,9 +83,18 @@ class ChatService {
     }
   }
 
-  /// 내 채팅방 목록 (lastMessageTime 내림차순 정렬)
-  static Future<List<ChatRoomListModel>> getMyChatRooms(int memberId) async {
-    final url = Uri.parse(ApiEndpoints.myChatRooms(memberId));
+  /// 내 채팅방 목록 (lastMessageTime 내림차순, 페이징)
+  ///
+  /// 백엔드는 PageResponse 로 응답한다 (`data.content[]`).
+  /// 호환을 위해 List 응답도 함께 처리한다.
+  static Future<List<ChatRoomListModel>> getMyChatRooms(
+    int memberId, {
+    int page = 0,
+    int size = 10,
+  }) async {
+    final url = Uri.parse(ApiEndpoints.myChatRooms(memberId)).replace(
+      queryParameters: {'page': '$page', 'size': '$size'},
+    );
 
     final token = await _getToken();
     final response = await http.get(url, headers: {
@@ -99,9 +108,14 @@ class ChatService {
 
     final decodedBody = utf8.decode(response.bodyBytes);
     final jsonResponse = jsonDecode(decodedBody);
-    if (jsonResponse['data'] == null) return [];
+    final dynamic data = jsonResponse['data'];
+    if (data == null) return [];
 
-    final List<dynamic> dataList = jsonResponse['data'];
+    final List<dynamic> dataList = data is List
+        ? data
+        : (data is Map<String, dynamic>
+              ? (data['content'] as List<dynamic>? ?? const <dynamic>[])
+              : const <dynamic>[]);
     final rooms =
         dataList.map((json) => ChatRoomListModel.fromJson(json)).toList();
 
@@ -118,10 +132,21 @@ class ChatService {
     return rooms;
   }
 
-  /// 채팅방 메시지 내역
+  /// 채팅방 메시지 내역 (페이징)
+  ///
+  /// 서버는 `regTime DESC` 로 페이지를 잘라준다 (page 0 = 가장 최근 N개).
+  /// UI 는 보통 과거→최신 순으로 화면에 쌓으므로, 본 메서드는 페이지 안에서
+  /// 한 번 reverse 해서 "오래된→최신" 순서로 반환한다.
+  /// 따라서 호출 측은 페이지를 위로 추가 로드할 때 받은 리스트를 기존 리스트
+  /// **앞쪽**에 prepend 하면 자연스러운 순서가 유지된다.
   static Future<List<ChatMessageModel>> getChatHistory(
-      int roomId, int memberId) async {
-    final url = Uri.parse(ApiEndpoints.chatRoomMessages(roomId, memberId));
+    int roomId,
+    int memberId, {
+    int page = 0,
+    int size = 15,
+  }) async {
+    final url = Uri.parse(ApiEndpoints.chatRoomMessages(roomId, memberId))
+        .replace(queryParameters: {'page': '$page', 'size': '$size'});
 
     final token = await _getToken();
     final response = await http.get(url, headers: {
@@ -135,10 +160,79 @@ class ChatService {
 
     final decodedBody = utf8.decode(response.bodyBytes);
     final jsonResponse = jsonDecode(decodedBody);
-    if (jsonResponse['data'] == null) return [];
+    final dynamic data = jsonResponse['data'];
+    if (data == null) return [];
 
-    final List<dynamic> dataList = jsonResponse['data'];
-    return dataList.map((json) => ChatMessageModel.fromJson(json)).toList();
+    final List<dynamic> dataList = data is List
+        ? data
+        : (data is Map<String, dynamic>
+              ? (data['content'] as List<dynamic>? ?? const <dynamic>[])
+              : const <dynamic>[]);
+
+    final messages =
+        dataList.map((json) => ChatMessageModel.fromJson(json)).toList();
+    // 서버는 최신→과거 순이므로 화면 표시용으로 뒤집어 과거→최신으로.
+    return messages.reversed.toList();
+  }
+
+  /// 채팅방에 이미지 메시지 전송.
+  ///
+  /// `POST /api/chat/room/{roomId}/image?senderId={senderId}` (multipart/form-data).
+  /// - form field: `image` (단일 파일)
+  /// - 허용 확장자: jpg / jpeg / png / heic / heif, 최대 20MB
+  ///
+  /// 서버가 IMAGE 타입 ChatMessage 로 저장한 뒤 STOMP 구독 채널
+  /// `/sub/chat/room/{roomId}` 로 자동 브로드캐스트한다. 따라서 호출 측은
+  /// 별도의 WebSocket SEND 를 하지 않아도 되며, 동일한 구독 콜백으로
+  /// 새 메시지가 수신된다. 응답 payload 도 동일한 `ChatMessageRes` 형식.
+  static Future<ChatMessageModel> sendImageMessage({
+    required int roomId,
+    required int senderId,
+    required File imageFile,
+  }) async {
+    final url = Uri.parse(ApiEndpoints.chatRoomImage(roomId, senderId));
+    final token = await _getToken();
+
+    final request = http.MultipartRequest('POST', url);
+    request.headers['Authorization'] = 'Bearer $token';
+
+    final fileName = imageFile.path.split(Platform.pathSeparator).last;
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'image', // 명세상 단수
+        imageFile.path,
+        filename: fileName,
+        contentType: _chatImageContentTypeFor(imageFile),
+      ),
+    );
+
+    final streamed = await request.send();
+    final responseBody = await streamed.stream.bytesToString();
+
+    if (streamed.statusCode != 200) {
+      throw Exception(
+        '이미지 전송 실패: ${streamed.statusCode} $responseBody',
+      );
+    }
+
+    final decoded = jsonDecode(responseBody);
+    final dynamic data = decoded['data'];
+    if (data is! Map<String, dynamic>) {
+      throw Exception('이미지 전송 응답 파싱 실패: $data');
+    }
+    return ChatMessageModel.fromJson(data);
+  }
+
+  static MediaType _chatImageContentTypeFor(File imageFile) {
+    final path = imageFile.path.toLowerCase();
+    if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
+      return MediaType('image', 'jpeg');
+    }
+    if (path.endsWith('.png')) return MediaType('image', 'png');
+    if (path.endsWith('.heic')) return MediaType('image', 'heic');
+    if (path.endsWith('.heif')) return MediaType('image', 'heif');
+    // 서버가 거부할 수도 있으나 기본값 fallback
+    return MediaType('application', 'octet-stream');
   }
 
   /// 채팅방에 이미지 메시지 전송.

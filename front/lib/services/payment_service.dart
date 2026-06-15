@@ -117,48 +117,65 @@ class PaymentService {
   }
 
   // -------------------------------------------------------------------------
-  // 5. 내 미완료 결제 목록
+  // 5. 내 미완료 결제 목록 (페이징)
   // -------------------------------------------------------------------------
-  static Future<List<PendingPayment>> getMyPending() async {
+  static Future<List<PendingPayment>> getMyPending({
+    int page = 0,
+    int size = 10,
+  }) async {
     final token = await _getToken();
-    final response = await http.get(
-      Uri.parse(ApiEndpoints.myPendingPayments),
-      headers: _authHeaders(token),
+    final uri = Uri.parse(ApiEndpoints.myPendingPayments).replace(
+      queryParameters: {'page': '$page', 'size': '$size'},
     );
+    final response = await http.get(uri, headers: _authHeaders(token));
     final decoded = jsonDecode(utf8.decode(response.bodyBytes));
     if (response.statusCode != 200 || decoded['code'] != 200) {
       throw Exception(decoded['message'] ?? '미완료 결제 조회 실패');
     }
-    final list = decoded['data'] as List<dynamic>? ?? [];
+    final dynamic data = decoded['data'];
+    final List<dynamic> list = data is List
+        ? data
+        : (data is Map<String, dynamic>
+              ? (data['content'] as List<dynamic>? ?? const <dynamic>[])
+              : const <dynamic>[]);
     return list
         .map((e) => PendingPayment.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 
   // -------------------------------------------------------------------------
-  // 6. 내 결제 이력 (기간/타입 필터)
+  // 6. 내 결제 이력 (기간/타입 필터, 페이징)
   //    백엔드 [GET /api/trustay/payments/me/history]
   // -------------------------------------------------------------------------
   static Future<List<PaymentHistoryItem>> getMyHistory({
     DateTime? from,
     DateTime? to,
     String? type, // RENT / UTILITY / DUTCH
+    int page = 0,
+    int size = 10,
   }) async {
     final token = await _getToken();
     final qp = <String, String>{};
     if (from != null) qp['from'] = _yyyyMmDd(from);
     if (to != null) qp['to'] = _yyyyMmDd(to);
     if (type != null && type.isNotEmpty) qp['type'] = type;
+    qp['page'] = '$page';
+    qp['size'] = '$size';
 
     final uri = Uri.parse(ApiEndpoints.myPaymentHistory).replace(
-      queryParameters: qp.isEmpty ? null : qp,
+      queryParameters: qp,
     );
     final response = await http.get(uri, headers: _authHeaders(token));
     final decoded = jsonDecode(utf8.decode(response.bodyBytes));
     if (response.statusCode != 200 || decoded['code'] != 200) {
       throw Exception(decoded['message'] ?? '결제 이력 조회 실패');
     }
-    final list = decoded['data'] as List<dynamic>? ?? [];
+    final dynamic data = decoded['data'];
+    final List<dynamic> list = data is List
+        ? data
+        : (data is Map<String, dynamic>
+              ? (data['content'] as List<dynamic>? ?? const <dynamic>[])
+              : const <dynamic>[]);
     return list
         .map((e) => PaymentHistoryItem.fromJson(e as Map<String, dynamic>))
         .toList();

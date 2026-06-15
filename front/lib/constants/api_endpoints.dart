@@ -14,6 +14,8 @@ class ApiEndpoints {
   static const String paymentsBase =
       '${ApiConstants.baseUrl}/api/trustay/payments';
   static const String postsBase = '${ApiConstants.baseUrl}/api/trustay/posts';
+  static const String reviewsBase =
+      '${ApiConstants.baseUrl}/api/trustay/reviews';
   static const String sharehousesBase =
       '${ApiConstants.baseUrl}/api/trustay/sharehouses';
 
@@ -50,8 +52,15 @@ class ApiEndpoints {
   static const String communitiesTrending = '$communitiesBase/trending';
   static const String communitiesCreated = '$communitiesBase/created';
   static const String communitiesJoined = '$communitiesBase/joined';
+  static const String communitiesRecent = '$communitiesBase/recent';
+  static const String communitiesRecentSearches =
+      '$communitiesBase/recent-searches';
+  static String communitiesRecentSearchById(int searchId) =>
+      '$communitiesBase/recent-searches/$searchId';
   static String communityById(int communityId) =>
       '$communitiesBase/$communityId';
+  static String communityMembers(int communityId) =>
+      '$communitiesBase/$communityId/members';
   static String communityJoin(int communityId) =>
       '$communitiesBase/$communityId/join';
   static String communityLeave(int communityId) =>
@@ -78,6 +87,18 @@ class ApiEndpoints {
       '$contractsBase/$contractId/sign';
   static String contractById(int contractId) => '$contractsBase/$contractId';
   static const String myContracts = '$contractsBase/me';
+  static String contractLeave(int contractId) =>
+      '$contractsBase/$contractId/leave';
+
+  // Reviews
+  static const String reviewsRoot = reviewsBase;
+  static String reviewById(int reviewId) => '$reviewsBase/$reviewId';
+  static String houseReviews(int houseId) => '$reviewsBase/house/$houseId';
+  static String houseReviewSummary(int houseId) =>
+      '$reviewsBase/house/$houseId/summary';
+  static String houseTopReviews(int houseId, {int limit = 3}) =>
+      '$reviewsBase/house/$houseId/top?limit=$limit';
+  static const String myReviews = '$reviewsBase/me';
 
   // Payments
   static const String tossClientConfig = '$paymentsBase/toss/client-config';
@@ -98,6 +119,8 @@ class ApiEndpoints {
   static const String myPosts = '$postsBase/me';
   static String postLike(int postId) => '$postsBase/$postId/like';
   static String postComments(int postId) => '$postsBase/$postId/comments';
+  static String postCommentById(int postId, int commentId) =>
+      '$postsBase/$postId/comments/$commentId';
 
   // Sharehouses
   static const String uploadImages = '$sharehousesBase/images';

@@ -13,6 +13,7 @@ class SharehouseDetailModel {
   final int viewCount;
   final String hostName;
   final int hostId; // [추가] 집주인 ID
+  final String? hostProfileImageUrl; // 집주인 프로필 이미지 (없으면 null)
   final double? lat;
   final double? lon;
   final List<String> imageUrls;
@@ -40,6 +41,7 @@ class SharehouseDetailModel {
     required this.viewCount,
     required this.hostId, // [추가]
     required this.hostName,
+    this.hostProfileImageUrl,
     this.lat,
     this.lon,
     required this.imageUrls,
@@ -69,8 +71,10 @@ class SharehouseDetailModel {
       currentResidents: d['currentResidents'] ?? 0,
       features: d['features'],
       viewCount: d['viewCount'] ?? 0,
-      hostId: json['hostId'] ?? 0,
-      hostName: json['hostName'] ?? 'Host',
+      hostId: d['hostId'] ?? json['hostId'] ?? 0,
+      hostName: d['hostName'] ?? json['hostName'] ?? 'Host',
+      hostProfileImageUrl:
+          (d['hostProfileImageUrl'] ?? json['hostProfileImageUrl']) as String?,
       lat: (d['lat'] as num?)?.toDouble(),
       lon: (d['lon'] as num?)?.toDouble(),
       imageUrls: d['imageUrls'] != null

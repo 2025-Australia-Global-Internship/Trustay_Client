@@ -10,6 +10,7 @@ import '../../widgets/custom_header.dart';
 import '../../widgets/current_stay_card.dart';
 import '../../widgets/gradient_layout.dart';
 import '../community/contract_view_page.dart';
+import 'write_review_page.dart';
 
 /// "Current Stay" — 내가 (임대인 또는 임차인으로) 참여한 **ACTIVE** 계약 목록.
 ///
@@ -38,12 +39,20 @@ class _CurrentStayPageState extends State<CurrentStayPage> {
     try {
       // 화면 진입 시점 최신 프로필 확보 (memberId 가 비어 있을 가능성에 대비)
       _user ??= await AuthService.fetchProfile();
+      final myId = _user?.memberId;
 
       final list = await ContractService.getMyContracts();
       if (!mounted) return;
       setState(() {
-        // Current Stay 는 "지금 머무는/머물게 하는" 매물이라 ACTIVE 만 노출.
-        _contracts = list.where((c) => c.status == 'ACTIVE').toList();
+        // Current Stay 는 "현재 거주중인 곳" 이므로
+        //   1) ACTIVE 상태이고
+        //   2) 내가 세입자(tenant) 로 참여한 계약만 노출한다.
+        // 내가 임대인(landlord) 으로 참여한 계약은 Listings 쪽 책임이라 제외.
+        _contracts = list.where((c) {
+          if (c.status != 'ACTIVE') return false;
+          if (myId == null) return true; // memberId 불명일 땐 종전대로 모두 노출
+          return c.isTenant(myId);
+        }).toList();
         _isLoading = false;
         _hasError = false;
       });
@@ -68,6 +77,71 @@ class _CurrentStayPageState extends State<CurrentStayPage> {
         ),
       ),
     ).then((_) => _loadData());
+  }
+
+  /// 카드의 "Leave homestay" 버튼을 눌렀을 때.
+  /// 1) 확인 다이얼로그
+  /// 2) 백엔드 leave 호출 (ACTIVE → EXPIRED)
+  /// 3) 성공 시 리뷰 작성 페이지로 이동 (그곳에서 작성 완료/스킵)
+  /// 4) 어쨌든 돌아온 뒤 목록 새로고침
+  Future<void> _onLeavePressed(ContractModel c) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text(
+          'Leave this homestay?',
+          style: TextStyle(fontWeight: FontWeight.w800, color: dark),
+        ),
+        content: Text(
+          'You\'re about to move out of "${c.houseTitle ?? 'this listing'}". '
+          'You\'ll be able to write a review afterwards.',
+          style: const TextStyle(color: grey04, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel', style: TextStyle(color: grey03)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text(
+              'Leave',
+              style: TextStyle(color: darkgreen, fontWeight: FontWeight.w800),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      await ContractService.leave(c.id);
+      if (!mounted) return;
+      // 거주 이력이 끝났으니 곧장 리뷰 작성 페이지로 안내.
+      final houseId = c.houseId;
+      if (houseId != null) {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => WriteReviewPage(
+              houseId: houseId,
+              houseTitle: c.houseTitle,
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('You\'ve left the homestay.')),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to leave: $e')),
+      );
+    } finally {
+      if (mounted) _loadData();
+    }
   }
 
   @override
@@ -125,6 +199,7 @@ class _CurrentStayPageState extends State<CurrentStayPage> {
             contract: c,
             myMemberId: _user?.memberId ?? 0,
             onTap: () => _openContract(c),
+            onLeave: () => _onLeavePressed(c),
           );
         },
       ),
