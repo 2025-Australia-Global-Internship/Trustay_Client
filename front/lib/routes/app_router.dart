@@ -13,6 +13,7 @@ import '../pages/mypage/edit_profile.dart';
 import '../pages/mypage/personal_details.dart';
 import '../pages/mypage/sharehouse_create_step1.dart';
 import '../pages/mypage/post_pending_approval.dart';
+import '../pages/notifications/notifications_page.dart';
 import 'app_routes.dart';
 
 final Map<String, WidgetBuilder> appRouter = {
@@ -30,4 +31,5 @@ final Map<String, WidgetBuilder> appRouter = {
   AppRoutes.personalDetails: (_) => const PersonalDetailsPage(),
   AppRoutes.sharehouseCreate: (_) => const SharehouseCreateStep1Page(),
   AppRoutes.postPending: (_) => const PostPendingApprovalPage(),
+  AppRoutes.notifications: (_) => const NotificationsPage(),
 };

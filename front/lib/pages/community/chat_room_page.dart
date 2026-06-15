@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:front/constants/colors.dart';
 import 'package:front/services/chat_service.dart';
+import 'package:front/services/contract_service.dart';
 import 'package:front/models/chat_message_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -11,6 +12,7 @@ import 'package:front/models/sharehouse_detail_model.dart';
 import 'package:front/pages/mypage/sharehouse_detail_page.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'package:front/index.dart' show goToFinanceTab, indexTabNotifier;
 import 'contract_scan_upload_page.dart';
 import 'contract_detail_page.dart';
 import 'contract_view_page.dart';
@@ -71,7 +73,21 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     await _loadToken();
     // 채팅 내역과 숙소 정보를 동시에 병렬로 로드합니다.
     await Future.wait([_loadChatHistory(), _loadHouseDetail()]);
+    // 진입 시 안 읽은 메시지를 한 번에 읽음 처리 (페이지 범위를 벗어난
+    // 과거 안 읽은 메시지까지 모두 포함하기 위함).
+    _markRoomAsReadSafely();
     await _connectAndSubscribe();
+  }
+
+  /// 채팅방 안 읽은 메시지를 한 번에 읽음 처리.
+  /// 실패해도 사용자 흐름을 막지 않는다.
+  Future<void> _markRoomAsReadSafely() async {
+    try {
+      await ChatService.markRoomAsRead(widget.roomId, widget.myMemberId);
+    } catch (e) {
+      // 읽음 처리 실패는 치명적이지 않음. 다음 진입 시 자동 동기화됨.
+      print('⚠️ 채팅 읽음 처리 실패: $e');
+    }
   }
 
   Future<void> _loadToken() async {
@@ -198,6 +214,11 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     if (!mounted) return;
     setState(() => _messages.add(msg));
     _scrollToBottom();
+    // 채팅방을 열어둔 상태에서 상대방의 메시지가 도착했다면
+    // 즉시 서버에 읽음 처리를 알린다. 내가 보낸 메시지(echo)는 제외.
+    if (msg.senderId != widget.myMemberId) {
+      _markRoomAsReadSafely();
+    }
   }
 
   void _sendMessage() {
@@ -416,7 +437,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
-                  onPressed: () {},
+                  onPressed: () => _showSnack('Voice calls are coming soon.'),
                   icon: SvgPicture.asset(
                     'assets/icons/call.svg',
                     width: 26,
@@ -436,7 +457,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
-                  onPressed: () {},
+                  onPressed: () => _showSnack('Video calls are coming soon.'),
                   icon: SvgPicture.asset(
                     'assets/icons/video-call.svg',
                     width: 26,
@@ -584,6 +605,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
         _pickAndSendImage(ImageSource.camera);
         break;
       case 'Contract':
+        // 2단계: 호스트만 종이 계약서 스캔을 보낼 수 있다.
         // 안전망: 메뉴에서 이미 숨겼지만 호스트가 아니면 진입 자체를 막는다.
         if (_myContractRole != 'LANDLORD') {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -595,8 +617,83 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
         }
         _openContractFlow();
         break;
+      case 'Request':
+        // 1단계: 세입자가 호스트에게 계약서를 요청.
+        if (_myContractRole == 'LANDLORD') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Only the tenant can request a contract.'),
+            ),
+          );
+          break;
+        }
+        _sendContractRequest();
+        break;
+      case 'Wallet':
+        // 채팅방을 닫고 IndexPage 의 Finance 탭으로 이동.
+        setState(() => _isMenuExpanded = false);
+        Navigator.of(context).popUntil((route) => route.isFirst);
+        goToFinanceTab();
+        break;
+      case 'Location':
+        // 채팅방을 닫고 IndexPage 의 Map 탭으로 이동.
+        setState(() => _isMenuExpanded = false);
+        Navigator.of(context).popUntil((route) => route.isFirst);
+        indexTabNotifier.value = 2; // Map 탭
+        break;
+      case 'Schedule':
+        setState(() => _isMenuExpanded = false);
+        _showSnack('Schedule sharing is coming soon.');
+        break;
       default:
-        print("$label 클릭됨 — 아직 구현되지 않음");
+        setState(() => _isMenuExpanded = false);
+        _showSnack('$label is coming soon.');
+    }
+  }
+
+  /// "+" 메뉴 → Request (세입자만).
+  /// 1단계: 호스트에게 계약서를 보내달라는 CONTRACT_REQUEST 메시지를 발행한다.
+  /// 서버가 채팅방에 broadcast 하므로 STOMP 구독 콜백이 받아 화면에 카드가 뜬다.
+  Future<void> _sendContractRequest() async {
+    setState(() => _isMenuExpanded = false);
+
+    // 짧은 확인 다이얼로그.
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Request a contract'),
+        content: const Text(
+          'Send a contract request to the host? The host will be notified to share the document.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: green,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Send'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    try {
+      await ContractService.requestContract(roomId: widget.roomId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Contract request sent.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to request: $e')),
+      );
     }
   }
 
@@ -781,6 +878,9 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     if (type == 'IMAGE') {
       body = _buildImageBubble(msg, bubbleRadius);
       maxWidthFactor = 0.65;
+    } else if (type == 'CONTRACT_REQUEST') {
+      body = _buildContractRequestBubble(msg, isMe, bubbleRadius);
+      maxWidthFactor = 0.78;
     } else if (type == 'CONTRACT') {
       body = _buildContractScanBubble(msg, isMe, bubbleRadius);
       maxWidthFactor = 0.78;
@@ -824,6 +924,34 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           ],
         ),
       ),
+    );
+  }
+
+  /// CONTRACT_REQUEST 타입 — 세입자가 보낸 "계약서 보내달라"는 요청 카드 (1단계)
+  ///
+  /// - 세입자(보낸 사람) 측: "We've asked the host for a contract. Awaiting…"
+  /// - 호스트(받은 사람) 측: 탭하면 바로 스캔 업로드 화면(2단계)으로 이동.
+  Widget _buildContractRequestBubble(
+    ChatMessageModel msg,
+    bool isMe,
+    BorderRadius radius,
+  ) {
+    final bool isHost = _myContractRole == 'LANDLORD';
+    return _ContractCardBase(
+      radius: radius,
+      isMe: isMe,
+      onTap: () {
+        // 호스트만 탭으로 바로 다음 단계(스캔 업로드)로 진입.
+        if (isHost) _openContractFlow();
+      },
+      icon: Icons.assignment_outlined,
+      title: 'Contract requested',
+      subtitle: msg.message.isNotEmpty
+          ? msg.message
+          : (isMe
+              ? "You've asked the host for a contract."
+              : 'The tenant is asking you to share a contract.'),
+      ctaLabel: isHost ? 'Send contract' : 'Awaiting host…',
     );
   }
 
@@ -1120,8 +1248,9 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
 
   Widget _buildExpandedMenu() {
     // 메뉴 아이템 데이터 구조화.
-    // 'Contract' 옵션은 매물의 호스트(=집주인)에게만 노출한다.
-    // 세입자는 호스트가 보내준 계약서를 받기만 한다.
+    // 4단계 계약 흐름의 시작점:
+    //   - 호스트(=집주인): 'Contract' = 종이 계약서 스캔 업로드 (2단계)
+    //   - 세입자        : 'Request'  = 호스트에게 계약서 요청 메시지 발행 (1단계)
     final bool isHost = _myContractRole == 'LANDLORD';
     final List<Map<String, dynamic>> menuItems = [
       {
@@ -1139,6 +1268,12 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           'icon': 'assets/icons/contract-fill.svg',
           'label': 'Contract',
           'defaultIcon': Icons.description,
+        }
+      else
+        {
+          'icon': 'assets/icons/contract-fill.svg',
+          'label': 'Request',
+          'defaultIcon': Icons.contact_mail,
         },
       {
         'icon': 'assets/icons/wallet.svg',

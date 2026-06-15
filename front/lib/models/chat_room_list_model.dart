@@ -11,6 +11,11 @@ class ChatRoomListModel {
   final String lastMessageTime;
   final String? profileImageUrl;
 
+  /// 내가 아직 읽지 않은 메시지 수.
+  /// - 상대방이 보낸 메시지 중 isRead=false 인 개수.
+  /// - 채팅방 목록에서 빨간 뱃지로 표시한다.
+  final int unreadCount;
+
   ChatRoomListModel({
     required this.roomId,
     required this.houseId,
@@ -21,6 +26,7 @@ class ChatRoomListModel {
     required this.lastSenderName,
     required this.lastMessageTime,
     this.profileImageUrl,
+    this.unreadCount = 0,
   });
 
   factory ChatRoomListModel.fromJson(Map<String, dynamic> json) {
@@ -34,7 +40,24 @@ class ChatRoomListModel {
       lastSenderName: json['lastSenderName'] ?? '',
       lastMessageTime: json['lastMessageTime'] ?? '',
       profileImageUrl: json['profileImageUrl'],
+      unreadCount: (json['unreadCount'] as num?)?.toInt() ?? 0,
     );
   }
 
+  ChatRoomListModel copyWith({
+    int? unreadCount,
+  }) {
+    return ChatRoomListModel(
+      roomId: roomId,
+      houseId: houseId,
+      houseTitle: houseTitle,
+      otherMemberId: otherMemberId,
+      otherMemberName: otherMemberName,
+      lastMessage: lastMessage,
+      lastSenderName: lastSenderName,
+      lastMessageTime: lastMessageTime,
+      profileImageUrl: profileImageUrl,
+      unreadCount: unreadCount ?? this.unreadCount,
+    );
+  }
 }

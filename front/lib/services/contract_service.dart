@@ -8,12 +8,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/api_endpoints.dart';
 import '../models/contract_model.dart';
 
-/// `/api/contracts` REST 호출 모음.
+/// `/api/contracts` REST 호출 모음. 4단계 계약 흐름:
 ///
-/// - propose : 한쪽이 계약 조건 + 본인 서명 이미지로 제안 (multipart)
-/// - sign    : 상대방이 본인 서명 이미지로 서명 (multipart). 양측 서명되면 ACTIVE
-/// - getById : 단건 조회
-/// - getMy   : 내가 참여한 계약 목록
+/// - [requestContract] : (세입자) 호스트에게 계약서를 요청하는 채팅 메시지 발행
+/// - [propose]         : (세입자) 조건 + 본인 서명 이미지로 제안 (multipart)
+/// - [sign]            : (호스트) 본인 서명 이미지로 서명 (multipart). 양측 서명되면 ACTIVE
+/// - [getById]         : 단건 조회
+/// - [getMyContracts]  : 내가 참여한 계약 목록
 class ContractService {
   static Future<String> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
@@ -22,6 +23,25 @@ class ContractService {
       throw Exception('Not signed in.');
     }
     return token;
+  }
+
+  /// [1단계] 세입자가 호스트에게 계약서를 요청하는 채팅 메시지를 발행.
+  ///
+  /// 백엔드에서 채팅방에 `CONTRACT_REQUEST` 메시지가 broadcast 되고, 호스트에게
+  /// 알림이 발송된다. 응답 본문은 사용하지 않고 성공 여부만 판단한다.
+  static Future<void> requestContract({required int roomId}) async {
+    final token = await _getToken();
+    final uri = Uri.parse(ApiEndpoints.contractRequest).replace(
+      queryParameters: {'roomId': '$roomId'},
+    );
+    final response = await http.post(
+      uri,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+    if (response.statusCode != 200 || decoded['code'] != 200) {
+      throw Exception(decoded['message'] ?? 'Failed to request contract');
+    }
   }
 
   /// 계약 제안. `signaturePng` 는 캔버스에서 캡쳐한 PNG 바이트.

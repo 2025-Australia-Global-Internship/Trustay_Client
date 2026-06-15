@@ -13,4 +13,5 @@ class AppRoutes {
   static const personalDetails = '/person_details';
   static const sharehouseCreate = '/sharehouse_create';
   static const postPending = '/post_pending';
+  static const notifications = '/notifications';
 }

@@ -140,13 +140,50 @@ class _ContractDetailPageState extends State<ContractDetailPage> {
           : _error != null
               ? _buildError()
               : _buildBody(),
-      // 계약 propose CTA 는 세입자(TENANT)에게만 노출한다.
-      // 호스트는 종이 계약서 스캔을 올리는 쪽이고, 세입자가 그 스캔을 보고
-      // 조건 + 본인 서명을 채워서 propose 하는 게 정상 흐름.
-      bottomNavigationBar:
-          (_loading || _error != null || widget.iAm != 'TENANT')
-              ? null
-              : _buildCta(),
+      // 하단 영역:
+      //   - 세입자(TENANT) → "Propose contract from this scan" CTA
+      //   - 호스트(LANDLORD) → 수정/입력 권한 없음을 알리는 read-only 안내 박스
+      //                       (이 단계에서 호스트는 본인이 보낸 계약서만 확인 가능)
+      bottomNavigationBar: (_loading || _error != null)
+          ? null
+          : (widget.iAm == 'TENANT' ? _buildCta() : _buildHostInfoBar()),
+    );
+  }
+
+  /// 호스트(LANDLORD) 시점의 하단 안내 배너.
+  /// 이 단계에서 호스트는 deposit/rent 등을 수정할 수 없고, 자신이 보낸
+  /// 계약서가 무엇인지 확인만 가능하다는 점을 분명히 보여준다.
+  Widget _buildHostInfoBar() {
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          decoration: BoxDecoration(
+            color: darkgreen.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.lock_outline, color: darkgreen, size: 20),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  "You sent this contract. The tenant will fill in deposit, "
+                  "rent and dates. You'll review and sign in the final step.",
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: darkgreen,
+                    fontWeight: FontWeight.w700,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -165,12 +202,40 @@ class _ContractDetailPageState extends State<ContractDetailPage> {
   Widget _buildBody() {
     final doc = _doc!;
     final pages = doc.sourceImageUrls;
+    final bool isHost = widget.iAm == 'LANDLORD';
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // 호스트는 자신이 보낸 계약서를 확인만 할 수 있다는 안내 배지.
+          if (isHost) ...[
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: grey01),
+              ),
+              child: Row(
+                children: const [
+                  Icon(Icons.visibility_outlined, size: 16, color: darkgreen),
+                  SizedBox(width: 6),
+                  Text(
+                    'Sent by you · read only',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w800,
+                      color: darkgreen,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
           // 원본 페이지 뷰어
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
