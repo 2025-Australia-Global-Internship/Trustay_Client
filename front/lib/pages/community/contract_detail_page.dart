@@ -140,7 +140,13 @@ class _ContractDetailPageState extends State<ContractDetailPage> {
           : _error != null
               ? _buildError()
               : _buildBody(),
-      bottomNavigationBar: _loading || _error != null ? null : _buildCta(),
+      // 계약 propose CTA 는 세입자(TENANT)에게만 노출한다.
+      // 호스트는 종이 계약서 스캔을 올리는 쪽이고, 세입자가 그 스캔을 보고
+      // 조건 + 본인 서명을 채워서 propose 하는 게 정상 흐름.
+      bottomNavigationBar:
+          (_loading || _error != null || widget.iAm != 'TENANT')
+              ? null
+              : _buildCta(),
     );
   }
 

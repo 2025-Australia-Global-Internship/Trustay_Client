@@ -6,10 +6,12 @@ import 'package:front/index.dart' show goToMyPageTab;
 import 'package:front/widgets/custom_header.dart';
 import 'package:front/widgets/circle_icon_button.dart';
 import 'package:front/widgets/gradient_layout.dart';
+import 'package:front/services/auth_service.dart';
 import 'package:front/services/payment_service.dart';
 import 'package:front/models/payment_model.dart';
 import 'create_split_bill_page.dart';
 import 'split_bills_page.dart';
+import 'toss_payment_webview.dart';
 
 class TransactionItem {
   final String title;
@@ -19,6 +21,12 @@ class TransactionItem {
   final String paymentType; // RENT / UTILITY / DUTCH
   /// true 면 "Mate paid" (양수, 초록색), false 면 "You paid" (음수)
   final bool isIncoming;
+  /// PENDING 결제 행이면 본인이 직접 결제할 수 있도록 진입점에 사용할 정보.
+  /// CONFIRMED 또는 다른 사람이 결제할 건이라면 null.
+  final PendingPayment? pending;
+  /// IN 거래 중 아직 메이트가 결제 완료하지 않은 항목(=대기 중).
+  /// UI 에서 "Awaiting" 같은 보조 라벨을 보여주기 위함.
+  final bool isAwaiting;
 
   const TransactionItem({
     required this.title,
@@ -27,7 +35,11 @@ class TransactionItem {
     required this.amount,
     required this.paymentType,
     required this.isIncoming,
+    this.pending,
+    this.isAwaiting = false,
   });
+
+  bool get isPayable => pending != null;
 }
 
 class FinancePage extends StatefulWidget {
@@ -47,11 +59,14 @@ class _FinancePageState extends State<FinancePage> {
   /// API 호출 실패 또는 데이터가 없을 때는 빈 맵으로 둔다(=빈 상태 표시).
   Map<String, List<TransactionItem>> _transactionsByMonth = {};
   bool _isLoading = true;
+  String? _loadError;
 
   // ── 결제 이력 페이징 ──
   // 누적해 들어온 모든 페이지의 raw 항목을 보관한다(중복 합쳐진 뒤 다시 월별 그룹핑).
-  static const int _historyPageSize = 10;
+  static const int _historyPageSize = 20;
   final List<PaymentHistoryItem> _allHistoryItems = [];
+  // PENDING 결제 (탭 → 토스 결제창) 진입을 위해 함께 보관.
+  List<PendingPayment> _pendingPayments = const [];
   int _historyNextPage = 0;
   bool _historyHasMore = true;
   bool _isLoadingMoreHistory = false;
@@ -89,29 +104,40 @@ class _FinancePageState extends State<FinancePage> {
   //   targetAccount 또는 paymentType 으로 표시할 subtitle 을 구성한다.
   // ---------------------------------------------------------------------------
   Future<void> _loadHistory() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+      _loadError = null;
+    });
     try {
-      final list = await PaymentService.getMyHistory(
-        page: 0,
-        size: _historyPageSize,
-      );
+      // 거래 이력과 미완료 결제(Pending) 를 한 번에 가져온다.
+      final results = await Future.wait([
+        PaymentService.getMyHistory(page: 0, size: _historyPageSize),
+        PaymentService.getMyPending(size: 30),
+      ]);
       if (!mounted) return;
+      final history = results[0] as List<PaymentHistoryItem>;
+      final pending = results[1] as List<PendingPayment>;
       setState(() {
         _allHistoryItems
           ..clear()
-          ..addAll(list);
-        _transactionsByMonth = _groupByMonth(_allHistoryItems);
+          ..addAll(history);
+        _pendingPayments = pending;
+        _transactionsByMonth = _groupByMonth(_allHistoryItems, _pendingPayments);
         _historyNextPage = 1;
-        _historyHasMore = list.length >= _historyPageSize;
+        _historyHasMore = history.length >= _historyPageSize;
         _isLoading = false;
       });
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
-      // 미로그인/네트워크 실패 시에도 화면은 유지하고 더미 비우기
+      // 로그인 만료 등 인증 실패는 안내만 표시.
       setState(() {
         _allHistoryItems.clear();
+        _pendingPayments = const [];
         _transactionsByMonth = {};
         _historyHasMore = false;
         _isLoading = false;
+        _loadError = 'Could not load transactions. Pull down to retry.';
       });
     }
   }
@@ -128,7 +154,8 @@ class _FinancePageState extends State<FinancePage> {
       if (!mounted) return;
       setState(() {
         _allHistoryItems.addAll(next);
-        _transactionsByMonth = _groupByMonth(_allHistoryItems);
+        _transactionsByMonth =
+            _groupByMonth(_allHistoryItems, _pendingPayments);
         _historyNextPage += 1;
         _historyHasMore = next.length >= _historyPageSize;
         _isLoadingMoreHistory = false;
@@ -139,6 +166,38 @@ class _FinancePageState extends State<FinancePage> {
     }
   }
 
+  /// PENDING 결제 행을 누르면 토스 결제 위젯을 띄우고 성공 시 새로고침.
+  Future<void> _payPending(PendingPayment p) async {
+    final user = AuthService.currentUserNotifier.value;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('User profile is not loaded yet.')),
+      );
+      return;
+    }
+    final orderName = (p.title != null && p.title!.isNotEmpty)
+        ? p.title!
+        : _titleFor(p.paymentType);
+    final paid = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TossPaymentWebView(
+          amount: p.amount,
+          orderId: p.orderId,
+          orderName: orderName,
+          customerKey: 'MEMBER_${user.memberId}',
+          customerName: user.name,
+        ),
+      ),
+    );
+    if (paid == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Payment confirmed.')),
+      );
+      _loadHistory();
+    }
+  }
+
   static const List<String> _monthLabels = [
     'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
@@ -146,16 +205,38 @@ class _FinancePageState extends State<FinancePage> {
 
   Map<String, List<TransactionItem>> _groupByMonth(
     List<PaymentHistoryItem> items,
+    List<PendingPayment> pendings,
   ) {
     final result = <String, List<TransactionItem>>{};
 
-    // 최신순으로 정렬
+    // (1) 미완료 결제 → 별도 "Pending" 섹션으로 묶어 가장 위에 노출.
+    if (pendings.isNotEmpty) {
+      result['Pending'] = pendings
+          .map((p) => TransactionItem(
+                title: (p.title != null && p.title!.isNotEmpty)
+                    ? p.title!
+                    : _titleFor(p.paymentType),
+                subtitle: (p.payeeName != null && p.payeeName!.isNotEmpty)
+                    ? 'My wallet → ${p.payeeName}'
+                    : ((p.targetAccount != null &&
+                            p.targetAccount!.isNotEmpty)
+                        ? 'My wallet → ${p.targetAccount}'
+                        : 'My wallet'),
+                date: 'Tap to pay',
+                amount: -p.amount.toDouble(),
+                paymentType: p.paymentType,
+                isIncoming: false,
+                pending: p,
+              ))
+          .toList();
+    }
+
+    // (2) 거래 이력: 최신순 → 월별 그룹핑.
     final sorted = [...items]..sort((a, b) {
       final ad = a.transactionDate ?? DateTime.fromMillisecondsSinceEpoch(0);
       final bd = b.transactionDate ?? DateTime.fromMillisecondsSinceEpoch(0);
       return bd.compareTo(ad);
     });
-
     for (final p in sorted) {
       final date = p.transactionDate;
       if (date == null) continue;
@@ -169,6 +250,9 @@ class _FinancePageState extends State<FinancePage> {
       final double signed =
           p.isIncoming ? p.amount.toDouble() : -p.amount.toDouble();
 
+      // IN 인데 아직 메이트가 결제 안 한 경우 = 받을 예정.
+      final bool awaiting = p.isIncoming && p.status == 'PENDING';
+
       result.putIfAbsent(monthLabel, () => []).add(
             TransactionItem(
               title: title,
@@ -177,6 +261,7 @@ class _FinancePageState extends State<FinancePage> {
               amount: signed,
               paymentType: p.paymentType,
               isIncoming: p.isIncoming,
+              isAwaiting: awaiting,
             ),
           );
     }
@@ -228,14 +313,20 @@ class _FinancePageState extends State<FinancePage> {
 
   // 필터링된 거래 내역 가져오기
   Map<String, List<TransactionItem>> _getFilteredTransactions() {
+    // "Pending" 섹션은 항상 그대로 노출하고, 거래 내역에만 필터를 적용.
+    final pending = _transactionsByMonth['Pending'];
     if (_selectedFilter == 0) {
       // All splits - 전체 표시
       return _transactionsByMonth;
     }
 
     Map<String, List<TransactionItem>> filtered = {};
+    if (pending != null && pending.isNotEmpty) {
+      filtered['Pending'] = pending;
+    }
 
     _transactionsByMonth.forEach((month, transactions) {
+      if (month == 'Pending') return;
       List<TransactionItem> filteredList = transactions.where((item) {
         if (_selectedFilter == 1) {
           // You paid - 음수 (내가 지불)
@@ -311,9 +402,14 @@ class _FinancePageState extends State<FinancePage> {
     return Scaffold(
       backgroundColor: Color(0xFFFAFAFA),
       body: GradientLayout(
-        child: CustomScrollView(
+        child: RefreshIndicator(
+          color: green,
+          onRefresh: _loadHistory,
+          child: CustomScrollView(
           controller: _scrollController,
-          physics: const BouncingScrollPhysics(),
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
           slivers: [
             SliverToBoxAdapter(
               child: CustomHeader(
@@ -366,20 +462,69 @@ class _FinancePageState extends State<FinancePage> {
 
                   // 필터 탭
                   _buildFilterTabs(),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 24),
 
-                  // 월별 거래 목록 (필터링됨)
-                  if (filteredTransactions.isEmpty)
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(40),
-                        child: Text(
-                          'No transactions found',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: grey03,
-                            fontWeight: FontWeight.w500,
-                          ),
+                  // 로딩 / 에러 / 빈 상태 / 데이터 표시
+                  if (_isLoading)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 60),
+                      child: Center(
+                        child: CircularProgressIndicator(color: green),
+                      ),
+                    )
+                  else if (_loadError != null)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 40),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            const Icon(Icons.cloud_off,
+                                color: grey02, size: 36),
+                            const SizedBox(height: 10),
+                            Text(
+                              _loadError!,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: grey03,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else if (filteredTransactions.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 60),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            SvgPicture.asset(
+                              'assets/icons/wallet.svg',
+                              width: 48,
+                              height: 48,
+                              color: grey01,
+                            ),
+                            const SizedBox(height: 10),
+                            const Text(
+                              'No transactions yet',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: grey03,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Create a split bill to get started.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: grey03,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     )
@@ -427,6 +572,7 @@ class _FinancePageState extends State<FinancePage> {
               ),
             ),
           ],
+        ),
         ),
       ),
     );
@@ -781,22 +927,16 @@ class _FinancePageState extends State<FinancePage> {
   }
 
   Widget _buildTransactionRow(TransactionItem item) {
-    // 디자인 매핑:
-    //   - RENT  : 동전 아이콘 (assets/icons/coin-fill.svg)
-    //   - DUTCH : 지갑 아이콘 (assets/icons/wallet.svg)
-    //   - 기타  : 동전 아이콘
     final isRent = item.paymentType == 'RENT';
     final String leadingIcon =
         isRent ? 'assets/icons/coin-fill.svg' : 'assets/icons/wallet.svg';
-    // 금액 색: Mate paid(+) 는 짙은 초록, You paid(−) 는 dark
     final Color amountColor = item.isIncoming ? darkgreen : dark;
-    // 부호 + 호주 달러 포맷
     final String sign = item.amount >= 0 ? '' : '- ';
-    final String moneyText =
-        '$sign${_fmtAud(item.amount.abs().toInt())}';
+    final String moneyText = '$sign${_fmtAud(item.amount.abs().toInt())}';
 
-    return ListTile(
+    final tile = ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+      onTap: item.isPayable ? () => _payPending(item.pending!) : null,
       leading: Container(
         width: 42,
         height: 42,
@@ -839,17 +979,53 @@ class _FinancePageState extends State<FinancePage> {
             ),
           ),
           const SizedBox(height: 6),
-          Text(
-            item.date,
-            style: const TextStyle(
-              fontSize: 9.5,
-              color: grey03,
-              fontWeight: FontWeight.w700,
+          if (item.isPayable)
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: yellow,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Text(
+                'Pay',
+                style: TextStyle(
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w800,
+                  color: dark,
+                ),
+              ),
+            )
+          else if (item.isAwaiting)
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE6F4EA),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Text(
+                'Awaiting',
+                style: TextStyle(
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w800,
+                  color: darkgreen,
+                ),
+              ),
+            )
+          else
+            Text(
+              item.date,
+              style: const TextStyle(
+                fontSize: 9.5,
+                color: grey03,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-          ),
         ],
       ),
       dense: true,
     );
+    return tile;
   }
 }

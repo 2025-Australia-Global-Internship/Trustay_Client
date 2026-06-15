@@ -584,6 +584,15 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
         _pickAndSendImage(ImageSource.camera);
         break;
       case 'Contract':
+        // 안전망: 메뉴에서 이미 숨겼지만 호스트가 아니면 진입 자체를 막는다.
+        if (_myContractRole != 'LANDLORD') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Only the host of this listing can send a contract.'),
+            ),
+          );
+          break;
+        }
         _openContractFlow();
         break;
       default:
@@ -1110,7 +1119,10 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   }
 
   Widget _buildExpandedMenu() {
-    // 메뉴 아이템 데이터 구조화
+    // 메뉴 아이템 데이터 구조화.
+    // 'Contract' 옵션은 매물의 호스트(=집주인)에게만 노출한다.
+    // 세입자는 호스트가 보내준 계약서를 받기만 한다.
+    final bool isHost = _myContractRole == 'LANDLORD';
     final List<Map<String, dynamic>> menuItems = [
       {
         'icon': 'assets/icons/image.svg',
@@ -1122,11 +1134,12 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
         'label': 'Camera',
         'defaultIcon': Icons.camera_alt,
       },
-      {
-        'icon': 'assets/icons/contract-fill.svg',
-        'label': 'Contract',
-        'defaultIcon': Icons.description,
-      },
+      if (isHost)
+        {
+          'icon': 'assets/icons/contract-fill.svg',
+          'label': 'Contract',
+          'defaultIcon': Icons.description,
+        },
       {
         'icon': 'assets/icons/wallet.svg',
         'label': 'Wallet',

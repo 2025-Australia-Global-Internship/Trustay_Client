@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:front/constants/colors.dart';
+import 'package:front/index.dart' show goToFinanceTab;
 import 'package:front/services/auth_service.dart';
 import 'package:front/services/sharehouse_service.dart';
 import 'package:front/models/user_model.dart';
@@ -324,7 +325,8 @@ class _MyPageState extends State<MyPage> {
                 MyPageMenuItem(
                   title: 'My Wallet',
                   leadingPath: 'assets/icons/wallet-line.svg',
-                  onTap: () => Navigator.pushNamed(context, '/my_wallet'),
+                  // My Wallet 메뉴는 House Finances 탭으로 이동한다.
+                  onTap: goToFinanceTab,
                 ),
                 MyPageMenuItem(
                   title: 'My Contracts',

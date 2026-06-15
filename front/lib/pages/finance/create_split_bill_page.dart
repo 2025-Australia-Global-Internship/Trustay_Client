@@ -163,10 +163,14 @@ class _CreateSplitBillPageState extends State<CreateSplitBillPage> {
     try {
       // 호주달러 → 정수 단위로 변환 (1AUD 이하 절사). 백엔드 amount 가 int.
       final int totalInt = _totalAmount.round();
-      // 메이트들의 memberId 목록.
-      final memberIds =
-          _selectedMates.map((e) => e.otherMemberId).toList(growable: false);
-      // 본인이 받는 쪽.
+      // 백엔드 createDutchPay 규약:
+      //   - memberIds 에는 "본인 포함" 전체 참여자가 들어가야 한다.
+      //   - payeeMemberId 는 memberIds 에 반드시 포함돼야 한다.
+      // 본인이 payee(받는 쪽)이고 본인 몫도 N등분에 참여한다.
+      final memberIds = <int>[
+        me.memberId,
+        ..._selectedMates.map((e) => e.otherMemberId),
+      ];
       await PaymentService.createDutchPay(
         totalAmount: totalInt,
         memberIds: memberIds,
