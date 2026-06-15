@@ -49,10 +49,7 @@ class ChatService {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-        body: jsonEncode({
-          "houseId": houseId,
-          "senderId": senderId,
-        }),
+        body: jsonEncode({"houseId": houseId, "senderId": senderId}),
       );
 
       if (response.statusCode == 200) {
@@ -62,8 +59,7 @@ class ChatService {
 
         // 신규 스키마: 객체 { roomId, houseId }
         if (data is Map<String, dynamic>) {
-          final int parsedRoomId =
-              (data['roomId'] as num?)?.toInt() ?? 0;
+          final int parsedRoomId = (data['roomId'] as num?)?.toInt() ?? 0;
           final int parsedHouseId =
               (data['houseId'] as num?)?.toInt() ?? houseId;
           return (roomId: parsedRoomId, houseId: parsedHouseId);
@@ -92,15 +88,18 @@ class ChatService {
     int page = 0,
     int size = 10,
   }) async {
-    final url = Uri.parse(ApiEndpoints.myChatRooms(memberId)).replace(
-      queryParameters: {'page': '$page', 'size': '$size'},
-    );
+    final url = Uri.parse(
+      ApiEndpoints.myChatRooms(memberId),
+    ).replace(queryParameters: {'page': '$page', 'size': '$size'});
 
     final token = await _getToken();
-    final response = await http.get(url, headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    });
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
 
     if (response.statusCode != 200) {
       throw Exception('채팅방 목록 조회 실패: ${response.statusCode}');
@@ -116,8 +115,9 @@ class ChatService {
         : (data is Map<String, dynamic>
               ? (data['content'] as List<dynamic>? ?? const <dynamic>[])
               : const <dynamic>[]);
-    final rooms =
-        dataList.map((json) => ChatRoomListModel.fromJson(json)).toList();
+    final rooms = dataList
+        .map((json) => ChatRoomListModel.fromJson(json))
+        .toList();
 
     // 서버 정렬을 신뢰하지 않고 클라이언트에서 한 번 더 정렬
     // (ISO-8601 문자열은 사전식 정렬해도 시간순과 동일하지만, 안전하게 DateTime으로 비교)
@@ -145,14 +145,18 @@ class ChatService {
     int page = 0,
     int size = 15,
   }) async {
-    final url = Uri.parse(ApiEndpoints.chatRoomMessages(roomId, memberId))
-        .replace(queryParameters: {'page': '$page', 'size': '$size'});
+    final url = Uri.parse(
+      ApiEndpoints.chatRoomMessages(roomId, memberId),
+    ).replace(queryParameters: {'page': '$page', 'size': '$size'});
 
     final token = await _getToken();
-    final response = await http.get(url, headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    });
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
 
     if (response.statusCode != 200) {
       throw Exception('채팅 내역 조회 실패: ${response.statusCode}');
@@ -169,8 +173,9 @@ class ChatService {
               ? (data['content'] as List<dynamic>? ?? const <dynamic>[])
               : const <dynamic>[]);
 
-    final messages =
-        dataList.map((json) => ChatMessageModel.fromJson(json)).toList();
+    final messages = dataList
+        .map((json) => ChatMessageModel.fromJson(json))
+        .toList();
     // 서버는 최신→과거 순이므로 화면 표시용으로 뒤집어 과거→최신으로.
     return messages.reversed.toList();
   }
@@ -210,69 +215,7 @@ class ChatService {
     final responseBody = await streamed.stream.bytesToString();
 
     if (streamed.statusCode != 200) {
-      throw Exception(
-        '이미지 전송 실패: ${streamed.statusCode} $responseBody',
-      );
-    }
-
-    final decoded = jsonDecode(responseBody);
-    final dynamic data = decoded['data'];
-    if (data is! Map<String, dynamic>) {
-      throw Exception('이미지 전송 응답 파싱 실패: $data');
-    }
-    return ChatMessageModel.fromJson(data);
-  }
-
-  static MediaType _chatImageContentTypeFor(File imageFile) {
-    final path = imageFile.path.toLowerCase();
-    if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
-      return MediaType('image', 'jpeg');
-    }
-    if (path.endsWith('.png')) return MediaType('image', 'png');
-    if (path.endsWith('.heic')) return MediaType('image', 'heic');
-    if (path.endsWith('.heif')) return MediaType('image', 'heif');
-    // 서버가 거부할 수도 있으나 기본값 fallback
-    return MediaType('application', 'octet-stream');
-  }
-
-  /// 채팅방에 이미지 메시지 전송.
-  ///
-  /// `POST /api/chat/room/{roomId}/image?senderId={senderId}` (multipart/form-data).
-  /// - form field: `image` (단일 파일)
-  /// - 허용 확장자: jpg / jpeg / png / heic / heif, 최대 20MB
-  ///
-  /// 서버가 IMAGE 타입 ChatMessage 로 저장한 뒤 STOMP 구독 채널
-  /// `/sub/chat/room/{roomId}` 로 자동 브로드캐스트한다. 따라서 호출 측은
-  /// 별도의 WebSocket SEND 를 하지 않아도 되며, 동일한 구독 콜백으로
-  /// 새 메시지가 수신된다. 응답 payload 도 동일한 `ChatMessageRes` 형식.
-  static Future<ChatMessageModel> sendImageMessage({
-    required int roomId,
-    required int senderId,
-    required File imageFile,
-  }) async {
-    final url = Uri.parse(ApiEndpoints.chatRoomImage(roomId, senderId));
-    final token = await _getToken();
-
-    final request = http.MultipartRequest('POST', url);
-    request.headers['Authorization'] = 'Bearer $token';
-
-    final fileName = imageFile.path.split(Platform.pathSeparator).last;
-    request.files.add(
-      await http.MultipartFile.fromPath(
-        'image', // 명세상 단수
-        imageFile.path,
-        filename: fileName,
-        contentType: _chatImageContentTypeFor(imageFile),
-      ),
-    );
-
-    final streamed = await request.send();
-    final responseBody = await streamed.stream.bytesToString();
-
-    if (streamed.statusCode != 200) {
-      throw Exception(
-        '이미지 전송 실패: ${streamed.statusCode} $responseBody',
-      );
+      throw Exception('이미지 전송 실패: ${streamed.statusCode} $responseBody');
     }
 
     final decoded = jsonDecode(responseBody);
@@ -336,7 +279,7 @@ class ChatSocketService {
 
   /// roomId → unsubscribe 함수 (stomp_dart_client subscribe 반환값)
   final Map<int, void Function({Map<String, String>? unsubscribeHeaders})>
-      _subscriptions = {};
+  _subscriptions = {};
 
   /// onConnected: 연결 성공 후 호출 (구독 재설정 등)
   /// onError    : 연결/STOMP 에러 발생 시 호출
@@ -410,7 +353,9 @@ class ChatSocketService {
     }
     _reconnectAttempts++;
     final delay = Duration(seconds: _reconnectAttempts * 2);
-    print('🔁 ${delay.inSeconds}s 후 재연결 시도($_reconnectAttempts/$_maxReconnectAttempts)');
+    print(
+      '🔁 ${delay.inSeconds}s 후 재연결 시도($_reconnectAttempts/$_maxReconnectAttempts)',
+    );
     Future.delayed(delay, () {
       if (_manualDisconnect) return;
       reconnect();
