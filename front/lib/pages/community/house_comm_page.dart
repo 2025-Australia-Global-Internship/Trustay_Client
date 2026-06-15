@@ -523,7 +523,7 @@ class _HouseCommPageState extends State<HouseCommPage> with RouteAware {
         children: [
           SizedBox(height: MediaQuery.of(context).size.height * 0.22),
           _buildEmptyState(
-            iconPath: 'assets/icons/house-pin.svg',
+            iconPath: 'assets/icons/house.svg',
             title: 'No house yet',
             subtitle: 'List a house or move into one to use notices.',
           ),
@@ -970,22 +970,22 @@ class _HouseCommPageState extends State<HouseCommPage> with RouteAware {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        SvgPicture.asset(iconPath, color: grey01, width: 64, height: 64),
+        SvgPicture.asset(iconPath, color: grey01, width: 84, height: 84),
         const SizedBox(height: 16),
         Text(
           title,
           style: const TextStyle(
             fontSize: 14,
             color: grey02,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w400,
           ),
         ),
         const SizedBox(height: 6),
         Text(
           subtitle,
           style: const TextStyle(
-            fontSize: 13,
-            color: grey03,
+            fontSize: 14,
+            color: grey02,
             fontWeight: FontWeight.w400,
           ),
         ),

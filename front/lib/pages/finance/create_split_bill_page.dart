@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 
 import 'package:front/constants/colors.dart';
@@ -9,8 +8,10 @@ import 'package:front/models/user_model.dart';
 import 'package:front/services/auth_service.dart';
 import 'package:front/services/chat_service.dart';
 import 'package:front/services/payment_service.dart';
+import 'package:front/widgets/common_text_field.dart';
 import 'package:front/widgets/custom_header.dart';
 import 'package:front/widgets/gradient_layout.dart';
+import 'package:front/widgets/primary_button.dart';
 
 import 'select_mate_sheet.dart';
 
@@ -33,6 +34,7 @@ class CreateSplitBillPage extends StatefulWidget {
 }
 
 class _CreateSplitBillPageState extends State<CreateSplitBillPage> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _amountCtrl = TextEditingController();
   final TextEditingController _nameCtrl = TextEditingController();
   final TextEditingController _noteCtrl = TextEditingController();
@@ -101,8 +103,7 @@ class _CreateSplitBillPageState extends State<CreateSplitBillPage> {
   int get _splitCount => 1 + _selectedMates.length;
 
   /// 각자 분담 금액 (소수 둘째 자리까지).
-  double get _perPerson =>
-      _splitCount == 0 ? 0 : (_totalAmount / _splitCount);
+  double get _perPerson => _splitCount == 0 ? 0 : (_totalAmount / _splitCount);
 
   bool get _canSubmit =>
       _totalAmount > 0 &&
@@ -126,7 +127,8 @@ class _CreateSplitBillPageState extends State<CreateSplitBillPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-              'You need to chat with someone first before adding them as a mate.'),
+            'You need to chat with someone first before adding them as a mate.',
+          ),
         ),
       );
       return;
@@ -164,8 +166,9 @@ class _CreateSplitBillPageState extends State<CreateSplitBillPage> {
       // 호주달러 → 정수 단위로 변환 (1AUD 이하 절사). 백엔드 amount 가 int.
       final int totalInt = _totalAmount.round();
       // 메이트들의 memberId 목록.
-      final memberIds =
-          _selectedMates.map((e) => e.otherMemberId).toList(growable: false);
+      final memberIds = _selectedMates
+          .map((e) => e.otherMemberId)
+          .toList(growable: false);
       // 본인이 받는 쪽.
       await PaymentService.createDutchPay(
         totalAmount: totalInt,
@@ -174,9 +177,9 @@ class _CreateSplitBillPageState extends State<CreateSplitBillPage> {
         title: _composeTitle(),
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Split bill created.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Split bill created.')));
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
@@ -213,7 +216,7 @@ class _CreateSplitBillPageState extends State<CreateSplitBillPage> {
               center: Text(
                 'Create Split Bills',
                 style: TextStyle(
-                  fontSize: 17,
+                  fontSize: 18,
                   fontWeight: FontWeight.w800,
                   color: dark,
                 ),
@@ -222,58 +225,61 @@ class _CreateSplitBillPageState extends State<CreateSplitBillPage> {
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _label('Total Bill'),
-                    const SizedBox(height: 8),
-                    _buildAmountField(),
-                    const SizedBox(height: 20),
-                    _label('Bill Name'),
-                    const SizedBox(height: 8),
-                    _buildTextField(
-                      controller: _nameCtrl,
-                      hint: 'Shared Meal',
-                    ),
-                    const SizedBox(height: 20),
-                    _label('Note'),
-                    const SizedBox(height: 8),
-                    _buildTextField(
-                      controller: _noteCtrl,
-                      hint: 'Please send the money by January.',
-                      maxLines: 2,
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _label('Split With'),
-                        Text(
-                          '${_selectedMates.length} person',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: grey03,
-                            fontWeight: FontWeight.w700,
+                padding: const EdgeInsets.fromLTRB(20, 30, 20, 120),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildAmountField(),
+                      const SizedBox(height: 14),
+                      CommonTextField(
+                        label: 'Bill Name',
+                        controller: _nameCtrl,
+                        hintText: 'Shared Meal',
+                        onChanged: (_) => setState(() {}),
+                        bottomPadding: 0,
+                      ),
+                      const SizedBox(height: 14),
+                      CommonTextField(
+                        label: 'Note',
+                        controller: _noteCtrl,
+                        hintText: 'Please send the money by January.',
+                        maxLines: 2,
+                        onChanged: (_) => setState(() {}),
+                        bottomPadding: 0,
+                      ),
+                      const SizedBox(height: 26),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _label('Split With'),
+                          Text(
+                            '${_selectedMates.length} person',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: grey03,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
-                        ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      if (_isLoadingCandidates)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 20),
+                          child: Center(
+                            child: CircularProgressIndicator(color: green),
+                          ),
+                        )
+                      else
+                        _buildMatesRow(),
+                      if (_selectedMates.isNotEmpty) ...[
+                        const SizedBox(height: 24),
+                        _buildPerPersonList(),
                       ],
-                    ),
-                    const SizedBox(height: 12),
-                    if (_isLoadingCandidates)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 20),
-                        child: Center(
-                          child: CircularProgressIndicator(color: green),
-                        ),
-                      )
-                    else
-                      _buildMatesRow(),
-                    if (_selectedMates.isNotEmpty) ...[
-                      const SizedBox(height: 24),
-                      _buildPerPersonList(),
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -289,124 +295,47 @@ class _CreateSplitBillPageState extends State<CreateSplitBillPage> {
     return Text(
       text,
       style: const TextStyle(
-        fontSize: 13,
+        fontSize: 15,
         color: dark,
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w700,
       ),
     );
   }
 
   Widget _buildAmountField() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const Text(
-            '\$',
-            style: TextStyle(
-              fontSize: 30,
-              fontWeight: FontWeight.w800,
-              color: darkgreen,
-            ),
-          ),
-          const SizedBox(width: 4),
-          Expanded(
-            child: TextField(
-              controller: _amountCtrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-              ],
-              style: const TextStyle(
-                fontSize: 30,
-                fontWeight: FontWeight.w800,
-                color: darkgreen,
-              ),
-              decoration: const InputDecoration(
-                isCollapsed: true,
-                border: InputBorder.none,
-                hintText: '0',
-                hintStyle: TextStyle(
-                  color: grey02,
-                  fontSize: 30,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              onChanged: (_) => setState(() {}),
-            ),
-          ),
-          GestureDetector(
-            onTap: () {
-              _amountCtrl.clear();
-              setState(() {});
-            },
-            child: Container(
-              width: 26,
-              height: 26,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: grey02, width: 1.4),
-              ),
-              alignment: Alignment.center,
-              child: const Icon(Icons.close, size: 14, color: grey03),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hint,
-    int maxLines = 1,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: TextField(
-        controller: controller,
-        maxLines: maxLines,
-        onChanged: (_) => setState(() {}),
-        style: const TextStyle(
-          fontSize: 13.5,
-          color: dark,
-          fontWeight: FontWeight.w600,
-        ),
-        decoration: InputDecoration(
-          isCollapsed: true,
-          border: InputBorder.none,
-          hintText: hint,
-          hintStyle: const TextStyle(
-            color: grey02,
-            fontSize: 13.5,
-            fontWeight: FontWeight.w500,
-          ),
+    return CommonTextField(
+      label: 'Total Bill',
+      controller: _amountCtrl,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+      prefixIcon: const Text(
+        '\$',
+        style: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.w800,
+          color: green,
         ),
       ),
+      prefixIconPadding: const EdgeInsets.fromLTRB(20, 0, 10, 0),
+      suffixIcon: GestureDetector(
+        onTap: () {
+          _amountCtrl.clear();
+          setState(() {});
+        },
+        child: Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: grey02, width: 1.3),
+          ),
+          alignment: Alignment.center,
+          child: const Icon(Icons.close, size: 13, color: grey03),
+        ),
+      ),
+      hintText: '0',
+      onChanged: (_) => setState(() {}),
+      bottomPadding: 0,
     );
   }
 
@@ -440,18 +369,13 @@ class _CreateSplitBillPageState extends State<CreateSplitBillPage> {
           foregroundColor: Colors.white,
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(26),
           ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SvgPicture.asset(
-              'assets/icons/plus.svg',
-              width: 14,
-              height: 14,
-              color: Colors.white,
-            ),
+            const Icon(Icons.add, size: 18, color: Colors.white),
             const SizedBox(width: 8),
             const Text(
               'Add Mate',
@@ -480,12 +404,7 @@ class _CreateSplitBillPageState extends State<CreateSplitBillPage> {
               border: Border.all(color: grey02, width: 1.4),
             ),
             alignment: Alignment.center,
-            child: SvgPicture.asset(
-              'assets/icons/plus.svg',
-              width: 16,
-              height: 16,
-              color: dark,
-            ),
+            child: const Icon(Icons.add, size: 18, color: dark),
           ),
           const SizedBox(height: 6),
           const SizedBox(
@@ -502,8 +421,7 @@ class _CreateSplitBillPageState extends State<CreateSplitBillPage> {
   }
 
   Widget _buildMateChip(ChatRoomListModel m) {
-    final hasImg =
-        m.profileImageUrl != null && m.profileImageUrl!.isNotEmpty;
+    final hasImg = m.profileImageUrl != null && m.profileImageUrl!.isNotEmpty;
     return Column(
       children: [
         Stack(
@@ -563,7 +481,7 @@ class _CreateSplitBillPageState extends State<CreateSplitBillPage> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -635,38 +553,17 @@ class _CreateSplitBillPageState extends State<CreateSplitBillPage> {
   Widget _buildSaveButton() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: SizedBox(
-        width: double.infinity,
-        height: 56,
-        child: ElevatedButton(
-          onPressed: _canSubmit ? _submit : null,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: yellow,
-            disabledBackgroundColor: grey01,
-            foregroundColor: dark,
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(28),
-            ),
-          ),
-          child: _isSubmitting
-              ? const SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.4,
-                    color: dark,
-                  ),
-                )
-              : const Text(
-                  'Save',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    color: dark,
-                  ),
-                ),
-        ),
+      child: PrimaryButton(
+        formKey: _formKey,
+        text: 'Save',
+        isLoading: _isSubmitting,
+        onAction: () async {
+          await _submit();
+          return false;
+        },
+        successMessage: '',
+        failMessage: '',
+        enabled: _canSubmit,
       ),
     );
   }
