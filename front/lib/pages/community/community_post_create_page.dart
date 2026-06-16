@@ -53,22 +53,10 @@ class _CommunityPostCreatePageState extends State<CommunityPostCreatePage> {
 
   bool get _canSubmit => _contentCtl.text.trim().isNotEmpty && !_submitting;
 
-<<<<<<< HEAD
-  Future<void> _pickImages() async {
-    if (_selectedImages.length >= _maxImages) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('최대 $_maxImages개의 이미지만 선택할 수 있습니다.')),
-      );
-      return;
-    }
-    final picked = await _picker.pickMultiImage();
-    if (picked.isEmpty) return;
-=======
   Future<void> _pickImage() async {
     if (_selectedImages.length >= _maxImages) return;
     final picked = await _picker.pickImage(source: ImageSource.gallery);
     if (picked == null) return;
->>>>>>> 4ccf48f752c93ecb555fba25a73efe6c3d56d1d9
     setState(() {
       _selectedImages
         ..clear()
@@ -240,13 +228,8 @@ class _CommunityPostCreatePageState extends State<CommunityPostCreatePage> {
             ),
             SizedBox(width: 6),
             Text(
-<<<<<<< HEAD
-              '(${_selectedImages.length}/$_maxImages)',
-              style: const TextStyle(
-=======
               '(Optional)',
               style: TextStyle(
->>>>>>> 4ccf48f752c93ecb555fba25a73efe6c3d56d1d9
                 fontSize: 12,
                 color: grey02,
                 fontWeight: FontWeight.w700,
@@ -257,25 +240,9 @@ class _CommunityPostCreatePageState extends State<CommunityPostCreatePage> {
         const SizedBox(height: 12),
         SizedBox(
           height: 100,
-<<<<<<< HEAD
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: [
-              _buildAddImageButton(),
-              const SizedBox(width: 8),
-              ..._selectedImages.asMap().entries.map(
-                (e) => Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: _buildSelectedImage(e.key, e.value),
-                ),
-              ),
-            ],
-          ),
-=======
           child: hasImage
               ? _buildSelectedImage(0, _selectedImages.first)
               : _buildAddImageButton(),
->>>>>>> 4ccf48f752c93ecb555fba25a73efe6c3d56d1d9
         ),
       ],
     );
@@ -304,11 +271,7 @@ class _CommunityPostCreatePageState extends State<CommunityPostCreatePage> {
             Icon(Icons.photo_camera, color: grey02, size: 32),
             SizedBox(height: 6),
             Text(
-<<<<<<< HEAD
-              'Photos',
-=======
               'Photo',
->>>>>>> 4ccf48f752c93ecb555fba25a73efe6c3d56d1d9
               style: TextStyle(
                 fontSize: 12,
                 color: grey02,

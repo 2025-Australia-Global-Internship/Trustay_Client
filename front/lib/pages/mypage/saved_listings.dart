@@ -131,9 +131,9 @@ class _SavedListingsPageState extends State<SavedListingsPage> {
       itemCount: _wishlist.length,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        crossAxisSpacing: 12, // 가로 간격
-        mainAxisSpacing: 14, // 세로 간격
-        childAspectRatio: 0.68, // 카드의 가로세로 비율
+        mainAxisSpacing: 9,
+        crossAxisSpacing: 11,
+        childAspectRatio: 0.65, // 카드의 가로세로 비율
       ),
       itemBuilder: (context, index) {
         final item = _wishlist[index];

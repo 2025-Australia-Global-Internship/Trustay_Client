@@ -1174,35 +1174,23 @@ class _HouseCommPageState extends State<HouseCommPage> with RouteAware {
       );
     }
 
-    final int extraTail = (_isLoadingMoreChats || !_chatHasMore) ? 1 : 0;
     return ListView.builder(
       controller: _chatScrollController,
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(vertical: 8),
-      itemCount: _chatRooms.length + extraTail,
+      itemCount: _chatRooms.length + (_isLoadingMoreChats ? 1 : 0),
       itemBuilder: (context, index) {
         if (index >= _chatRooms.length) {
-          if (_isLoadingMoreChats) {
-            return const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Center(
-                child: SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.4,
-                    color: green,
-                  ),
-                ),
-              ),
-            );
-          }
           return const Padding(
             padding: EdgeInsets.symmetric(vertical: 16),
             child: Center(
-              child: Text(
-                'No more chats',
-                style: TextStyle(fontSize: 12, color: grey03),
+              child: SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.4,
+                  color: green,
+                ),
               ),
             ),
           );

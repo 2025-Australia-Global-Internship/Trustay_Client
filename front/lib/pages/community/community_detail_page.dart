@@ -14,11 +14,9 @@ import 'package:front/services/auth_service.dart';
 import 'package:front/services/community_service.dart';
 import 'package:front/services/post_service.dart';
 import 'package:front/services/sharehouse_service.dart';
-<<<<<<< HEAD
-=======
 import 'package:front/widgets/confirm_dialog.dart';
->>>>>>> 4ccf48f752c93ecb555fba25a73efe6c3d56d1d9
 import 'package:front/widgets/gradient_layout.dart';
+import 'package:front/widgets/circle_icon_button.dart';
 
 import 'community_post_create_page.dart';
 
@@ -379,45 +377,15 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _circleIconButton(
-            asset: 'assets/icons/arrow_back.svg',
-            onTap: () => Navigator.of(context).maybePop(),
+          CircleIconButton(
+            svgAsset: 'assets/icons/arrow_back.svg',
+            onPressed: () => Navigator.of(context).maybePop(),
           ),
-          _circleIconButton(
-            iconWidget: const Icon(Icons.more_horiz, size: 22, color: dark),
-            onTap: _onTapMore,
+          CircleIconButton(
+            svgAsset: 'assets/icons/dots-linear.svg',
+            onPressed: _onTapMore,
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _circleIconButton({
-    String? asset,
-    Widget? iconWidget,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Center(
-          child:
-              iconWidget ??
-              SvgPicture.asset(asset!, width: 18, height: 18, color: dark),
-        ),
       ),
     );
   }
@@ -510,7 +478,14 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
               ),
               const SizedBox(height: 4),
               ListTile(
-                leading: const Icon(Icons.group_outlined, color: dark),
+                horizontalTitleGap: 16,
+                minLeadingWidth: 0,
+                leading: SvgPicture.asset(
+                  'assets/icons/social.svg',
+                  color: dark,
+                  width: 20,
+                  height: 20,
+                ),
                 title: const Text(
                   'Members',
                   style: TextStyle(fontWeight: FontWeight.w700, color: dark),
@@ -524,9 +499,15 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
               // 오너는 항상 멤버이므로 _isMember 가 true → 옵션이 노출된다.
               if (_isMember)
                 ListTile(
-                  leading: Icon(
-                    _isOwner ? Icons.delete_outline : Icons.exit_to_app,
+                  horizontalTitleGap: 15,
+                  minLeadingWidth: 0,
+                  leading: SvgPicture.asset(
+                    _isOwner
+                        ? 'assets/icons/trash.svg'
+                        : 'assets/icons/logout.svg',
                     color: _isOwner ? Colors.redAccent : dark,
+                    width: 23,
+                    height: 23,
                   ),
                   title: Text(
                     _isOwner ? 'Delete community' : 'Leave community',
@@ -1226,10 +1207,12 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
   bool _canDeletePost(PostModel p) {
     final me = AuthService.currentUserNotifier.value;
     if (me == null) return false;
-    final isAuthor = p.authorEmail != null &&
+    final isAuthor =
+        p.authorEmail != null &&
         p.authorEmail!.isNotEmpty &&
         p.authorEmail == me.email;
-    final isOwner = _community?.ownerMemberId != null &&
+    final isOwner =
+        _community?.ownerMemberId != null &&
         _community!.ownerMemberId == me.memberId;
     return isAuthor || isOwner;
   }
@@ -1251,15 +1234,13 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
         // 앨범 캐시도 함께 무효화 (사진이 빠지면 다시 채워줘야 하므로).
         _albumPosts.removeWhere((e) => e.id == p.id);
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Post deleted.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Post deleted.')));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-        ),
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
       );
     }
   }
@@ -1274,9 +1255,7 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
         tooltip: 'More',
         padding: EdgeInsets.zero,
         position: PopupMenuPosition.under,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         elevation: 6,
         icon: SvgPicture.asset(
           'assets/icons/dots-linear.svg',
@@ -1335,19 +1314,6 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-<<<<<<< HEAD
-            // 본문만 표시 (타이틀은 노출하지 않는다).
-            Text(
-              p.content,
-              maxLines: hasImage ? 2 : 4,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 13,
-                height: 1.4,
-                color: dark,
-                fontWeight: FontWeight.w700,
-              ),
-=======
             // 본문 + (권한 있을 때) 더보기 메뉴.
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1367,7 +1333,6 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
                 ),
                 if (canDelete) _buildPostMoreMenu(p),
               ],
->>>>>>> 4ccf48f752c93ecb555fba25a73efe6c3d56d1d9
             ),
             if (hasImage) ...[
               const SizedBox(height: 12),

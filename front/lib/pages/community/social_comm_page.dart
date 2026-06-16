@@ -496,7 +496,7 @@ class _SocialCommPageState extends State<SocialCommPage> with RouteAware {
   }) {
     final hasImage = imageUrl != null && imageUrl.isNotEmpty;
     return Container(
-      width: 190,
+      width: 180,
       margin: const EdgeInsets.only(right: 12),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -592,14 +592,14 @@ class _SocialCommPageState extends State<SocialCommPage> with RouteAware {
                     style: const TextStyle(
                       color: dark,
                       fontSize: 15,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                   const SizedBox(height: 7),
                   Row(
                     children: [
-                      const Icon(Icons.access_time, size: 16, color: grey03),
-                      const SizedBox(width: 5),
+                      const Icon(Icons.access_time, size: 17, color: grey03),
+                      const SizedBox(width: 4),
                       Expanded(
                         child: Text(
                           subtitle,
@@ -608,7 +608,7 @@ class _SocialCommPageState extends State<SocialCommPage> with RouteAware {
                           style: const TextStyle(
                             color: grey03,
                             fontSize: 12.5,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
