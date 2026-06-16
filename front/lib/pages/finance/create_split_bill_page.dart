@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import 'package:front/constants/colors.dart';
+import 'package:front/constants/exchange_rate.dart';
 import 'package:front/models/chat_room_list_model.dart';
 import 'package:front/models/user_model.dart';
 import 'package:front/services/auth_service.dart';
@@ -163,8 +164,10 @@ class _CreateSplitBillPageState extends State<CreateSplitBillPage> {
 
     setState(() => _isSubmitting = true);
     try {
-      // 호주달러 → 정수 단위로 변환 (1AUD 이하 절사). 백엔드 amount 가 int.
-      final int totalInt = _totalAmount.round();
+      // 입력값은 호주달러(AUD). 서버/DB/토스 결제는 모두 KRW 정수로 통일하므로
+      // 전송 직전에 환산한다 (1 AUD ≈ kAudToKrwRate KRW).
+      // 변환 단계는 audToKrw 에 일원화돼 있어 환율을 바꾸려면 그 한 곳만 손대면 된다.
+      final int totalKrw = audToKrw(_totalAmount);
       // 백엔드 createDutchPay 규약:
       //   - memberIds 에는 "본인 포함" 전체 참여자가 들어가야 한다.
       //   - payeeMemberId 는 memberIds 에 반드시 포함돼야 한다.
@@ -174,15 +177,19 @@ class _CreateSplitBillPageState extends State<CreateSplitBillPage> {
         ..._selectedMates.map((e) => e.otherMemberId),
       ];
       await PaymentService.createDutchPay(
-        totalAmount: totalInt,
+        totalAmount: totalKrw,
         memberIds: memberIds,
         payeeMemberId: me.memberId,
         title: _composeTitle(),
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Split bill created.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Split bill sent. We'll let you know as mates pay their share.",
+          ),
+        ),
+      );
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
@@ -235,6 +242,10 @@ class _CreateSplitBillPageState extends State<CreateSplitBillPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildAmountField(),
+                      if (_totalAmount > 0) ...[
+                        const SizedBox(height: 8),
+                        _buildKrwPreview(),
+                      ],
                       const SizedBox(height: 14),
                       CommonTextField(
                         label: 'Bill Name',
@@ -280,6 +291,8 @@ class _CreateSplitBillPageState extends State<CreateSplitBillPage> {
                       if (_selectedMates.isNotEmpty) ...[
                         const SizedBox(height: 24),
                         _buildPerPersonList(),
+                        const SizedBox(height: 16),
+                        _buildPayeeHint(),
                       ],
                     ],
                   ),
@@ -301,6 +314,40 @@ class _CreateSplitBillPageState extends State<CreateSplitBillPage> {
         fontSize: 15,
         color: dark,
         fontWeight: FontWeight.w700,
+      ),
+    );
+  }
+
+  /// 사용자가 입력한 AUD 금액의 KRW 환산값을 미리 보여준다.
+  ///
+  /// 토스 결제는 KRW 로 진행되기 때문에, 입력 시점에 실제 결제 금액을
+  /// 확인할 수 있도록 "≈ ₩50,000 (1 AUD = 1,000 KRW)" 형식으로 표기한다.
+  Widget _buildKrwPreview() {
+    final krw = audToKrw(_totalAmount);
+    return Padding(
+      padding: const EdgeInsets.only(left: 4),
+      child: Row(
+        children: [
+          const Icon(Icons.swap_horiz, size: 14, color: grey03),
+          const SizedBox(width: 4),
+          Text(
+            '≈ ${formatKrw(krw)}',
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: darkgreen,
+            ),
+          ),
+          const SizedBox(width: 6),
+          const Text(
+            '(1 AUD = 1,000 KRW)',
+            style: TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w500,
+              color: grey03,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -546,6 +593,62 @@ class _CreateSplitBillPageState extends State<CreateSplitBillPage> {
               fontSize: 14,
               fontWeight: FontWeight.w800,
               color: darkgreen,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 만든 사람이 정산자(payee)라는 점을 명확히 알려주는 안내 박스.
+  ///
+  /// "본인 Pending이 왜 비어 있지?" 라는 흔한 혼동을 미리 차단한다.
+  /// 메이트들의 결제 진행은 Finance 메인의 거래 내역에서 "Awaiting" 으로 보인다.
+  Widget _buildPayeeHint() {
+    final me = _me;
+    final mateCount = _selectedMates.length;
+    final per = _perPerson;
+    final receivable = per * mateCount;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF7C7),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFFFE57F), width: 1),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.info_outline, size: 16, color: darkgreen),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  me == null
+                      ? "You'll receive payments from your mates"
+                      : "${me.name}, you'll receive payments",
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
+                    color: darkgreen,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  mateCount == 0
+                      ? "Each mate will pay their share to you. Your own share is already covered."
+                      : 'Each of your $mateCount mate${mateCount == 1 ? '' : 's'} will pay ${_fmtMoney(per)} to you — totalling ${_fmtMoney(receivable)}. Your own share is already covered.',
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    height: 1.45,
+                    fontWeight: FontWeight.w500,
+                    color: dark,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

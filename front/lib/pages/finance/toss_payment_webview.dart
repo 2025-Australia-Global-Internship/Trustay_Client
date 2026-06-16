@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import 'package:front/constants/colors.dart';
+import 'package:front/constants/exchange_rate.dart';
 import 'package:front/services/payment_service.dart';
 import 'package:front/widgets/custom_header.dart';
 
@@ -22,6 +23,10 @@ import 'package:front/widgets/custom_header.dart';
 ///   5) 실패/취소 시 `failUrl` 로 리다이렉트 → `Navigator.pop(context, false)`.
 class TossPaymentWebView extends StatefulWidget {
   /// 결제할 금액 (백엔드 Payment.amount 와 동일해야 한다).
+  ///
+  /// 단위는 **KRW 정수**. 우리 앱은 사용자에게 호주달러로 표시하지만,
+  /// 서버/DB/토스에는 KRW 로 통일해 흐른다. 호출 측에서 이미 KRW 로
+  /// 환산한 값을 넘겨주어야 한다 (보통 서버에서 받아온 Payment.amount 를 그대로 전달).
   final int amount;
 
   /// 백엔드에서 발급된 결제 주문 ID. confirm 호출 시 키로 쓰인다.
@@ -173,6 +178,7 @@ class _TossPaymentWebViewState extends State<TossPaymentWebView> {
     }
     .summary .name { font-size: 13px; color: #888; font-weight: 600; }
     .summary .amount { font-size: 28px; font-weight: 800; color: #454B27; margin-top: 6px; }
+    .summary .krw { font-size: 13px; color: #888; font-weight: 600; margin-top: 2px; }
     .pay-btn {
       width: 100%;
       padding: 16px;
@@ -197,7 +203,8 @@ class _TossPaymentWebViewState extends State<TossPaymentWebView> {
 <body>
   <div class="summary">
     <div class="name">${widget.orderName.replaceAll('<', '&lt;')}</div>
-    <div class="amount">₩${widget.amount}</div>
+    <div class="amount">${formatAud(krwToAud(widget.amount)).replaceAll('<', '&lt;')}</div>
+    <div class="krw">≈ ${formatKrw(widget.amount)} (charged in KRW via Toss)</div>
   </div>
   <div id="payment-method"></div>
   <div id="agreement"></div>
