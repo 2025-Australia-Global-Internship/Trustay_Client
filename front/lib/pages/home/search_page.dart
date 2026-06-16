@@ -265,7 +265,7 @@ class _SearchPageState extends State<SearchPage> {
 
           // 최근 본 매물 (서버 자동 집계 - 최신 5개)
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
             child: Row(
               children: const [
                 Text(
@@ -292,9 +292,9 @@ class _SearchPageState extends State<SearchPage> {
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
-                          mainAxisSpacing: 14,
-                          crossAxisSpacing: 12,
-                          childAspectRatio: 0.68,
+                          mainAxisSpacing: 9,
+                          crossAxisSpacing: 11,
+                          childAspectRatio: 0.65,
                         ),
                     itemCount: _recentViewed.length,
                     itemBuilder: (context, index) {

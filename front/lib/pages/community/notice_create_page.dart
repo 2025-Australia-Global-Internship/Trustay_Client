@@ -128,11 +128,11 @@ class _NoticeCreatePageState extends State<NoticeCreatePage> {
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
                   children: [
+                    _buildImagePicker(),
+                    const SizedBox(height: 14),
                     _buildTitleField(),
                     const SizedBox(height: 14),
                     _buildContentField(),
-                    const SizedBox(height: 26),
-                    _buildImagePicker(),
                   ],
                 ),
               ),
