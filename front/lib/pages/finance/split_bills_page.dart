@@ -73,11 +73,20 @@ class _SplitBillsPageState extends State<SplitBillsPage> {
   // 통계 계산
   // ---------------------------------------------------------------------------
 
+  /// 차트/총합에 사용할 항목만 필터링.
+  ///
+  /// - "내가 지불한" 더치페이만 포함 (OUT, CONFIRMED).
+  ///   - PENDING 은 아직 결제 전이라 합산하면 사용자 입장에서 잘못된 금액이 노출됨.
+  ///   - IN 은 내가 받은 돈이라 "이번 달 사용 금액"엔 들어가면 안 됨.
+  Iterable<PaymentHistoryItem> get _confirmedOutgoing => _dutchHistory.where(
+        (p) => !p.isIncoming && p.status == 'CONFIRMED',
+      );
+
   /// 올해(현재 연도) 월별 합계(달러). 1=Jan ... 12=Dec.
   Map<int, double> _monthlyTotalsThisYear() {
     final int year = DateTime.now().year;
     final Map<int, double> totals = {for (int i = 1; i <= 12; i++) i: 0.0};
-    for (final p in _dutchHistory) {
+    for (final p in _confirmedOutgoing) {
       final d = p.transactionDate;
       if (d == null) continue;
       if (d.year != year) continue;
@@ -89,7 +98,7 @@ class _SplitBillsPageState extends State<SplitBillsPage> {
   double _totalThisMonth() {
     final now = DateTime.now();
     double sum = 0;
-    for (final p in _dutchHistory) {
+    for (final p in _confirmedOutgoing) {
       final d = p.transactionDate;
       if (d == null) continue;
       if (d.year != now.year || d.month != now.month) continue;
@@ -403,9 +412,18 @@ class _SplitBillsPageState extends State<SplitBillsPage> {
   Widget _buildHistoryRow(PaymentHistoryItem p) {
     final d = p.transactionDate;
     final dateStr = d != null ? _fmtTxDate(d) : '';
-    final title = (p.targetAccount != null && p.targetAccount!.isNotEmpty)
-        ? p.targetAccount!
-        : 'Split bill';
+    // 행 제목: 1순위 카운터파티 이름, 2순위 계좌 라벨(짧을 때만), 그 외 'Split bill'.
+    //   targetAccount 는 계좌 등록 안내 같은 긴 문장이 들어올 수 있으므로
+    //   그대로 노출하면 안 된다(=서버 PaymentService.ACCOUNT_NOT_SET 메시지).
+    String resolvedTitle = 'Split bill';
+    if (p.counterpartyName != null && p.counterpartyName!.isNotEmpty) {
+      resolvedTitle = p.counterpartyName!;
+    } else if (p.targetAccount != null &&
+        p.targetAccount!.isNotEmpty &&
+        !p.targetAccount!.startsWith('(')) {
+      resolvedTitle = p.targetAccount!;
+    }
+    final title = resolvedTitle;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),

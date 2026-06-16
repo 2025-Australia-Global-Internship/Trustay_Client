@@ -11,6 +11,26 @@ import 'widgets/bottom_nav_bar.dart';
 /// 0: Home, 1: Community, 2: Map, 3: Finance, 4: MyPage
 final ValueNotifier<int> indexTabNotifier = ValueNotifier<int>(0);
 
+/// 같은 탭을 다시 눌렀을 때(=재선택) 페이지에 새로고침 신호를 보내는 노티파이어.
+///
+/// 값 자체는 의미가 없고 `notifyListeners()` 가 호출되었다는 사실만 사용한다.
+/// 어떤 탭이 재선택되었는지는 [lastReselectedTabIndex] 로 확인한다.
+/// (ValueNotifier 는 같은 값을 다시 set 하면 알림이 발생하지 않으므로,
+///  매번 카운터를 증가시켜 같은 탭을 연속으로 눌러도 매번 알림이 발생하도록 한다.)
+final ValueNotifier<int> tabReselectTick = ValueNotifier<int>(0);
+
+/// 가장 최근에 재선택된 탭 인덱스. [tabReselectTick] 이 트리거되었을 때
+/// 호출 측에서 자기 탭이 재선택된 것인지 비교하는 용도.
+int lastReselectedTabIndex = -1;
+
+/// 같은 탭을 다시 눌렀을 때 IndexPage 가 호출하는 전역 시그널 발신기.
+/// 페이지들은 [tabReselectTick] 을 listen 해서 자기 탭이 재선택되면
+/// 페이지 상태를 새로고침할 수 있다.
+void signalTabReselect(int tabIndex) {
+  lastReselectedTabIndex = tabIndex;
+  tabReselectTick.value = tabReselectTick.value + 1;
+}
+
 /// MyPage 탭(=4)으로 이동시키는 헬퍼.
 void goToMyPageTab() {
   indexTabNotifier.value = 4;
@@ -63,7 +83,12 @@ class _IndexPageState extends State<IndexPage> {
   }
 
   void _setTab(int index) {
-    if (index == _currentIndex) return;
+    if (index == _currentIndex) {
+      // 같은 탭을 다시 눌렀을 때 → 그 탭의 페이지에 새로고침 신호.
+      // (지도 탭에서는 검색/카메라 초기화로 사용된다.)
+      signalTabReselect(index);
+      return;
+    }
     setState(() => _currentIndex = index);
     // 외부 listener 들에게도 알리되, 같은 값이면 알림 발생 X
     if (indexTabNotifier.value != index) {

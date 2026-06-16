@@ -8,9 +8,9 @@ import 'package:front/models/sharehouse_model.dart';
 import 'package:front/services/auth_service.dart';
 import 'package:front/services/sharehouse_service.dart';
 import 'package:front/services/notification_service.dart';
-import 'package:front/routes/app_routes.dart';
 import 'package:front/widgets/circle_icon_button.dart';
 import 'package:front/widgets/house_card.dart';
+import 'package:front/widgets/notification_bell_button.dart';
 // 상세 페이지 이동을 위해 import 추가
 import '../../pages/mypage/sharehouse_detail_page.dart';
 
@@ -198,14 +198,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
                           Navigator.pushNamed(context, '/search');
                         },
                       ),
-                      _NotificationBellButton(
-                        onPressed: () {
-                          Navigator.pushNamed(
-                            context,
-                            AppRoutes.notifications,
-                          );
-                        },
-                      ),
+                      const NotificationBellButton(),
                     ],
                   ),
                 ),
@@ -488,56 +481,3 @@ class _HomePageState extends State<HomePage> with RouteAware {
   }
 }
 
-/// 종 아이콘 + 안 읽은 알림 개수 빨간 뱃지.
-/// 뱃지는 [NotificationService.unreadCountNotifier] 를 구독하여
-/// 새로고침 없이도 즉시 반영된다.
-class _NotificationBellButton extends StatelessWidget {
-  final VoidCallback onPressed;
-
-  const _NotificationBellButton({required this.onPressed});
-
-  @override
-  Widget build(BuildContext context) {
-    return ValueListenableBuilder<int>(
-      valueListenable: NotificationService.unreadCountNotifier,
-      builder: (context, unread, _) {
-        return Stack(
-          clipBehavior: Clip.none,
-          children: [
-            CircleIconButton(
-              svgAsset: 'assets/icons/bell.svg',
-              iconSize: 22,
-              iconColor: dark,
-              onPressed: onPressed,
-            ),
-            if (unread > 0)
-              Positioned(
-                right: 2,
-                top: 2,
-                child: Container(
-                  constraints:
-                      const BoxConstraints(minWidth: 18, minHeight: 18),
-                  padding: const EdgeInsets.symmetric(horizontal: 5),
-                  decoration: BoxDecoration(
-                    color: Colors.redAccent,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.white, width: 1.5),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    unread > 99 ? '99+' : '$unread',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      height: 1.0,
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        );
-      },
-    );
-  }
-}

@@ -232,6 +232,10 @@ class _FinancePageState extends State<FinancePage> {
     }
 
     // (2) 거래 이력: 최신순 → 월별 그룹핑.
+    //
+    // OUT 거래의 PENDING 은 이미 위 "Pending" 섹션에서 노출되므로 월별 거래 내역에는
+    // 포함시키지 않는다(중복 표시 방지). IN 거래의 PENDING 은 "Awaiting" 라벨로
+    // 받을 예정 금액을 표시해야 하므로 그대로 둔다.
     final sorted = [...items]..sort((a, b) {
       final ad = a.transactionDate ?? DateTime.fromMillisecondsSinceEpoch(0);
       final bd = b.transactionDate ?? DateTime.fromMillisecondsSinceEpoch(0);
@@ -240,6 +244,10 @@ class _FinancePageState extends State<FinancePage> {
     for (final p in sorted) {
       final date = p.transactionDate;
       if (date == null) continue;
+      // OUT 거래의 PENDING / FAILED 는 거래 내역에서 제외.
+      //   - PENDING: 위 Pending 섹션과 중복.
+      //   - FAILED : 사용자에게 노이즈 (재시도하면 새 레코드가 생성).
+      if (!p.isIncoming && p.status != 'CONFIRMED') continue;
       final monthLabel = _monthLabels[date.month - 1];
       final dateStr = _formatTxDate(date);
       final title = _titleFor(p.paymentType);

@@ -142,7 +142,10 @@ class _TossPaymentWebViewState extends State<TossPaymentWebView> {
   }
 
   String _buildHtml(String clientKey) {
-    // 토스 결제 위젯 v2 SDK 를 사용한 인라인 HTML.
+    // 토스페이먼츠 JavaScript SDK v2 (Standard) 기반 인라인 HTML.
+    //   https://docs.tosspayments.com/sdk/v2/js
+    // 호출 흐름: TossPayments(clientKey).widgets({customerKey})
+    //   → setAmount → renderPaymentMethods → renderAgreement → requestPayment
     // 안전을 위해 JS 문자열 리터럴은 jsonEncode 로 이스케이프한다.
     String j(Object v) => jsonEncode(v);
 
@@ -188,7 +191,7 @@ class _TossPaymentWebViewState extends State<TossPaymentWebView> {
       overflow: hidden;
       margin-bottom: 12px;
     }
-    .err { color:#c0392b; font-size: 13px; margin-top: 8px; }
+    .err { color:#c0392b; font-size: 13px; margin-top: 8px; white-space: pre-wrap; }
   </style>
 </head>
 <body>
@@ -201,7 +204,7 @@ class _TossPaymentWebViewState extends State<TossPaymentWebView> {
   <button id="payment-button" class="pay-btn" disabled>Pay</button>
   <div id="err" class="err"></div>
 
-  <script src="https://js.tosspayments.com/v1/payment-widget"></script>
+  <script src="https://js.tosspayments.com/v2/standard"></script>
   <script>
     (async () => {
       const clientKey = ${j(clientKey)};
@@ -216,13 +219,23 @@ class _TossPaymentWebViewState extends State<TossPaymentWebView> {
       const btn = document.getElementById('payment-button');
       const errBox = document.getElementById('err');
       try {
-        // PaymentWidget 전역으로 노출되는 SDK
-        const paymentWidget = PaymentWidget(clientKey, customerKey);
-        await paymentWidget.renderPaymentMethods('#payment-method', { value: amount, currency: 'KRW' });
-        await paymentWidget.renderAgreement('#agreement');
-        btn.disabled = false;
+        const tossPayments = TossPayments(clientKey);
+        const widgets = tossPayments.widgets({ customerKey: customerKey });
+        await widgets.setAmount({ currency: 'KRW', value: amount });
+        await widgets.renderPaymentMethods({
+          selector: '#payment-method',
+          variantKey: 'DEFAULT',
+        });
+        const agreementWidget = await widgets.renderAgreement({
+          selector: '#agreement',
+          variantKey: 'AGREEMENT',
+        });
+        // 약관 체크 후에만 결제 버튼 활성화 (필수 약관에 동의해야 결제 가능).
+        agreementWidget.on('agreementStatusChange', (status) => {
+          btn.disabled = !status.agreedRequiredTerms;
+        });
         btn.addEventListener('click', () => {
-          paymentWidget.requestPayment({
+          widgets.requestPayment({
             orderId: orderId,
             orderName: orderName,
             customerName: customerName || undefined,

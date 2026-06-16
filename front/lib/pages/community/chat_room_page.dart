@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:front/constants/colors.dart';
 import 'package:front/services/chat_service.dart';
 import 'package:front/services/contract_service.dart';
+import 'package:front/services/notification_service.dart';
 import 'package:front/models/chat_message_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -81,6 +83,10 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
 
   /// 채팅방 안 읽은 메시지를 한 번에 읽음 처리.
   /// 실패해도 사용자 흐름을 막지 않는다.
+  ///
+  /// 서버는 채팅 메시지를 읽음 처리하면서 해당 채팅방의 CHAT 알림을 함께
+  /// 삭제한다. 따라서 호출 후 종 아이콘 뱃지(unreadCount)도 새로 받아와
+  /// 즉시 동기화한다.
   Future<void> _markRoomAsReadSafely() async {
     try {
       await ChatService.markRoomAsRead(widget.roomId, widget.myMemberId);
@@ -88,6 +94,9 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       // 읽음 처리 실패는 치명적이지 않음. 다음 진입 시 자동 동기화됨.
       print('⚠️ 채팅 읽음 처리 실패: $e');
     }
+    // 알림 정리(서버 측)가 적용된 결과를 종 뱃지에 즉시 반영.
+    // 실패해도 ValueNotifier 의 기존 값이 유지될 뿐이므로 안전하다.
+    unawaited(NotificationService.fetchUnreadCount());
   }
 
   Future<void> _loadToken() async {

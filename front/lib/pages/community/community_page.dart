@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:front/constants/colors.dart';
 import 'package:front/index.dart' show goToMyPageTab;
+import 'package:front/services/notification_service.dart';
 import 'package:front/widgets/circle_icon_button.dart';
 import 'package:front/widgets/custom_header.dart';
 import 'package:front/widgets/gradient_layout.dart';
+import 'package:front/widgets/notification_bell_button.dart';
 import 'community_search_page.dart';
 import 'house_comm_page.dart';
 import 'social_comm_page.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:front/main.dart'; // routeObserver import
 
 class CommunityPage extends StatefulWidget {
   const CommunityPage({super.key});
@@ -16,8 +19,33 @@ class CommunityPage extends StatefulWidget {
   State<CommunityPage> createState() => _CommunityPageState();
 }
 
-class _CommunityPageState extends State<CommunityPage> {
+class _CommunityPageState extends State<CommunityPage> with RouteAware {
   int _topTabIndex = 0; // 0: House, 1: Social
+
+  @override
+  void initState() {
+    super.initState();
+    // 종 아이콘 빨간 뱃지를 위한 unread 개수 갱신.
+    NotificationService.fetchUnreadCount();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  // 알림 페이지에서 돌아왔을 때 뱃지를 다시 동기화한다.
+  @override
+  void didPopNext() {
+    NotificationService.fetchUnreadCount();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -82,12 +110,9 @@ class _CommunityPageState extends State<CommunityPage> {
                   );
                 },
               ),
-            CircleIconButton(
-              svgAsset: 'assets/icons/bell.svg',
+            const NotificationBellButton(
               iconSize: 21.5,
-              iconColor: dark,
-              padding: const EdgeInsets.only(right: 8),
-              onPressed: () {},
+              padding: EdgeInsets.only(right: 8),
             ),
             CircleIconButton(
               svgAsset: 'assets/icons/profile.svg',
