@@ -28,8 +28,18 @@ class SplitBillsPage extends StatefulWidget {
 
 class _SplitBillsPageState extends State<SplitBillsPage> {
   static const List<String> _shortMonths = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
 
   // 가져올 결제 이력 (DUTCH 전용으로 충분히 큰 페이지).
@@ -140,7 +150,7 @@ class _SplitBillsPageState extends State<SplitBillsPage> {
               center: Text(
                 'Split Bills',
                 style: TextStyle(
-                  fontSize: 17,
+                  fontSize: 20,
                   fontWeight: FontWeight.w800,
                   color: dark,
                 ),
@@ -154,8 +164,7 @@ class _SplitBillsPageState extends State<SplitBillsPage> {
                       onRefresh: _load,
                       child: ListView(
                         physics: const AlwaysScrollableScrollPhysics(),
-                        padding:
-                            const EdgeInsets.fromLTRB(16, 16, 16, 120),
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
                         children: [
                           _buildSummaryCard(),
                           const SizedBox(height: 20),
@@ -213,18 +222,18 @@ class _SplitBillsPageState extends State<SplitBillsPage> {
           const Text(
             'Total Split Bill This Month',
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 13,
               fontWeight: FontWeight.w700,
-              color: grey03,
+              color: dark,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
           Text(
             _fmtMoney(total),
             style: const TextStyle(
-              fontSize: 32,
+              fontSize: 36,
               fontWeight: FontWeight.w800,
-              color: darkgreen,
+              color: green,
             ),
           ),
           const SizedBox(height: 14),
@@ -235,8 +244,8 @@ class _SplitBillsPageState extends State<SplitBillsPage> {
                 'Expenses in $year',
                 style: const TextStyle(
                   fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: grey03,
+                  fontWeight: FontWeight.w600,
+                  color: grey02,
                 ),
               ),
               GestureDetector(
@@ -246,7 +255,7 @@ class _SplitBillsPageState extends State<SplitBillsPage> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
-                    color: darkgreen,
+                    color: green,
                   ),
                 ),
               ),
@@ -263,82 +272,129 @@ class _SplitBillsPageState extends State<SplitBillsPage> {
     required Map<int, double> totals,
     required int currentMonth,
   }) {
-    // 막대 9개 (Jan~Sep). 디자인을 충실히 재현.
-    final values = List<double>.generate(9, (i) => totals[i + 1] ?? 0);
-    final double maxValue =
-        values.fold<double>(0, (acc, v) => v > acc ? v : acc);
+    final values = List<double>.generate(12, (i) => totals[i + 1] ?? 0);
+    final double maxValue = values.fold<double>(
+      0,
+      (acc, v) => v > acc ? v : acc,
+    );
 
     return SizedBox(
-      height: 130,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          // 라벨이 항상 막대 위로 올라오도록 강조 막대의 라벨 영역 확보.
-          const double labelHeight = 22;
-          const double barAreaTop = labelHeight + 6;
-          final double barAreaHeight = 110 - barAreaTop;
+      height: 120,
+      // 💡 1. 가로 스크롤을 가능하게 해주는 좌우 스크롤 뷰 배치
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            const double labelHeight = 24;
+            const double barAreaTop = labelHeight + 6;
+            final double barAreaHeight = 110 - barAreaTop;
 
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: List.generate(9, (i) {
-              final v = values[i];
-              final bool isCurrent = (i + 1) == currentMonth;
-              final double ratio = maxValue == 0 ? 0 : (v / maxValue);
-              final double barHeight =
-                  (barAreaHeight * ratio).clamp(8.0, barAreaHeight);
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              // 💡 2. Expanded 대신 고정 너비를 가질 수 있도록 변경
+              children: List.generate(12, (i) {
+                final v = values[i];
+                final bool isCurrent = (i + 1) == currentMonth;
+                final double ratio = maxValue == 0 ? 0 : (v / maxValue);
+                final double barHeight = (barAreaHeight * ratio).clamp(
+                  8.0,
+                  barAreaHeight,
+                );
 
-              return Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    // 라벨 (현재 월에만 표시)
-                    SizedBox(
-                      height: labelHeight,
-                      child: isCurrent
-                          ? Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: darkgreen,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                _fmtMoney(v),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
+                // 💡 3. 각 한 달 영역의 총 가로 할당 너비를 고정(42px)합니다.
+                // 이 값이 커질수록 막대 사이의 간격이 넓어집니다.
+                return SizedBox(
+                  width: 42,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      // 💬 가로로 긴 말풍선 모양 가격 라벨
+                      SizedBox(
+                        height: labelHeight,
+                        child: isCurrent
+                            ? OverflowBox(
+                                minWidth: 0,
+                                maxWidth: 100, // 양옆으로 넉넉하게 펼쳐질 수 있는 공간 보장
+                                minHeight: 0,
+                                maxHeight: labelHeight,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    // 말풍선 본체 (가로로 긴 라운드 렉트)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: green,
+                                        borderRadius: BorderRadius.circular(10),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(
+                                              0.05,
+                                            ),
+                                            blurRadius: 4,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Text(
+                                        _fmtMoney(v),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 9.5,
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: -0.3,
+                                        ),
+                                      ),
+                                    ),
+                                    // 말풍선 아래 꼬리 역삼각형 모양 힌트
+                                    Transform.translate(
+                                      offset: const Offset(0, -1),
+                                      child: ClipPath(
+                                        clipper: _TriangleClipper(),
+                                        child: Container(
+                                          width: 6,
+                                          height: 4,
+                                          color: green,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            )
-                          : const SizedBox.shrink(),
-                    ),
-                    const SizedBox(height: 6),
-                    Container(
-                      width: 12,
-                      height: barHeight,
-                      decoration: BoxDecoration(
-                        color: isCurrent ? yellow : const Color(0xFFEFEFEF),
-                        borderRadius: BorderRadius.circular(8),
+                              )
+                            : const SizedBox.shrink(),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _shortMonths[i],
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight:
-                            isCurrent ? FontWeight.w800 : FontWeight.w600,
-                        color: isCurrent ? darkgreen : grey03,
+                      const SizedBox(height: 6),
+                      // 막대 기둥
+                      Container(
+                        width: 23,
+                        height: barHeight,
+                        decoration: BoxDecoration(
+                          color: isCurrent ? yellow : const Color(0xFFEFEFEF),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              );
-            }),
-          );
-        },
+                      const SizedBox(height: 8),
+                      Text(
+                        _shortMonths[i],
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: isCurrent
+                              ? FontWeight.w800
+                              : FontWeight.w600,
+                          color: isCurrent ? green : grey03,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            );
+          },
+        ),
       ),
     );
   }
@@ -369,7 +425,7 @@ class _SplitBillsPageState extends State<SplitBillsPage> {
               const Text(
                 'Split Bill History',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 16,
                   fontWeight: FontWeight.w800,
                   color: dark,
                 ),
@@ -381,7 +437,7 @@ class _SplitBillsPageState extends State<SplitBillsPage> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
-                    color: darkgreen,
+                    color: green,
                   ),
                 ),
               ),
@@ -500,9 +556,7 @@ class _SplitBillsPageState extends State<SplitBillsPage> {
           onPressed: () async {
             final created = await Navigator.push<bool>(
               context,
-              MaterialPageRoute(
-                builder: (_) => const CreateSplitBillPage(),
-              ),
+              MaterialPageRoute(builder: (_) => const CreateSplitBillPage()),
             );
             if (created == true && mounted) _load();
           },
@@ -538,4 +592,20 @@ class _SplitBillsPageState extends State<SplitBillsPage> {
       ),
     );
   }
+}
+
+// 💡 말풍선 아래 꼬리 삼각형을 그리기 위한 클리퍼 클래스
+class _TriangleClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    path.moveTo(0, 0);
+    path.lineTo(size.width, 0);
+    path.lineTo(size.width / 2, size.height);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }

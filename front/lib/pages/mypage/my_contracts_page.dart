@@ -72,8 +72,10 @@ class _MyContractsPageState extends State<MyContractsPage> {
       _hasMore = true;
     });
     try {
-      final list =
-          await ContractService.getMyContracts(page: 0, size: _pageSize);
+      final list = await ContractService.getMyContracts(
+        page: 0,
+        size: _pageSize,
+      );
       _sortByRegTimeDesc(list);
       if (!mounted) return;
       setState(() {
@@ -130,18 +132,15 @@ class _MyContractsPageState extends State<MyContractsPage> {
   Future<void> _openDetail(ContractModel c) async {
     final memberId = AuthService.currentUserNotifier.value?.memberId;
     if (memberId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please sign in again.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please sign in again.')));
       return;
     }
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ContractViewPage(
-          contractId: c.id,
-          memberId: memberId,
-        ),
+        builder: (_) => ContractViewPage(contractId: c.id, memberId: memberId),
       ),
     );
     // 뒤로 돌아왔을 때 서명 상태가 바뀌었을 수 있으므로 재조회.
@@ -214,8 +213,8 @@ class _MyContractsPageState extends State<MyContractsPage> {
               children: [
                 SvgPicture.asset(
                   'assets/icons/contract-fill.svg',
-                  width: 64,
-                  height: 64,
+                  width: 90,
+                  height: 90,
                   colorFilter: const ColorFilter.mode(grey01, BlendMode.srcIn),
                 ),
                 const SizedBox(height: 16),
@@ -231,7 +230,7 @@ class _MyContractsPageState extends State<MyContractsPage> {
                 const Text(
                   'Your saved contracts will show up here.',
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 14,
                     fontWeight: FontWeight.w400,
                     color: grey02,
                   ),
@@ -374,7 +373,7 @@ class _ContractCard extends StatelessWidget {
                           c.monthlyRent == null
                               ? 'Monthly: -'
                               : 'Monthly ${_money(c.monthlyRent!)} AUD'
-                                  '${c.deposit != null ? '  ·  Deposit ${_money(c.deposit!)} AUD' : ''}',
+                                    '${c.deposit != null ? '  ·  Deposit ${_money(c.deposit!)} AUD' : ''}',
                           style: const TextStyle(
                             fontSize: 12,
                             color: grey04,
@@ -413,8 +412,10 @@ class _ContractCard extends StatelessWidget {
               else
                 Container(
                   width: double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF3F3F3),
                     borderRadius: BorderRadius.circular(10),
@@ -422,8 +423,7 @@ class _ContractCard extends StatelessWidget {
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.hourglass_bottom,
-                          size: 14, color: grey03),
+                      Icon(Icons.hourglass_bottom, size: 14, color: grey03),
                       SizedBox(width: 6),
                       Text(
                         'PDF will be generated after both parties sign.',
@@ -473,15 +473,17 @@ class _Thumbnail extends StatelessWidget {
                 errorBuilder: (_, __, ___) => Container(
                   color: const Color(0xFFF1F1F1),
                   alignment: Alignment.center,
-                  child: const Icon(Icons.image_not_supported,
-                      size: 22, color: grey02),
+                  child: const Icon(
+                    Icons.image_not_supported,
+                    size: 22,
+                    color: grey02,
+                  ),
                 ),
               )
             : Container(
                 color: const Color(0xFFF1F1F1),
                 alignment: Alignment.center,
-                child: const Icon(Icons.home_outlined,
-                    size: 22, color: grey02),
+                child: const Icon(Icons.home_outlined, size: 22, color: grey02),
               ),
       ),
     );

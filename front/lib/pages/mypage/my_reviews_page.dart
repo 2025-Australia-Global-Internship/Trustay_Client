@@ -88,14 +88,14 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
       setState(() {
         _reviews.removeWhere((e) => e.id == r.id);
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Review deleted.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Review deleted.')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to delete review: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to delete review: $e')));
     }
   }
 
@@ -104,9 +104,7 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
     if (houseId == null) return;
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => SharehouseDetailPage(houseId: houseId),
-      ),
+      MaterialPageRoute(builder: (_) => SharehouseDetailPage(houseId: houseId)),
     );
   }
 
@@ -176,13 +174,16 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           SizedBox(
-            width: 96,
-            height: 96,
+            width: 90,
+            height: 90,
             child: SvgPicture.asset(
               'assets/icons/review.svg',
               color: grey01,
-              placeholderBuilder: (_) =>
-                  const Icon(Icons.rate_review_outlined, size: 86, color: grey02),
+              placeholderBuilder: (_) => const Icon(
+                Icons.rate_review_outlined,
+                size: 86,
+                color: grey02,
+              ),
             ),
           ),
           const SizedBox(height: 12),
@@ -191,14 +192,14 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
             style: const TextStyle(
               fontSize: 14,
               color: grey02,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w400,
             ),
           ),
           const SizedBox(height: 6),
           Text(
             subtitle,
             style: const TextStyle(
-              fontSize: 13,
+              fontSize: 14,
               color: grey02,
               fontWeight: FontWeight.w400,
             ),

@@ -1,12 +1,12 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:front/constants/colors.dart';
 import 'package:front/services/post_service.dart';
 import 'package:front/services/sharehouse_service.dart';
+import 'package:front/widgets/common_text_field.dart';
 import 'package:front/widgets/custom_header.dart';
 import 'package:front/widgets/gradient_layout.dart';
 import 'package:front/widgets/primary_button.dart';
@@ -56,9 +56,7 @@ class _NoticeCreatePageState extends State<NoticeCreatePage> {
 
     setState(() {
       final remaining = _maxImages - _selectedImages.length;
-      _selectedImages.addAll(
-        picked.take(remaining).map((x) => File(x.path)),
-      );
+      _selectedImages.addAll(picked.take(remaining).map((x) => File(x.path)));
     });
   }
 
@@ -99,11 +97,7 @@ class _NoticeCreatePageState extends State<NoticeCreatePage> {
       if (!mounted) return false;
       setState(() => _submitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            e.toString().replaceFirst('Exception: ', ''),
-          ),
-        ),
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
       );
       return false;
     }
@@ -122,7 +116,7 @@ class _NoticeCreatePageState extends State<NoticeCreatePage> {
               center: Text(
                 'Write Notice',
                 style: TextStyle(
-                  fontSize: 17,
+                  fontSize: 18,
                   fontWeight: FontWeight.w800,
                   color: dark,
                 ),
@@ -132,12 +126,12 @@ class _NoticeCreatePageState extends State<NoticeCreatePage> {
               child: Form(
                 key: _formKey,
                 child: ListView(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                  padding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
                   children: [
                     _buildTitleField(),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
                     _buildContentField(),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 26),
                     _buildImagePicker(),
                   ],
                 ),
@@ -166,45 +160,11 @@ class _NoticeCreatePageState extends State<NoticeCreatePage> {
   // Title
   // ---------------------------------------------------------------------------
   Widget _buildTitleField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Title',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w800,
-            color: dark,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: TextField(
-            controller: _titleCtl,
-            maxLength: 200,
-            style: const TextStyle(fontSize: 14, color: dark),
-            decoration: const InputDecoration(
-              counterText: '',
-              contentPadding:
-                  EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-              border: InputBorder.none,
-              hintText: 'Notice title',
-              hintStyle: TextStyle(color: grey02),
-            ),
-          ),
-        ),
-      ],
+    return CommonTextField(
+      label: 'Title',
+      controller: _titleCtl,
+      hintText: 'Notice title',
+      bottomPadding: 0,
     );
   }
 
@@ -212,47 +172,12 @@ class _NoticeCreatePageState extends State<NoticeCreatePage> {
   // Content
   // ---------------------------------------------------------------------------
   Widget _buildContentField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Content',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w800,
-            color: dark,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: TextField(
-            controller: _contentCtl,
-            maxLines: 8,
-            minLines: 6,
-            style: const TextStyle(fontSize: 14, color: dark, height: 1.5),
-            decoration: const InputDecoration(
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: 18,
-                vertical: 16,
-              ),
-              border: InputBorder.none,
-              hintText: 'Write what your house mates need to know...',
-              hintStyle: TextStyle(color: grey02),
-            ),
-          ),
-        ),
-      ],
+    return CommonTextField(
+      label: 'Content',
+      controller: _contentCtl,
+      hintText: 'Write what your house mates need to know...',
+      maxLines: 6,
+      bottomPadding: 0,
     );
   }
 
@@ -268,8 +193,8 @@ class _NoticeCreatePageState extends State<NoticeCreatePage> {
             const Text(
               'Photos',
               style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
                 color: dark,
               ),
             ),
@@ -280,20 +205,20 @@ class _NoticeCreatePageState extends State<NoticeCreatePage> {
             ),
           ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
         SizedBox(
-          height: 92,
+          height: 100,
           child: ListView(
             scrollDirection: Axis.horizontal,
             children: [
               _buildAddImageButton(),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               ..._selectedImages.asMap().entries.map(
-                    (e) => Padding(
-                      padding: const EdgeInsets.only(right: 10),
-                      child: _buildSelectedImage(e.key, e.value),
-                    ),
-                  ),
+                (e) => Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: _buildSelectedImage(e.key, e.value),
+                ),
+              ),
             ],
           ),
         ),
@@ -305,27 +230,28 @@ class _NoticeCreatePageState extends State<NoticeCreatePage> {
     return GestureDetector(
       onTap: _pickImages,
       child: Container(
-        width: 92,
-        height: 92,
+        width: 100,
+        height: 90,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: green, width: 1.4),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SvgPicture.asset(
-              'assets/icons/camera.svg',
-              width: 22,
-              height: 22,
-              color: green,
-            ),
-            const SizedBox(height: 4),
+            const Icon(Icons.photo_camera, color: grey02, size: 32),
+            const SizedBox(height: 6),
             const Text(
-              'Add',
+              'Photos',
               style: TextStyle(
-                color: green,
+                color: grey02,
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
               ),
@@ -340,13 +266,8 @@ class _NoticeCreatePageState extends State<NoticeCreatePage> {
     return Stack(
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(14),
-          child: Image.file(
-            file,
-            width: 92,
-            height: 92,
-            fit: BoxFit.cover,
-          ),
+          borderRadius: BorderRadius.circular(16),
+          child: Image.file(file, width: 100, height: 100, fit: BoxFit.cover),
         ),
         Positioned(
           top: 4,

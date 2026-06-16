@@ -10,6 +10,7 @@ import 'package:front/services/post_service.dart';
 import 'package:front/services/sharehouse_service.dart';
 import 'package:front/widgets/custom_header.dart';
 import 'package:front/widgets/gradient_layout.dart';
+import 'package:front/widgets/primary_button.dart';
 
 /// 커뮤니티 게시글 작성 페이지.
 ///
@@ -27,6 +28,7 @@ class CommunityPostCreatePage extends StatefulWidget {
 }
 
 class _CommunityPostCreatePageState extends State<CommunityPostCreatePage> {
+  final _formKey = GlobalKey<FormState>();
   final ImagePicker _picker = ImagePicker();
   final TextEditingController _contentCtl = TextEditingController();
 
@@ -47,13 +49,12 @@ class _CommunityPostCreatePageState extends State<CommunityPostCreatePage> {
     super.dispose();
   }
 
-  bool get _canSubmit =>
-      _contentCtl.text.trim().isNotEmpty && !_submitting;
+  bool get _canSubmit => _contentCtl.text.trim().isNotEmpty && !_submitting;
 
   Future<void> _pickImages() async {
     if (_selectedImages.length >= _maxImages) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('You can add up to $_maxImages images.')),
+        SnackBar(content: Text('최대 $_maxImages개의 이미지만 선택할 수 있습니다.')),
       );
       return;
     }
@@ -73,14 +74,21 @@ class _CommunityPostCreatePageState extends State<CommunityPostCreatePage> {
   /// - 첫 줄 우선, 너무 길면 30자에서 잘라준다.
   /// - 본문이 한 줄짜리 짧은 글이면 본문 자체가 제목 = 내용.
   String _deriveTitle(String content) {
-    final firstLine =
-        content.split(RegExp(r'\r?\n')).firstWhere((_) => true, orElse: () => '');
-    final base = firstLine.trim().isNotEmpty ? firstLine.trim() : content.trim();
+    final firstLine = content
+        .split(RegExp(r'\r?\n'))
+        .firstWhere((_) => true, orElse: () => '');
+    final base = firstLine.trim().isNotEmpty
+        ? firstLine.trim()
+        : content.trim();
     return base.characters.take(30).toString();
   }
 
-  Future<void> _submit() async {
-    if (!_canSubmit) return;
+  Future<bool> _submit() async {
+    if (!_formKey.currentState!.validate()) {
+      return false;
+    }
+
+    if (!_canSubmit) return false;
     final content = _contentCtl.text.trim();
     setState(() => _submitting = true);
     try {
@@ -94,16 +102,16 @@ class _CommunityPostCreatePageState extends State<CommunityPostCreatePage> {
         content: content,
         imageUrls: imageUrls,
       );
-      if (!mounted) return;
+      if (!mounted) return true;
       Navigator.of(context).pop<PostModel>(created);
+      return true;
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) return false;
       setState(() => _submitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-        ),
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
       );
+      return false;
     }
   }
 
@@ -113,66 +121,95 @@ class _CommunityPostCreatePageState extends State<CommunityPostCreatePage> {
       backgroundColor: const Color(0xFFFAFAFA),
       resizeToAvoidBottomInset: true,
       body: GradientLayout(
-        child: Column(
-          children: [
-            const CustomHeader(
-              center: Text(
-                'New Post',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: dark,
+        child: Form(
+          key: _formKey, // Form 위젯을 상위 Column 전체에 씌워서 하단 버튼까지 바인딩되도록 수정
+          child: Column(
+            children: [
+              const CustomHeader(
+                center: Text(
+                  'New Post',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: dark,
+                  ),
+                ),
+                showBack: true,
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 30, 16, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildImagePicker(),
+                      const SizedBox(height: 24),
+                      _buildContentField(),
+                      const SizedBox(height: 24), // 하단 여백 조절
+                    ],
+                  ),
                 ),
               ),
-            ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                children: [
-                  _buildContentField(),
-                  const SizedBox(height: 16),
-                  _buildImagePicker(),
-                ],
-              ),
-            ),
-            _buildSubmitButton(),
-          ],
+              // 스크롤 영역 외부(바텀 고정)로 버튼 이동
+              _buildSubmitButton(),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildContentField() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Content',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: dark,
           ),
-        ],
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      child: TextField(
-        controller: _contentCtl,
-        minLines: 6,
-        maxLines: 14,
-        style: const TextStyle(
-          fontSize: 14,
-          color: dark,
-          height: 1.5,
-          fontWeight: FontWeight.w500,
         ),
-        decoration: const InputDecoration(
-          isDense: true,
-          border: InputBorder.none,
-          hintText: 'Share something with the community...',
-          hintStyle: TextStyle(color: Color(0xFFD0D0D0)),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          child: TextFormField(
+            controller: _contentCtl,
+            minLines: 6,
+            maxLines: 14,
+            style: const TextStyle(
+              fontSize: 14,
+              color: dark,
+              height: 1.5,
+              fontWeight: FontWeight.w600,
+            ),
+            decoration: const InputDecoration(
+              isDense: true,
+              border: InputBorder.none,
+              hintText: 'Share something with the community...',
+              hintStyle: TextStyle(color: grey02),
+            ),
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'This field is required';
+              }
+              return null;
+            },
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -185,32 +222,36 @@ class _CommunityPostCreatePageState extends State<CommunityPostCreatePage> {
             const Text(
               'Photos',
               style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
                 color: dark,
               ),
             ),
             const SizedBox(width: 6),
             Text(
               '(${_selectedImages.length}/$_maxImages)',
-              style: const TextStyle(fontSize: 12, color: grey03),
+              style: const TextStyle(
+                fontSize: 12,
+                color: grey02,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
         SizedBox(
-          height: 92,
+          height: 100,
           child: ListView(
             scrollDirection: Axis.horizontal,
             children: [
               _buildAddImageButton(),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               ..._selectedImages.asMap().entries.map(
-                    (e) => Padding(
-                      padding: const EdgeInsets.only(right: 10),
-                      child: _buildSelectedImage(e.key, e.value),
-                    ),
-                  ),
+                (e) => Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: _buildSelectedImage(e.key, e.value),
+                ),
+              ),
             ],
           ),
         ),
@@ -222,28 +263,29 @@ class _CommunityPostCreatePageState extends State<CommunityPostCreatePage> {
     return GestureDetector(
       onTap: _pickImages,
       child: Container(
-        width: 92,
-        height: 92,
+        width: 100,
+        height: 90,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: green, width: 1.4),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        child: Column(
+        child: const Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SvgPicture.asset(
-              'assets/icons/camera.svg',
-              width: 22,
-              height: 22,
-              color: green,
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Add',
+            Icon(Icons.photo_camera, color: grey02, size: 32),
+            SizedBox(height: 6),
+            Text(
+              'Photos',
               style: TextStyle(
-                color: green,
                 fontSize: 12,
+                color: grey02,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -256,13 +298,12 @@ class _CommunityPostCreatePageState extends State<CommunityPostCreatePage> {
   Widget _buildSelectedImage(int index, File file) {
     return Stack(
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(14),
-          child: Image.file(
-            file,
-            width: 92,
-            height: 92,
-            fit: BoxFit.cover,
+        Container(
+          width: 100,
+          height: 100,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            image: DecorationImage(image: FileImage(file), fit: BoxFit.cover),
           ),
         ),
         Positioned(
@@ -271,13 +312,13 @@ class _CommunityPostCreatePageState extends State<CommunityPostCreatePage> {
           child: GestureDetector(
             onTap: () => _removeImage(index),
             child: Container(
-              width: 22,
-              height: 22,
+              width: 24,
+              height: 24,
               decoration: const BoxDecoration(
                 color: Colors.black54,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.close, color: Colors.white, size: 14),
+              child: const Icon(Icons.close, color: Colors.white, size: 16),
             ),
           ),
         ),
@@ -287,40 +328,17 @@ class _CommunityPostCreatePageState extends State<CommunityPostCreatePage> {
 
   Widget _buildSubmitButton() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+      // 기기 하단 노치와 패딩 레이아웃을 맞추기 위한 좌우 및 하단 패딩 설정
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 35),
       child: SafeArea(
         top: false,
-        child: SizedBox(
-          width: double.infinity,
-          height: 56,
-          child: ElevatedButton(
-            onPressed: _canSubmit ? _submit : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: green,
-              disabledBackgroundColor: const Color(0xFFC7CFA0),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(28),
-              ),
-            ),
-            child: _submitting
-                ? const SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.4,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Text(
-                    'Post',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-          ),
+        child: PrimaryButton(
+          formKey: _formKey,
+          text: 'Post',
+          onAction: _submit,
+          successMessage: '',
+          failMessage: '',
+          enabled: _canSubmit,
         ),
       ),
     );

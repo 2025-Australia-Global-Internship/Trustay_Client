@@ -38,41 +38,58 @@ class BottomNavbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(27, 0, 27, 30),
-      child: Container(
-        height: 74,
-        decoration: BoxDecoration(
-          color: const Color(0xFFF2F2F2).withOpacity(0.8),
-          borderRadius: BorderRadius.circular(50),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: List.generate(_items.length, (index) {
-            final isSelected = index == currentIndex;
+    const double navbarHeight = 74;
+    const double circleSize = 58;
 
-            return GestureDetector(
-              onTap: () => onTap(index),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
-                width: 67,
-                height: 67,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 30),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(40),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: Container(
+                height: navbarHeight,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
                 decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: isSelected ? green : Colors.white,
+                  color: const Color(0xFFF2F2F2).withOpacity(0.8),
+                  borderRadius: BorderRadius.circular(50),
                 ),
-                child: Center(
-                  child: SvgPicture.asset(
-                    isSelected
-                        ? _items[index]['selected']!
-                        : _items[index]['default']!,
-                    width: index == 4 ? 29 : 27,
-                    height: index == 4 ? 29 : 27,
-                  ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: List.generate(_items.length, (index) {
+                    final isSelected = index == currentIndex;
+
+                    return GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => onTap(index),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeOut,
+                        width: circleSize,
+                        height: circleSize,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isSelected ? green : Colors.white,
+                        ),
+                        child: Center(
+                          child: SvgPicture.asset(
+                            isSelected
+                                ? _items[index]['selected']!
+                                : _items[index]['default']!,
+                            width: index == 4 ? 26 : 24,
+                            height: index == 4 ? 26 : 24,
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
                 ),
               ),
-            );
-          }),
+            ),
+          ),
         ),
       ),
     );

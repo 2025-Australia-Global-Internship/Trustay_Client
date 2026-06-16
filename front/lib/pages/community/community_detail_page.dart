@@ -14,6 +14,7 @@ import 'package:front/services/auth_service.dart';
 import 'package:front/services/community_service.dart';
 import 'package:front/services/post_service.dart';
 import 'package:front/services/sharehouse_service.dart';
+import 'package:front/widgets/gradient_layout.dart';
 
 import 'community_post_create_page.dart';
 
@@ -298,7 +299,8 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
   Future<void> _onTapWritePost() async {
     final created = await Navigator.of(context).push<PostModel>(
       MaterialPageRoute(
-        builder: (_) => CommunityPostCreatePage(communityId: widget.communityId),
+        builder: (_) =>
+            CommunityPostCreatePage(communityId: widget.communityId),
       ),
     );
     if (!mounted) return;
@@ -326,47 +328,26 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
     return Scaffold(
       extendBodyBehindAppBar: false,
       backgroundColor: const Color(0xFFFAFAFA),
-      body: Stack(
-        children: [
-          // 상단 노란 그라데이션 (이미지와 동일한 분위기)
-          Container(
-            height: 180,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0xFFFFF6B7), Color(0xFFFAFAFA)],
+      body: GradientLayout(
+        child: SizedBox.expand(
+          child: RefreshIndicator(
+            color: green,
+            onRefresh: _refresh,
+            child: NestedScrollView(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              headerSliverBuilder: (context, _) => [
+                SliverToBoxAdapter(child: _buildTopBar()),
+                SliverToBoxAdapter(child: _buildHeader()),
+                SliverToBoxAdapter(child: _buildTabBar()),
+              ],
+              body: TabBarView(
+                controller: _tabController,
+                children: [_buildDiscussionsTab(), _buildAlbumsTab()],
               ),
             ),
           ),
-          SafeArea(
-            child: RefreshIndicator(
-              color: green,
-              onRefresh: _refresh,
-              child: NestedScrollView(
-                controller: _scrollController,
-                physics: const AlwaysScrollableScrollPhysics(),
-                headerSliverBuilder: (context, _) => [
-                  SliverToBoxAdapter(child: _buildTopBar()),
-                  SliverToBoxAdapter(child: _buildHeader()),
-                  SliverPersistentHeader(
-                    pinned: true,
-                    delegate: _TabBarDelegate(
-                      child: _buildTabBar(),
-                    ),
-                  ),
-                ],
-                body: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildDiscussionsTab(),
-                    _buildAlbumsTab(),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
       floatingActionButton: _buildPencilFab(),
     );
@@ -416,13 +397,9 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
           ],
         ),
         child: Center(
-          child: iconWidget ??
-              SvgPicture.asset(
-                asset!,
-                width: 18,
-                height: 18,
-                color: dark,
-              ),
+          child:
+              iconWidget ??
+              SvgPicture.asset(asset!, width: 18, height: 18, color: dark),
         ),
       ),
     );
@@ -479,14 +456,14 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
       // 서버에서 다시 정확한 값(멤버 수, 본인 포함된 멤버 목록 등)을 받아온다.
       await _loadHeader();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Joined the community.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Joined the community.')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Join failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Join failed: $e')));
     } finally {
       if (mounted) setState(() => _isJoining = false);
     }
@@ -573,7 +550,8 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
         return;
       }
       title = 'Delete community?';
-      body = "You're the only member left. The community will be deleted permanently.";
+      body =
+          "You're the only member left. The community will be deleted permanently.";
       confirmLabel = 'Delete';
     } else {
       title = 'Leave community?';
@@ -650,7 +628,7 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
     final memberCount = c?.memberCount ?? widget.initial?.memberCount ?? 0;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 6, 20, 8),
+      padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
       child: Column(
         children: [
           _buildCommunityAvatarWithEdit(c?.imageUrl),
@@ -658,12 +636,12 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
           Text(
             name,
             style: const TextStyle(
-              fontSize: 20,
+              fontSize: 21,
               fontWeight: FontWeight.w800,
               color: dark,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 13),
           _buildCategoryAndCount(categoryLabel, memberCount),
           const SizedBox(height: 14),
           _buildMembersRow(memberCount),
@@ -681,10 +659,7 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
         shape: BoxShape.circle,
         color: const Color(0xFFE8E8E8),
         image: hasImage
-            ? DecorationImage(
-                image: NetworkImage(url),
-                fit: BoxFit.cover,
-              )
+            ? DecorationImage(image: NetworkImage(url), fit: BoxFit.cover)
             : null,
       ),
       child: hasImage
@@ -717,7 +692,7 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
                 decoration: BoxDecoration(
                   color: green,
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
+                  border: Border.all(color: Colors.white, width: 1.2),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.12),
@@ -791,8 +766,7 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
   }
 
   Widget _buildCategoryAndCount(String category, int memberCount) {
-    final memberLabel =
-        memberCount == 1 ? '1 Member' : '$memberCount Members';
+    final memberLabel = memberCount == 1 ? '1 Member' : '$memberCount Members';
     final hasCategory = category.isNotEmpty;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -892,53 +866,104 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
   // 탭 바
   // ---------------------------------------------------------------------------
   Widget _buildTabBar() {
-    return Container(
-      color: const Color(0xFFFAFAFA),
-      child: TabBar(
-        controller: _tabController,
-        indicatorColor: darkgreen,
-        indicatorWeight: 2.4,
-        labelColor: darkgreen,
-        unselectedLabelColor: grey03,
-        labelStyle: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w800,
-        ),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w700,
-        ),
-        tabs: [
-          Tab(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SvgPicture.asset(
-                  'assets/icons/chat.svg',
-                  width: 16,
-                  height: 16,
-                  color: _tabController.index == 0 ? darkgreen : grey03,
-                ),
-                const SizedBox(width: 6),
-                const Text('Discussions'),
-              ],
-            ),
+    return SizedBox(
+      height: _TabBarDelegate.extent,
+      child: Stack(
+        children: [
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(height: 1.2, color: Colors.grey[200]),
           ),
-          Tab(
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.image_outlined,
-                  size: 16,
-                  color: _tabController.index == 1 ? darkgreen : grey03,
+                Expanded(
+                  child: _buildDetailTab(
+                    label: 'Discussions',
+                    svgPath: 'assets/icons/discussion.svg',
+                    index: 0,
+                    iconSize: 17,
+                  ),
                 ),
-                const SizedBox(width: 6),
-                const Text('Albums'),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildDetailTab(
+                    label: 'Albums',
+                    svgPath: 'assets/icons/image.svg',
+                    index: 1,
+                    iconSize: 13,
+                  ),
+                ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDetailTab({
+    required String label,
+    required String svgPath,
+    required int index,
+    required double iconSize,
+  }) {
+    final isSelected = _tabController.index == index;
+
+    return GestureDetector(
+      onTap: () => _tabController.animateTo(index),
+      behavior: HitTestBehavior.opaque,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return Stack(
+            children: [
+              // 아이콘 + 텍스트
+              Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SvgPicture.asset(
+                      svgPath,
+                      width: iconSize,
+                      height: iconSize,
+                      colorFilter: ColorFilter.mode(
+                        isSelected ? darkgreen : grey03,
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: isSelected ? darkgreen : grey03,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // 초록 선택 라인 (항상 맨 아래)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  width: 40,
+                  height: 1.2,
+                  decoration: BoxDecoration(
+                    color: isSelected ? darkgreen : Colors.transparent,
+                    borderRadius: BorderRadius.circular(1),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -989,16 +1014,6 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
                 ),
               ),
             ),
-          )
-        else if (!_postHasMore && _posts.isNotEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            child: Center(
-              child: Text(
-                "You're all caught up",
-                style: TextStyle(fontSize: 12, color: grey03),
-              ),
-            ),
           ),
       ],
     );
@@ -1029,7 +1044,7 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
           borderRadius: BorderRadius.circular(20),
           onTap: () {},
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
             child: Row(
               children: [
                 SvgPicture.asset(
@@ -1038,7 +1053,7 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
                   height: 18,
                   color: darkgreen,
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 8), // 간격을 6에서 8로 살짝 넓혀 가독성 확보
                 const Text(
                   'Filter',
                   style: TextStyle(
@@ -1053,6 +1068,7 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
         ),
         const Spacer(),
         _buildPillDropdown<int>(
+          width: 115, // Month 필터 너비 지정 (글자 길이에 맞춰 적절히 조절 가능)
           label: _filterMonth == null
               ? 'Month'
               : DateFormat('MMM').format(DateTime(2000, _filterMonth!)),
@@ -1070,6 +1086,7 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
         ),
         const SizedBox(width: 8),
         _buildPillDropdown<int>(
+          width: 75, // Year 필터 너비 지정
           label: _filterYear == null ? 'Year' : _filterYear.toString(),
           items: [
             const DropdownMenuItem<int>(value: null, child: Text('All')),
@@ -1102,48 +1119,79 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
     required String label,
     required List<DropdownMenuItem<T>> items,
     required ValueChanged<T?> onChanged,
+    double? width,
   }) {
     return Container(
+      width: width,
       height: 32,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      // 정중앙 정렬을 위해 Container 내부에 Alignment 추가
+      alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: darkgreen, width: 1.2),
+        border: Border.all(color: green, width: 1.1),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<T>(
           isDense: true,
-          icon: SvgPicture.asset(
-            'assets/icons/arrow_down.svg',
-            width: 12,
-            height: 12,
-            color: darkgreen,
+          isExpanded: false,
+          icon: const SizedBox.shrink(), // 기본 아이콘 제거
+          // 1. 힌트(기본) 상태 중앙 정렬
+          hint: Row(
+            mainAxisSize: MainAxisSize.min, // 필요한 만큼만 크기 차지
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: green,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 5), // 텍스트와 화살표 아이콘 사이 간격
+              SizedBox(
+                width: 11,
+                height: 11,
+                child: SvgPicture.asset(
+                  'assets/icons/arrow_down.svg',
+                  colorFilter: const ColorFilter.mode(green, BlendMode.srcIn),
+                ),
+              ),
+            ],
           ),
-          hint: Text(
-            label,
-            style: const TextStyle(
-              fontSize: 13,
-              color: darkgreen,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+
+          // 2. 선택된(Selected) 상태 중앙 정렬
           selectedItemBuilder: (context) {
-            return items
-                .map(
-                  (_) => Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      label,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: darkgreen,
-                        fontWeight: FontWeight.w700,
+            return items.map((_) {
+              return Row(
+                mainAxisSize: MainAxisSize.min, // 필요한 만큼만 크기 차지
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: darkgreen,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 5),
+                  SizedBox(
+                    width: 11,
+                    height: 11,
+                    child: SvgPicture.asset(
+                      'assets/icons/arrow_down.svg',
+                      colorFilter: const ColorFilter.mode(
+                        green,
+                        BlendMode.srcIn,
                       ),
                     ),
                   ),
-                )
-                .toList();
+                ],
+              );
+            }).toList();
           },
           items: items,
           onChanged: onChanged,
@@ -1162,7 +1210,7 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(23),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.06),
@@ -1184,15 +1232,15 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
                 fontSize: 13,
                 height: 1.4,
                 color: dark,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w700,
               ),
             ),
             if (hasImage) ...[
               const SizedBox(height: 12),
               ClipRRect(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(16),
                 child: SizedBox(
-                  height: 180,
+                  height: 160,
                   width: double.infinity,
                   child: Image.network(
                     p.imageUrls.first,
@@ -1211,13 +1259,13 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
             Row(
               children: [
                 CircleAvatar(
-                  radius: 11,
+                  radius: 13,
                   backgroundColor: Colors.grey[300],
                   backgroundImage: hasAvatar
                       ? NetworkImage(p.profileImageUrl!) as ImageProvider
                       : const AssetImage('assets/icons/default.png'),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 9),
                 Text(
                   p.authorName.isEmpty ? 'Member' : p.authorName,
                   style: const TextStyle(
@@ -1270,9 +1318,7 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
     }
 
     // 게시글 페이지에서 imageUrls 만 평탄화. (한 게시글이 여러 장일 수 있음)
-    final urls = <String>[
-      for (final p in _albumPosts) ...p.imageUrls,
-    ];
+    final urls = <String>[for (final p in _albumPosts) ...p.imageUrls];
 
     if (urls.isEmpty) {
       return ListView(
@@ -1315,8 +1361,11 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
                     errorBuilder: (_, __, ___) => Container(
                       color: const Color(0xFFEFEFEF),
                       child: const Center(
-                        child: Icon(Icons.broken_image,
-                            color: grey02, size: 18),
+                        child: Icon(
+                          Icons.broken_image,
+                          color: grey02,
+                          size: 18,
+                        ),
                       ),
                     ),
                   ),
@@ -1340,19 +1389,7 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
           child: SizedBox(
             width: 22,
             height: 22,
-            child:
-                CircularProgressIndicator(strokeWidth: 2.4, color: green),
-          ),
-        ),
-      );
-    }
-    if (!_albumHasMore && _albumPosts.isNotEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 16),
-        child: Center(
-          child: Text(
-            "You're all caught up",
-            style: TextStyle(fontSize: 12, color: grey03),
+            child: CircularProgressIndicator(strokeWidth: 2.4, color: green),
           ),
         ),
       );
@@ -1386,18 +1423,18 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
                   width: 22,
                   height: 22,
                   child: CircularProgressIndicator(
-                    strokeWidth: 2.4,
+                    strokeWidth: 1.2,
                     valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   ),
                 )
               : (isMember
-                  ? SvgPicture.asset(
-                      'assets/icons/pencil.svg',
-                      width: 22,
-                      height: 22,
-                      color: Colors.white,
-                    )
-                  : const Icon(Icons.add, size: 28, color: Colors.white)),
+                    ? SvgPicture.asset(
+                        'assets/icons/pencil.svg',
+                        width: 22,
+                        height: 22,
+                        color: Colors.white,
+                      )
+                    : const Icon(Icons.add, size: 28, color: Colors.white)),
         ),
       ),
     );
@@ -1406,19 +1443,25 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
 
 /// 탭 바를 NestedScrollView 의 sliver 헤더로 pin 시키기 위한 delegate.
 class _TabBarDelegate extends SliverPersistentHeaderDelegate {
+  static const double extent = 60;
+
   final Widget child;
   _TabBarDelegate({required this.child});
 
   @override
-  double get minExtent => 48;
+  double get minExtent => extent;
 
   @override
-  double get maxExtent => 48;
+  double get maxExtent => extent;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     return Material(
-      color: const Color(0xFFFAFAFA),
+      color: Colors.transparent,
       elevation: overlapsContent ? 1 : 0,
       child: child,
     );
@@ -1669,23 +1712,23 @@ class _MembersSheetState extends State<_MembersSheet> {
       ),
       trailing: canKick
           ? (isBusy
-              ? const SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.4,
-                    color: Colors.redAccent,
-                  ),
-                )
-              : IconButton(
-                  tooltip: 'Remove',
-                  onPressed: () => _onKickPressed(m),
-                  icon: const Icon(
-                    Icons.person_remove_alt_1_outlined,
-                    color: Colors.redAccent,
-                    size: 22,
-                  ),
-                ))
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.4,
+                      color: Colors.redAccent,
+                    ),
+                  )
+                : IconButton(
+                    tooltip: 'Remove',
+                    onPressed: () => _onKickPressed(m),
+                    icon: const Icon(
+                      Icons.person_remove_alt_1_outlined,
+                      color: Colors.redAccent,
+                      size: 22,
+                    ),
+                  ))
           : null,
     );
   }
