@@ -8,8 +8,10 @@ import 'package:front/models/community_model.dart';
 import 'package:front/models/post_model.dart';
 import 'package:front/pages/community/community_detail_page.dart';
 import 'package:front/pages/community/create_community_page.dart';
+import 'package:front/services/auth_service.dart';
 import 'package:front/services/community_service.dart';
 import 'package:front/services/post_service.dart';
+import 'package:front/widgets/confirm_dialog.dart';
 
 class SocialCommPage extends StatefulWidget {
   const SocialCommPage({super.key});
@@ -148,6 +150,59 @@ class _SocialCommPageState extends State<SocialCommPage> with RouteAware {
       return await CommunityService.fetchJoined();
     } catch (_) {
       return <CommunityModel>[];
+    }
+  }
+
+  /// 현재 로그인 사용자가 [post] 에 대한 삭제 권한이 있는지.
+  ///
+  /// 서버 정책과 동일하게:
+  ///   1) 작성자 본인 (authorEmail == 내 이메일)
+  ///   2) 글이 속한 커뮤니티의 오너 (community.ownerMemberId == 내 memberId)
+  ///
+  /// 피드는 "내가 가입한 커뮤니티"의 글만 내려주므로 [_myCommunities] 에서 매칭이
+  /// 가능하다. 오너지만 가입하지 않은 케이스는 없다(오너는 자동 멤버).
+  bool _canDeletePost(PostModel post) {
+    final me = AuthService.currentUserNotifier.value;
+    if (me == null) return false;
+    final isAuthor =
+        post.authorEmail != null &&
+        post.authorEmail!.isNotEmpty &&
+        post.authorEmail == me.email;
+    bool isOwner = false;
+    if (post.communityId != null) {
+      for (final c in _myCommunities) {
+        if (c.id == post.communityId) {
+          isOwner = c.ownerMemberId != null && c.ownerMemberId == me.memberId;
+          break;
+        }
+      }
+    }
+    return isAuthor || isOwner;
+  }
+
+  Future<void> _confirmAndDeletePost(PostModel post) async {
+    final confirmed = await showAppConfirmDialog(
+      context,
+      title: 'Delete post',
+      message: 'This post will be permanently removed. Continue?',
+      confirmLabel: 'Delete',
+      destructive: true,
+    );
+    if (!confirmed || !mounted) return;
+    try {
+      await PostService.deletePost(post.id);
+      if (!mounted) return;
+      setState(() {
+        _feedPosts.removeWhere((e) => e.id == post.id);
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Post deleted.')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      );
     }
   }
 
@@ -595,6 +650,51 @@ class _SocialCommPageState extends State<SocialCommPage> with RouteAware {
     return Column(children: _feedPosts.map(_buildPostCard).toList());
   }
 
+  /// 작성자 / 커뮤니티 오너 전용 더보기 메뉴.
+  /// `community_detail_page` 와 동일한 톤을 유지해 일관된 UX 를 제공.
+  Widget _buildPostMoreMenu(PostModel post) {
+    return SizedBox(
+      width: 36,
+      height: 28,
+      child: PopupMenuButton<String>(
+        tooltip: 'More',
+        padding: EdgeInsets.zero,
+        position: PopupMenuPosition.under,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        elevation: 6,
+        icon: SvgPicture.asset(
+          'assets/icons/dots-linear.svg',
+          width: 24,
+          height: 24,
+          color: dark,
+        ),
+        onSelected: (value) {
+          if (value == 'delete') _confirmAndDeletePost(post);
+        },
+        itemBuilder: (_) => const [
+          PopupMenuItem<String>(
+            value: 'delete',
+            height: 40,
+            child: Row(
+              children: [
+                Icon(Icons.delete_outline, size: 18, color: Color(0xFFE74C3C)),
+                SizedBox(width: 10),
+                Text(
+                  'Delete',
+                  style: TextStyle(
+                    color: Color(0xFFE74C3C),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPostCard(PostModel post) {
     final imageUrl = post.imageUrls.isNotEmpty ? post.imageUrls.first : null;
     final hasImage = imageUrl != null && imageUrl.isNotEmpty;
@@ -651,16 +751,7 @@ class _SocialCommPageState extends State<SocialCommPage> with RouteAware {
                   ],
                 ),
               ),
-              Baseline(
-                baseline: 8,
-                baselineType: TextBaseline.alphabetic,
-                child: SvgPicture.asset(
-                  'assets/icons/dots-linear.svg',
-                  width: 28,
-                  height: 28,
-                  color: dark,
-                ),
-              ),
+              if (_canDeletePost(post)) _buildPostMoreMenu(post),
             ],
           ),
           const SizedBox(height: 12),
@@ -722,13 +813,6 @@ class _SocialCommPageState extends State<SocialCommPage> with RouteAware {
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                 ),
-              ),
-              const Spacer(),
-              SvgPicture.asset(
-                'assets/icons/bookmark.svg',
-                color: dark,
-                width: 16,
-                height: 16,
               ),
             ],
           ),

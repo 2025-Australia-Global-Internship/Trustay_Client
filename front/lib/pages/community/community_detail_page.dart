@@ -14,6 +14,10 @@ import 'package:front/services/auth_service.dart';
 import 'package:front/services/community_service.dart';
 import 'package:front/services/post_service.dart';
 import 'package:front/services/sharehouse_service.dart';
+<<<<<<< HEAD
+=======
+import 'package:front/widgets/confirm_dialog.dart';
+>>>>>>> 4ccf48f752c93ecb555fba25a73efe6c3d56d1d9
 import 'package:front/widgets/gradient_layout.dart';
 
 import 'community_post_create_page.dart';
@@ -90,6 +94,11 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
   // 가입(+) 버튼 진행 중 상태. 더블탭 방지용.
   bool _isJoining = false;
 
+  /// 글 작성 페이지에서 돌아오는 흐름은 [_onTapWritePost] 가 직접 갱신을 처리한다.
+  /// 그래서 그 한 번의 [didPopNext] 자동 갱신은 건너뛰어, 작성한 글이 두 번
+  /// 표시되지 않도록 한다 (insert + refetch 중복 방지).
+  bool _skipNextDidPopNextRefresh = false;
+
   @override
   void initState() {
     super.initState();
@@ -122,11 +131,15 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
   /// 글쓰기 / 멤버 시트 / 이미지 변경 등 push 된 화면에서 돌아오면
   /// 헤더 + 현재 탭의 첫 페이지를 다시 받는다.
   ///
-  /// (글 작성 후 _onTapWritePost 가 자체 갱신을 하긴 하지만,
-  /// 다른 푸시 흐름에서도 동일하게 동작하도록 통일한다.)
+  /// 단, 글 작성 흐름은 [_onTapWritePost] 가 자체적으로 optimistic insert +
+  /// 헤더/앨범 갱신을 모두 처리하므로 한 번 건너뛴다.
   @override
   void didPopNext() {
     if (!mounted) return;
+    if (_skipNextDidPopNextRefresh) {
+      _skipNextDidPopNextRefresh = false;
+      return;
+    }
     _loadHeader();
     if (_tabController.index == 0) {
       _loadFirstPostPage();
@@ -297,6 +310,10 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
   }
 
   Future<void> _onTapWritePost() async {
+    // pop 시 호출되는 didPopNext 의 자동 갱신을 한 번 건너뛰도록 미리 표식.
+    // (push 결과가 await 로 돌아오기 전에 didPopNext 가 먼저 호출될 수 있으므로
+    //  반드시 push 호출 전에 세팅해야 한다.)
+    _skipNextDidPopNextRefresh = true;
     final created = await Navigator.of(context).push<PostModel>(
       MaterialPageRoute(
         builder: (_) =>
@@ -1200,10 +1217,105 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
     );
   }
 
+  /// 현재 로그인 사용자가 [p] 게시글에 대한 삭제 권한이 있는지.
+  ///
+  /// 서버 정책과 동일하게:
+  ///   1) 작성자 본인 (authorEmail == 내 이메일)
+  ///   2) 커뮤니티 오너 (community.ownerMemberId == 내 memberId)
+  /// 둘 중 하나면 true.
+  bool _canDeletePost(PostModel p) {
+    final me = AuthService.currentUserNotifier.value;
+    if (me == null) return false;
+    final isAuthor = p.authorEmail != null &&
+        p.authorEmail!.isNotEmpty &&
+        p.authorEmail == me.email;
+    final isOwner = _community?.ownerMemberId != null &&
+        _community!.ownerMemberId == me.memberId;
+    return isAuthor || isOwner;
+  }
+
+  Future<void> _confirmAndDeletePost(PostModel p) async {
+    final confirmed = await showAppConfirmDialog(
+      context,
+      title: 'Delete post',
+      message: 'This post will be permanently removed. Continue?',
+      confirmLabel: 'Delete',
+      destructive: true,
+    );
+    if (!confirmed || !mounted) return;
+    try {
+      await PostService.deletePost(p.id);
+      if (!mounted) return;
+      setState(() {
+        _posts.removeWhere((e) => e.id == p.id);
+        // 앨범 캐시도 함께 무효화 (사진이 빠지면 다시 채워줘야 하므로).
+        _albumPosts.removeWhere((e) => e.id == p.id);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Post deleted.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+        ),
+      );
+    }
+  }
+
+  /// 작성자 / 커뮤니티 오너 전용 더보기 메뉴.
+  /// 피드 카드와 동일한 dots-linear SVG 아이콘을 트리거로 사용해 톤을 통일.
+  Widget _buildPostMoreMenu(PostModel p) {
+    return SizedBox(
+      width: 32,
+      height: 24,
+      child: PopupMenuButton<String>(
+        tooltip: 'More',
+        padding: EdgeInsets.zero,
+        position: PopupMenuPosition.under,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
+        elevation: 6,
+        icon: SvgPicture.asset(
+          'assets/icons/dots-linear.svg',
+          width: 20,
+          height: 20,
+          color: dark,
+        ),
+        onSelected: (value) {
+          if (value == 'delete') _confirmAndDeletePost(p);
+        },
+        itemBuilder: (_) => const [
+          PopupMenuItem<String>(
+            value: 'delete',
+            height: 40,
+            child: Row(
+              children: [
+                Icon(Icons.delete_outline, size: 18, color: Color(0xFFE74C3C)),
+                SizedBox(width: 10),
+                Text(
+                  'Delete',
+                  style: TextStyle(
+                    color: Color(0xFFE74C3C),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPostCard(PostModel p) {
     final hasImage = p.imageUrls.isNotEmpty;
     final hasAvatar =
         p.profileImageUrl != null && p.profileImageUrl!.isNotEmpty;
+    final canDelete = _canDeletePost(p);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
@@ -1223,6 +1335,7 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+<<<<<<< HEAD
             // 본문만 표시 (타이틀은 노출하지 않는다).
             Text(
               p.content,
@@ -1234,6 +1347,27 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
                 color: dark,
                 fontWeight: FontWeight.w700,
               ),
+=======
+            // 본문 + (권한 있을 때) 더보기 메뉴.
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    p.content,
+                    maxLines: hasImage ? 2 : 4,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      height: 1.4,
+                      color: dark,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                if (canDelete) _buildPostMoreMenu(p),
+              ],
+>>>>>>> 4ccf48f752c93ecb555fba25a73efe6c3d56d1d9
             ),
             if (hasImage) ...[
               const SizedBox(height: 12),

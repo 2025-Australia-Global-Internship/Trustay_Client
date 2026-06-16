@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:front/constants/colors.dart';
@@ -14,7 +13,7 @@ import 'package:front/widgets/primary_button.dart';
 
 /// 커뮤니티 게시글 작성 페이지.
 ///
-/// - 본문(필수) + 사진(0~5장)
+/// - 본문(필수) + 사진(선택, 최대 1장)
 /// - 제목은 본문에서 자동 추출 (첫 30자)
 /// - 작성 후 생성된 [PostModel] 을 result 로 pop.
 class CommunityPostCreatePage extends StatefulWidget {
@@ -32,8 +31,11 @@ class _CommunityPostCreatePageState extends State<CommunityPostCreatePage> {
   final ImagePicker _picker = ImagePicker();
   final TextEditingController _contentCtl = TextEditingController();
 
+  /// 사진은 최대 1장만 첨부할 수 있다.
+  /// 리스트 형태를 유지하는 이유: PostService.createPost / SharehouseService.uploadImages
+  /// 시그니처가 `List<File>` 를 받기 때문에 호출 측 변경을 최소화하기 위함이다.
   final List<File> _selectedImages = [];
-  static const int _maxImages = 5;
+  static const int _maxImages = 1;
 
   bool _submitting = false;
 
@@ -51,6 +53,7 @@ class _CommunityPostCreatePageState extends State<CommunityPostCreatePage> {
 
   bool get _canSubmit => _contentCtl.text.trim().isNotEmpty && !_submitting;
 
+<<<<<<< HEAD
   Future<void> _pickImages() async {
     if (_selectedImages.length >= _maxImages) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -60,9 +63,16 @@ class _CommunityPostCreatePageState extends State<CommunityPostCreatePage> {
     }
     final picked = await _picker.pickMultiImage();
     if (picked.isEmpty) return;
+=======
+  Future<void> _pickImage() async {
+    if (_selectedImages.length >= _maxImages) return;
+    final picked = await _picker.pickImage(source: ImageSource.gallery);
+    if (picked == null) return;
+>>>>>>> 4ccf48f752c93ecb555fba25a73efe6c3d56d1d9
     setState(() {
-      final remaining = _maxImages - _selectedImages.length;
-      _selectedImages.addAll(picked.take(remaining).map((x) => File(x.path)));
+      _selectedImages
+        ..clear()
+        ..add(File(picked.path));
     });
   }
 
@@ -214,23 +224,29 @@ class _CommunityPostCreatePageState extends State<CommunityPostCreatePage> {
   }
 
   Widget _buildImagePicker() {
+    final hasImage = _selectedImages.isNotEmpty;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          children: [
-            const Text(
-              'Photos',
+          children: const [
+            Text(
+              'Photo',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
                 color: dark,
               ),
             ),
-            const SizedBox(width: 6),
+            SizedBox(width: 6),
             Text(
+<<<<<<< HEAD
               '(${_selectedImages.length}/$_maxImages)',
               style: const TextStyle(
+=======
+              '(Optional)',
+              style: TextStyle(
+>>>>>>> 4ccf48f752c93ecb555fba25a73efe6c3d56d1d9
                 fontSize: 12,
                 color: grey02,
                 fontWeight: FontWeight.w700,
@@ -241,6 +257,7 @@ class _CommunityPostCreatePageState extends State<CommunityPostCreatePage> {
         const SizedBox(height: 12),
         SizedBox(
           height: 100,
+<<<<<<< HEAD
           child: ListView(
             scrollDirection: Axis.horizontal,
             children: [
@@ -254,6 +271,11 @@ class _CommunityPostCreatePageState extends State<CommunityPostCreatePage> {
               ),
             ],
           ),
+=======
+          child: hasImage
+              ? _buildSelectedImage(0, _selectedImages.first)
+              : _buildAddImageButton(),
+>>>>>>> 4ccf48f752c93ecb555fba25a73efe6c3d56d1d9
         ),
       ],
     );
@@ -261,7 +283,7 @@ class _CommunityPostCreatePageState extends State<CommunityPostCreatePage> {
 
   Widget _buildAddImageButton() {
     return GestureDetector(
-      onTap: _pickImages,
+      onTap: _pickImage,
       child: Container(
         width: 100,
         height: 90,
@@ -282,7 +304,11 @@ class _CommunityPostCreatePageState extends State<CommunityPostCreatePage> {
             Icon(Icons.photo_camera, color: grey02, size: 32),
             SizedBox(height: 6),
             Text(
+<<<<<<< HEAD
               'Photos',
+=======
+              'Photo',
+>>>>>>> 4ccf48f752c93ecb555fba25a73efe6c3d56d1d9
               style: TextStyle(
                 fontSize: 12,
                 color: grey02,
