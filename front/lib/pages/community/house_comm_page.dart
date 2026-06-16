@@ -997,6 +997,7 @@ class _HouseCommPageState extends State<HouseCommPage> with RouteAware {
     final String? imageUrl = post.imageUrls.isNotEmpty
         ? post.imageUrls.first
         : null;
+
     final bool hasImage = imageUrl != null && imageUrl.isNotEmpty;
     final bool hasAvatar =
         post.profileImageUrl != null && post.profileImageUrl!.isNotEmpty;
@@ -1004,16 +1005,16 @@ class _HouseCommPageState extends State<HouseCommPage> with RouteAware {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
       child: InkWell(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(23),
         onTap: () => _openNoticeDetail(post),
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(23),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withOpacity(0.06),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -1022,61 +1023,71 @@ class _HouseCommPageState extends State<HouseCommPage> with RouteAware {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // 제목
               if (post.title.isNotEmpty) ...[
                 Text(
                   post.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
                     color: dark,
                   ),
                 ),
                 const SizedBox(height: 6),
               ],
+
+              // 내용
               Text(
                 post.content,
-                maxLines: hasImage ? 2 : 3,
+                maxLines: hasImage ? 2 : 4,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 14,
+                  fontSize: 13,
                   height: 1.4,
                   color: dark,
-                  fontWeight: FontWeight.w400,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
+
+              // 이미지
               if (hasImage) ...[
                 const SizedBox(height: 12),
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(16),
                   child: SizedBox(
-                    height: 180,
+                    height: 160,
                     width: double.infinity,
                     child: Image.network(
                       imageUrl,
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => Container(
-                        color: grey01,
+                        color: const Color(0xFFEFEFEF),
                         child: const Center(
-                          child: Icon(Icons.image, color: grey02),
+                          child: Icon(Icons.broken_image, color: grey02),
                         ),
                       ),
                     ),
                   ),
                 ),
               ],
+
               const SizedBox(height: 12),
+
+              // 작성자 + 날짜
               Row(
                 children: [
                   CircleAvatar(
-                    radius: 12,
+                    radius: 13,
                     backgroundColor: Colors.grey[300],
                     backgroundImage: hasAvatar
                         ? NetworkImage(post.profileImageUrl!) as ImageProvider
                         : const AssetImage('assets/icons/default.png'),
                   ),
-                  const SizedBox(width: 8),
+
+                  const SizedBox(width: 9),
+
                   Text(
                     post.authorName.isEmpty ? 'Host' : post.authorName,
                     style: const TextStyle(
@@ -1085,14 +1096,18 @@ class _HouseCommPageState extends State<HouseCommPage> with RouteAware {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(width: 12),
+
+                  const SizedBox(width: 14),
+
                   SvgPicture.asset(
                     'assets/icons/calendar.svg',
-                    width: 14,
-                    height: 14,
+                    width: 13,
+                    height: 13,
                     color: grey03,
                   ),
+
                   const SizedBox(width: 4),
+
                   Text(
                     _formatNoticeDate(post.regTime),
                     style: const TextStyle(
@@ -1174,35 +1189,23 @@ class _HouseCommPageState extends State<HouseCommPage> with RouteAware {
       );
     }
 
-    final int extraTail = (_isLoadingMoreChats || !_chatHasMore) ? 1 : 0;
     return ListView.builder(
       controller: _chatScrollController,
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(vertical: 8),
-      itemCount: _chatRooms.length + extraTail,
+      itemCount: _chatRooms.length + (_isLoadingMoreChats ? 1 : 0),
       itemBuilder: (context, index) {
         if (index >= _chatRooms.length) {
-          if (_isLoadingMoreChats) {
-            return const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Center(
-                child: SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.4,
-                    color: green,
-                  ),
-                ),
-              ),
-            );
-          }
           return const Padding(
             padding: EdgeInsets.symmetric(vertical: 16),
             child: Center(
-              child: Text(
-                'No more chats',
-                style: TextStyle(fontSize: 12, color: grey03),
+              child: SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.4,
+                  color: green,
+                ),
               ),
             ),
           );

@@ -21,9 +21,11 @@ class TransactionItem {
   final String paymentType; // RENT / UTILITY / DUTCH
   /// true 면 "Mate paid" (양수, 초록색), false 면 "You paid" (음수)
   final bool isIncoming;
+
   /// PENDING 결제 행이면 본인이 직접 결제할 수 있도록 진입점에 사용할 정보.
   /// CONFIRMED 또는 다른 사람이 결제할 건이라면 null.
   final PendingPayment? pending;
+
   /// IN 거래 중 아직 메이트가 결제 완료하지 않은 항목(=대기 중).
   /// UI 에서 "Awaiting" 같은 보조 라벨을 보여주기 위함.
   final bool isAwaiting;
@@ -123,7 +125,10 @@ class _FinancePageState extends State<FinancePage> {
           ..clear()
           ..addAll(history);
         _pendingPayments = pending;
-        _transactionsByMonth = _groupByMonth(_allHistoryItems, _pendingPayments);
+        _transactionsByMonth = _groupByMonth(
+          _allHistoryItems,
+          _pendingPayments,
+        );
         _historyNextPage = 1;
         _historyHasMore = history.length >= _historyPageSize;
         _isLoading = false;
@@ -154,8 +159,10 @@ class _FinancePageState extends State<FinancePage> {
       if (!mounted) return;
       setState(() {
         _allHistoryItems.addAll(next);
-        _transactionsByMonth =
-            _groupByMonth(_allHistoryItems, _pendingPayments);
+        _transactionsByMonth = _groupByMonth(
+          _allHistoryItems,
+          _pendingPayments,
+        );
         _historyNextPage += 1;
         _historyHasMore = next.length >= _historyPageSize;
         _isLoadingMoreHistory = false;
@@ -191,16 +198,26 @@ class _FinancePageState extends State<FinancePage> {
       ),
     );
     if (paid == true && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Payment confirmed.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Payment confirmed.')));
       _loadHistory();
     }
   }
 
   static const List<String> _monthLabels = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
 
   Map<String, List<TransactionItem>> _groupByMonth(
@@ -212,22 +229,23 @@ class _FinancePageState extends State<FinancePage> {
     // (1) 미완료 결제 → 별도 "Pending" 섹션으로 묶어 가장 위에 노출.
     if (pendings.isNotEmpty) {
       result['Pending'] = pendings
-          .map((p) => TransactionItem(
-                title: (p.title != null && p.title!.isNotEmpty)
-                    ? p.title!
-                    : _titleFor(p.paymentType),
-                subtitle: (p.payeeName != null && p.payeeName!.isNotEmpty)
-                    ? 'My wallet → ${p.payeeName}'
-                    : ((p.targetAccount != null &&
-                            p.targetAccount!.isNotEmpty)
+          .map(
+            (p) => TransactionItem(
+              title: (p.title != null && p.title!.isNotEmpty)
+                  ? p.title!
+                  : _titleFor(p.paymentType),
+              subtitle: (p.payeeName != null && p.payeeName!.isNotEmpty)
+                  ? 'My wallet → ${p.payeeName}'
+                  : ((p.targetAccount != null && p.targetAccount!.isNotEmpty)
                         ? 'My wallet → ${p.targetAccount}'
                         : 'My wallet'),
-                date: 'Tap to pay',
-                amount: -p.amount.toDouble(),
-                paymentType: p.paymentType,
-                isIncoming: false,
-                pending: p,
-              ))
+              date: 'Tap to pay',
+              amount: -p.amount.toDouble(),
+              paymentType: p.paymentType,
+              isIncoming: false,
+              pending: p,
+            ),
+          )
           .toList();
     }
 
@@ -236,11 +254,12 @@ class _FinancePageState extends State<FinancePage> {
     // OUT 거래의 PENDING 은 이미 위 "Pending" 섹션에서 노출되므로 월별 거래 내역에는
     // 포함시키지 않는다(중복 표시 방지). IN 거래의 PENDING 은 "Awaiting" 라벨로
     // 받을 예정 금액을 표시해야 하므로 그대로 둔다.
-    final sorted = [...items]..sort((a, b) {
-      final ad = a.transactionDate ?? DateTime.fromMillisecondsSinceEpoch(0);
-      final bd = b.transactionDate ?? DateTime.fromMillisecondsSinceEpoch(0);
-      return bd.compareTo(ad);
-    });
+    final sorted = [...items]
+      ..sort((a, b) {
+        final ad = a.transactionDate ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final bd = b.transactionDate ?? DateTime.fromMillisecondsSinceEpoch(0);
+        return bd.compareTo(ad);
+      });
     for (final p in sorted) {
       final date = p.transactionDate;
       if (date == null) continue;
@@ -255,13 +274,16 @@ class _FinancePageState extends State<FinancePage> {
       // 백엔드 direction 필드 사용:
       // - IN  : 내가 받음 (Mate paid) → 양수
       // - OUT : 내가 보냄 (You paid) → 음수
-      final double signed =
-          p.isIncoming ? p.amount.toDouble() : -p.amount.toDouble();
+      final double signed = p.isIncoming
+          ? p.amount.toDouble()
+          : -p.amount.toDouble();
 
       // IN 인데 아직 메이트가 결제 안 한 경우 = 받을 예정.
       final bool awaiting = p.isIncoming && p.status == 'PENDING';
 
-      result.putIfAbsent(monthLabel, () => []).add(
+      result
+          .putIfAbsent(monthLabel, () => [])
+          .add(
             TransactionItem(
               title: title,
               subtitle: subtitle,
@@ -294,12 +316,12 @@ class _FinancePageState extends State<FinancePage> {
     // 디자인:
     //   - You paid : "My wallet → {상대방}"
     //   - Mate paid: "{상대방} → My wallet"
-    final counterparty = (p.counterpartyName != null &&
-            p.counterpartyName!.isNotEmpty)
+    final counterparty =
+        (p.counterpartyName != null && p.counterpartyName!.isNotEmpty)
         ? p.counterpartyName!
         : ((p.targetAccount != null && p.targetAccount!.isNotEmpty)
-            ? p.targetAccount!
-            : 'Counterparty');
+              ? p.targetAccount!
+              : 'Counterparty');
     if (p.isIncoming) {
       return '$counterparty → My wallet';
     }
@@ -414,173 +436,176 @@ class _FinancePageState extends State<FinancePage> {
           color: green,
           onRefresh: _loadHistory,
           child: CustomScrollView(
-          controller: _scrollController,
-          physics: const AlwaysScrollableScrollPhysics(
-            parent: BouncingScrollPhysics(),
-          ),
-          slivers: [
-            SliverToBoxAdapter(
-              child: CustomHeader(
-                showBack: false,
-                toolbarHeight: 56,
-                leading: Padding(
-                  padding: EdgeInsets.only(left: 20),
-                  child: const Text(
-                    'House Finances',
-                    style: TextStyle(
-                      fontSize: 21,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF1A1A1A),
+            controller: _scrollController,
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
+            slivers: [
+              SliverToBoxAdapter(
+                child: CustomHeader(
+                  showBack: false,
+                  toolbarHeight: 56,
+                  leading: Padding(
+                    padding: EdgeInsets.only(left: 20),
+                    child: const Text(
+                      'House Finances',
+                      style: TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF1A1A1A),
+                      ),
                     ),
                   ),
-                ),
-                trailing: Row(
-                  children: [
-                    CircleIconButton(
-                      svgAsset: 'assets/icons/plus.svg',
-                      iconSize: 17,
-                      iconColor: dark,
-                      padding: const EdgeInsets.only(right: 8),
-                      onPressed: _openCreateSplitBill,
-                    ),
-                    CircleIconButton(
-                      svgAsset: 'assets/icons/profile.svg',
-                      iconSize: 23,
-                      iconColor: dark,
-                      onPressed: goToMyPageTab,
-                    ),
-                  ],
+                  trailing: Row(
+                    children: [
+                      CircleIconButton(
+                        svgAsset: 'assets/icons/plus.svg',
+                        iconSize: 17,
+                        iconColor: dark,
+                        padding: const EdgeInsets.only(right: 8),
+                        onPressed: _openCreateSplitBill,
+                      ),
+                      CircleIconButton(
+                        svgAsset: 'assets/icons/profile.svg',
+                        iconSize: 23,
+                        iconColor: dark,
+                        onPressed: goToMyPageTab,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
 
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  const SizedBox(height: 16),
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    const SizedBox(height: 16),
 
-                  // 달력 카드
-                  _buildCalendarCard(),
-                  const SizedBox(height: 28),
+                    // 달력 카드
+                    _buildCalendarCard(),
+                    const SizedBox(height: 28),
 
-                  // Split Bills 버튼
-                  _buildSplitBillsButton(),
-                  const SizedBox(height: 28),
+                    // Split Bills 버튼
+                    _buildSplitBillsButton(),
+                    const SizedBox(height: 28),
 
-                  // 필터 탭
-                  _buildFilterTabs(),
-                  const SizedBox(height: 24),
+                    // 필터 탭
+                    _buildFilterTabs(),
+                    const SizedBox(height: 24),
 
-                  // 로딩 / 에러 / 빈 상태 / 데이터 표시
-                  if (_isLoading)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 60),
-                      child: Center(
-                        child: CircularProgressIndicator(color: green),
-                      ),
-                    )
-                  else if (_loadError != null)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 40),
-                      child: Center(
-                        child: Column(
-                          children: [
-                            const Icon(Icons.cloud_off,
-                                color: grey02, size: 36),
-                            const SizedBox(height: 10),
-                            Text(
-                              _loadError!,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: grey03,
-                                fontWeight: FontWeight.w600,
+                    // 로딩 / 에러 / 빈 상태 / 데이터 표시
+                    if (_isLoading)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 60),
+                        child: Center(
+                          child: CircularProgressIndicator(color: green),
+                        ),
+                      )
+                    else if (_loadError != null)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 40),
+                        child: Center(
+                          child: Column(
+                            children: [
+                              const Icon(
+                                Icons.cloud_off,
+                                color: grey02,
+                                size: 36,
                               ),
-                            ),
+                              const SizedBox(height: 10),
+                              Text(
+                                _loadError!,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: grey03,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else if (filteredTransactions.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 60),
+                        child: Center(
+                          child: Column(
+                            children: [
+                              SvgPicture.asset(
+                                'assets/icons/wallet.svg',
+                                width: 48,
+                                height: 48,
+                                color: grey01,
+                              ),
+                              const SizedBox(height: 10),
+                              const Text(
+                                'No transactions yet',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: grey03,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              const Text(
+                                'Create a split bill to get started.',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: grey03,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else
+                      ...filteredTransactions.entries.map(
+                        (entry) => Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildMonthLabel(entry.key),
+                            const SizedBox(height: 16),
+                            _buildTransactionList(entry.value),
+                            const SizedBox(height: 20),
                           ],
                         ),
                       ),
-                    )
-                  else if (filteredTransactions.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 60),
-                      child: Center(
-                        child: Column(
-                          children: [
-                            SvgPicture.asset(
-                              'assets/icons/wallet.svg',
-                              width: 48,
-                              height: 48,
-                              color: grey01,
-                            ),
-                            const SizedBox(height: 10),
-                            const Text(
-                              'No transactions yet',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: grey03,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              'Create a split bill to get started.',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: grey03,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                  else
-                    ...filteredTransactions.entries.map(
-                      (entry) => Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildMonthLabel(entry.key),
-                          const SizedBox(height: 16),
-                          _buildTransactionList(entry.value),
-                          const SizedBox(height: 20),
-                        ],
-                      ),
-                    ),
 
-                  // 추가 페이지 로드 인디케이터 / 끝 안내
-                  if (_isLoadingMoreHistory)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Center(
-                        child: SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.4,
-                            color: green,
+                    // 추가 페이지 로드 인디케이터 / 끝 안내
+                    if (_isLoadingMoreHistory)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        child: Center(
+                          child: SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.4,
+                              color: green,
+                            ),
+                          ),
+                        ),
+                      )
+                    else if (!_historyHasMore && _allHistoryItems.isNotEmpty)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: Center(
+                          child: Text(
+                            'No more transactions',
+                            style: TextStyle(fontSize: 12, color: grey03),
                           ),
                         ),
                       ),
-                    )
-                  else if (!_historyHasMore && _allHistoryItems.isNotEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      child: Center(
-                        child: Text(
-                          'No more transactions',
-                          style: TextStyle(fontSize: 12, color: grey03),
-                        ),
-                      ),
-                    ),
 
-                  const SizedBox(height: 70),
-                ]),
+                    const SizedBox(height: 70),
+                  ]),
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
         ),
       ),
     );
@@ -936,8 +961,9 @@ class _FinancePageState extends State<FinancePage> {
 
   Widget _buildTransactionRow(TransactionItem item) {
     final isRent = item.paymentType == 'RENT';
-    final String leadingIcon =
-        isRent ? 'assets/icons/coin-fill.svg' : 'assets/icons/wallet.svg';
+    final String leadingIcon = isRent
+        ? 'assets/icons/coin-fill.svg'
+        : 'assets/icons/wallet.svg';
     final Color amountColor = item.isIncoming ? darkgreen : dark;
     final String sign = item.amount >= 0 ? '' : '- ';
     final String moneyText = '$sign${_fmtAud(item.amount.abs().toInt())}';
@@ -989,8 +1015,7 @@ class _FinancePageState extends State<FinancePage> {
           const SizedBox(height: 6),
           if (item.isPayable)
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
                 color: yellow,
                 borderRadius: BorderRadius.circular(20),
@@ -1006,8 +1031,7 @@ class _FinancePageState extends State<FinancePage> {
             )
           else if (item.isAwaiting)
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
                 color: const Color(0xFFE6F4EA),
                 borderRadius: BorderRadius.circular(20),

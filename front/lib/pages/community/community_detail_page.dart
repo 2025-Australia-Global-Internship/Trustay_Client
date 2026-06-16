@@ -16,6 +16,8 @@ import 'package:front/services/post_service.dart';
 import 'package:front/services/sharehouse_service.dart';
 import 'package:front/widgets/confirm_dialog.dart';
 import 'package:front/widgets/gradient_layout.dart';
+import 'package:front/widgets/circle_icon_button.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import 'community_post_create_page.dart';
 
@@ -376,45 +378,15 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _circleIconButton(
-            asset: 'assets/icons/arrow_back.svg',
-            onTap: () => Navigator.of(context).maybePop(),
+          CircleIconButton(
+            svgAsset: 'assets/icons/arrow_back.svg',
+            onPressed: () => Navigator.of(context).maybePop(),
           ),
-          _circleIconButton(
-            iconWidget: const Icon(Icons.more_horiz, size: 22, color: dark),
-            onTap: _onTapMore,
+          CircleIconButton(
+            svgAsset: 'assets/icons/dots-linear.svg',
+            onPressed: _onTapMore,
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _circleIconButton({
-    String? asset,
-    Widget? iconWidget,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Center(
-          child:
-              iconWidget ??
-              SvgPicture.asset(asset!, width: 18, height: 18, color: dark),
-        ),
       ),
     );
   }
@@ -507,7 +479,14 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
               ),
               const SizedBox(height: 4),
               ListTile(
-                leading: const Icon(Icons.group_outlined, color: dark),
+                horizontalTitleGap: 16,
+                minLeadingWidth: 0,
+                leading: SvgPicture.asset(
+                  'assets/icons/social.svg',
+                  color: dark,
+                  width: 20,
+                  height: 20,
+                ),
                 title: const Text(
                   'Members',
                   style: TextStyle(fontWeight: FontWeight.w700, color: dark),
@@ -521,9 +500,15 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
               // 오너는 항상 멤버이므로 _isMember 가 true → 옵션이 노출된다.
               if (_isMember)
                 ListTile(
-                  leading: Icon(
-                    _isOwner ? Icons.delete_outline : Icons.exit_to_app,
+                  horizontalTitleGap: 15,
+                  minLeadingWidth: 0,
+                  leading: SvgPicture.asset(
+                    _isOwner
+                        ? 'assets/icons/trash.svg'
+                        : 'assets/icons/logout.svg',
                     color: _isOwner ? Colors.redAccent : dark,
+                    width: 23,
+                    height: 23,
                   ),
                   title: Text(
                     _isOwner ? 'Delete community' : 'Leave community',
@@ -1067,7 +1052,7 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
                   height: 18,
                   color: darkgreen,
                 ),
-                const SizedBox(width: 8), // 간격을 6에서 8로 살짝 넓혀 가독성 확보
+                const SizedBox(width: 8),
                 const Text(
                   'Filter',
                   style: TextStyle(
@@ -1081,31 +1066,51 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
           ),
         ),
         const Spacer(),
+
+        // 1. Month 필터
         _buildPillDropdown<int>(
-          width: 115, // Month 필터 너비 지정 (글자 길이에 맞춰 적절히 조절 가능)
+          width: 115,
           label: _filterMonth == null
               ? 'Month'
               : DateFormat('MMM').format(DateTime(2000, _filterMonth!)),
           items: [
-            const DropdownMenuItem<int>(value: null, child: Text('All')),
+            // All 아이템 글자 크기 변경
+            const DropdownMenuItem<int>(
+              value: null,
+              child: Text('All', style: TextStyle(fontSize: 12)),
+            ),
             ...List.generate(12, (i) {
               final m = i + 1;
               return DropdownMenuItem<int>(
                 value: m,
-                child: Text(DateFormat('MMMM').format(DateTime(2000, m))),
+                // 월별 아이템 글자 크기 변경
+                child: Text(
+                  DateFormat('MMMM').format(DateTime(2000, m)),
+                  style: const TextStyle(fontSize: 12),
+                ),
               );
             }),
           ],
           onChanged: (v) => setState(() => _filterMonth = v),
         ),
         const SizedBox(width: 8),
+
+        // 2. Year 필터
         _buildPillDropdown<int>(
-          width: 75, // Year 필터 너비 지정
+          width: 75,
           label: _filterYear == null ? 'Year' : _filterYear.toString(),
           items: [
-            const DropdownMenuItem<int>(value: null, child: Text('All')),
+            // All 아이템 글자 크기 변경
+            const DropdownMenuItem<int>(
+              value: null,
+              child: Text('All', style: TextStyle(fontSize: 12)),
+            ),
             ..._availableYears().map(
-              (y) => DropdownMenuItem<int>(value: y, child: Text('$y')),
+              (y) => DropdownMenuItem<int>(
+                value: y,
+                // 연도별 아이템 글자 크기 변경
+                child: Text('$y', style: const TextStyle(fontSize: 12)),
+              ),
             ),
           ],
           onChanged: (v) => setState(() => _filterYear = v),
@@ -1223,10 +1228,12 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
   bool _canDeletePost(PostModel p) {
     final me = AuthService.currentUserNotifier.value;
     if (me == null) return false;
-    final isAuthor = p.authorEmail != null &&
+    final isAuthor =
+        p.authorEmail != null &&
         p.authorEmail!.isNotEmpty &&
         p.authorEmail == me.email;
-    final isOwner = _community?.ownerMemberId != null &&
+    final isOwner =
+        _community?.ownerMemberId != null &&
         _community!.ownerMemberId == me.memberId;
     return isAuthor || isOwner;
   }
@@ -1248,15 +1255,13 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
         // 앨범 캐시도 함께 무효화 (사진이 빠지면 다시 채워줘야 하므로).
         _albumPosts.removeWhere((e) => e.id == p.id);
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Post deleted.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Post deleted.')));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-        ),
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
       );
     }
   }
@@ -1271,9 +1276,7 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
         tooltip: 'More',
         padding: EdgeInsets.zero,
         position: PopupMenuPosition.under,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         elevation: 6,
         icon: SvgPicture.asset(
           'assets/icons/dots-linear.svg',
@@ -1284,13 +1287,18 @@ class _CommunityDetailPageState extends State<CommunityDetailPage>
         onSelected: (value) {
           if (value == 'delete') _confirmAndDeletePost(p);
         },
-        itemBuilder: (_) => const [
+        itemBuilder: (_) => [
           PopupMenuItem<String>(
             value: 'delete',
             height: 40,
             child: Row(
               children: [
-                Icon(Icons.delete_outline, size: 18, color: Color(0xFFE74C3C)),
+                SvgPicture.asset(
+                  'assets/icons/trash.svg',
+                  width: 18,
+                  height: 18,
+                  color: Color(0xFFE74C3C),
+                ),
                 SizedBox(width: 10),
                 Text(
                   'Delete',

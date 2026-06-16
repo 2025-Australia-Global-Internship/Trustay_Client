@@ -59,8 +59,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
       _error = null;
     });
     try {
-      final result =
-          await NotificationService.fetchNotifications(page: 0, size: _pageSize);
+      final result = await NotificationService.fetchNotifications(
+        page: 0,
+        size: _pageSize,
+      );
       await NotificationService.fetchUnreadCount();
       if (!mounted) return;
       setState(() {
@@ -82,8 +84,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   Future<void> _refresh() async {
     try {
-      final result =
-          await NotificationService.fetchNotifications(page: 0, size: _pageSize);
+      final result = await NotificationService.fetchNotifications(
+        page: 0,
+        size: _pageSize,
+      );
       await NotificationService.fetchUnreadCount();
       if (!mounted) return;
       setState(() {
@@ -355,7 +359,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       child: ListView.separated(
         controller: _scrollCtl,
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         itemCount: _items.length + (_isLast ? 0 : 1),
         separatorBuilder: (_, __) => const SizedBox(height: 10),
         itemBuilder: (context, index) {
@@ -399,7 +403,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
           context: context,
           builder: (ctx) => AlertDialog(
             title: const Text('Delete notification?'),
-            content: const Text('This will remove the notification from your list.'),
+            content: const Text(
+              'This will remove the notification from your list.',
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
@@ -478,10 +484,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         Text(
                           n.body!,
                           style: const TextStyle(
-                            fontSize: 13,
-                            color: dark,
+                            fontSize: 12,
+                            color: grey04,
                             height: 1.4,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w600,
                           ),
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,

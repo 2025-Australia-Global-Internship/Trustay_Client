@@ -105,24 +105,26 @@ class _NoticeDetailPageState extends State<NoticeDetailPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _posting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_friendlyError(e))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_friendlyError(e))));
     }
   }
 
   Future<void> _confirmDeleteComment(PostCommentModel c) async {
     final user = widget.currentUser;
     // 백엔드 규칙: 작성자 본인만 삭제 가능 (soft delete).
-    final canDelete = user != null && c.authorId == user.memberId &&
-        !c.isDeleted;
+    final canDelete =
+        user != null && c.authorId == user.memberId && !c.isDeleted;
     if (!canDelete) return;
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete comment?'),
-        content: const Text('Other people will see "(This comment was deleted.)" instead.'),
+        content: const Text(
+          'Other people will see "(This comment was deleted.)" instead.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -141,18 +143,15 @@ class _NoticeDetailPageState extends State<NoticeDetailPage> {
     if (confirmed != true) return;
 
     try {
-      await PostService.deleteComment(
-        postId: widget.postId,
-        commentId: c.id,
-      );
+      await PostService.deleteComment(postId: widget.postId, commentId: c.id);
       if (!mounted) return;
       // soft delete 후 목록 새로고침 — 백엔드에서 placeholder 본문으로 다시 받아온다.
       await _load();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_friendlyError(e))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_friendlyError(e))));
     }
   }
 
@@ -251,14 +250,14 @@ class _NoticeDetailPageState extends State<NoticeDetailPage> {
       onRefresh: _load,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
         children: [
           _buildPostBlock(_post!),
           const SizedBox(height: 16),
           Container(height: 1, color: grey01.withOpacity(0.7)),
           const SizedBox(height: 20),
           Text(
-            'Comments (${_comments.length.toString().padLeft(2, '0')})',
+            'Comments (${_comments.isEmpty ? '0' : _comments.length.toString().padLeft(2, '0')})',
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w800,
@@ -288,8 +287,8 @@ class _NoticeDetailPageState extends State<NoticeDetailPage> {
   }
 
   Widget _buildPostBlock(PostModel post) {
-    final bool hasAvatar = post.profileImageUrl != null &&
-        post.profileImageUrl!.isNotEmpty;
+    final bool hasAvatar =
+        post.profileImageUrl != null && post.profileImageUrl!.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -303,11 +302,11 @@ class _NoticeDetailPageState extends State<NoticeDetailPage> {
                   ? NetworkImage(post.profileImageUrl!) as ImageProvider
                   : const AssetImage('assets/icons/default.png'),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 12),
             Text(
               post.authorName.isEmpty ? 'Host' : post.authorName,
               style: const TextStyle(
-                fontSize: 15,
+                fontSize: 16,
                 fontWeight: FontWeight.w800,
                 color: dark,
               ),
@@ -319,12 +318,12 @@ class _NoticeDetailPageState extends State<NoticeDetailPage> {
           Text(
             post.title,
             style: const TextStyle(
-              fontSize: 16,
+              fontSize: 15,
               fontWeight: FontWeight.w800,
               color: dark,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 5),
         ],
         Text(
           post.content,
@@ -332,7 +331,7 @@ class _NoticeDetailPageState extends State<NoticeDetailPage> {
             fontSize: 14,
             height: 1.5,
             color: dark,
-            fontWeight: FontWeight.w400,
+            fontWeight: FontWeight.w700,
           ),
         ),
         if (post.imageUrls.isNotEmpty) ...[
@@ -372,13 +371,8 @@ class _NoticeDetailPageState extends State<NoticeDetailPage> {
               ),
             ),
             const SizedBox(width: 14),
-            SvgPicture.asset(
-              'assets/icons/schedule.svg',
-              width: 15,
-              height: 15,
-              color: grey03,
-            ),
-            const SizedBox(width: 6),
+            const Icon(Icons.access_time, size: 17, color: grey02),
+            const SizedBox(width: 4),
             Text(
               _timeAgo(post.regTime),
               style: const TextStyle(
@@ -397,18 +391,18 @@ class _NoticeDetailPageState extends State<NoticeDetailPage> {
     final user = widget.currentUser;
     final bool isMine = user != null && c.authorId == user.memberId;
     final bool canDelete = isMine && !c.isDeleted;
-    final bool hasAvatar = c.authorProfileImageUrl != null &&
-        c.authorProfileImageUrl!.isNotEmpty;
+    final bool hasAvatar =
+        c.authorProfileImageUrl != null && c.authorProfileImageUrl!.isNotEmpty;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.only(bottom: 30),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               CircleAvatar(
-                radius: 16,
+                radius: 17,
                 backgroundColor: Colors.grey[300],
                 backgroundImage: hasAvatar
                     ? NetworkImage(c.authorProfileImageUrl!) as ImageProvider
@@ -419,21 +413,39 @@ class _NoticeDetailPageState extends State<NoticeDetailPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      c.authorName.isEmpty ? 'User' : c.authorName,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                        color: c.isDeleted ? grey03 : dark,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          c.authorName.isEmpty ? 'User' : c.authorName,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: c.isDeleted ? grey03 : dark,
+                          ),
+                        ),
+
+                        if (canDelete) ...[
+                          const SizedBox(width: 4),
+                          GestureDetector(
+                            onTap: () => _confirmDeleteComment(c),
+                            child: SvgPicture.asset(
+                              'assets/icons/dots-linear.svg',
+                              width: 16,
+                              height: 16,
+                              color: dark,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 6),
                     Row(
                       children: [
                         Text(
                           _fmtDate(c.regTime),
                           style: const TextStyle(
-                            fontSize: 11,
+                            fontSize: 12,
                             color: grey03,
                             fontWeight: FontWeight.w600,
                           ),
@@ -462,26 +474,17 @@ class _NoticeDetailPageState extends State<NoticeDetailPage> {
                   ],
                 ),
               ),
-              if (canDelete)
-                IconButton(
-                  visualDensity: VisualDensity.compact,
-                  onPressed: () => _confirmDeleteComment(c),
-                  icon: const Icon(Icons.more_horiz, color: grey03),
-                ),
             ],
           ),
           const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.only(left: 42),
-            child: Text(
-              c.content,
-              style: TextStyle(
-                fontSize: 14,
-                height: 1.4,
-                color: c.isDeleted ? grey03 : dark,
-                fontStyle: c.isDeleted ? FontStyle.italic : FontStyle.normal,
-                fontWeight: FontWeight.w400,
-              ),
+          Text(
+            c.content,
+            style: TextStyle(
+              fontSize: 14,
+              height: 1.4,
+              color: c.isDeleted ? grey03 : dark,
+              fontStyle: c.isDeleted ? FontStyle.italic : FontStyle.normal,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
@@ -490,83 +493,114 @@ class _NoticeDetailPageState extends State<NoticeDetailPage> {
   }
 
   Widget _buildCommentComposer() {
-    return SafeArea(
-      top: false,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 8,
-              offset: const Offset(0, -2),
+    return Container(
+      color: Colors.transparent, // 배경을 투명하게 하여 메시지 창과 동일한 레이어감 유지
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+        child: SafeArea(
+          top: false,
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 68, maxHeight: 155),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(43),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: green, width: 1.4),
-              ),
-              child: const Icon(Icons.add, color: green, size: 20),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: TextField(
-                controller: _commentCtl,
-                focusNode: _commentFocus,
-                minLines: 1,
-                maxLines: 4,
-                textInputAction: TextInputAction.newline,
-                inputFormatters: [LengthLimitingTextInputFormatter(1000)],
-                style: const TextStyle(fontSize: 14, color: dark),
-                decoration: const InputDecoration(
-                  isDense: true,
-                  border: InputBorder.none,
-                  hintText: 'Write a comment...',
-                  hintStyle: TextStyle(
-                    color: grey02,
-                    fontWeight: FontWeight.w500,
-                    fontSize: 14,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // + 버튼 (디자인 유지, 클릭 기능 없음)
+                Padding(
+                  padding: const EdgeInsets.only(left: 13),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: green, width: 1.1),
+                    ),
+                    child: const Icon(Icons.add, size: 20, color: green),
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: _posting ? null : _submitComment,
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: _posting ? grey03 : green,
-                  shape: BoxShape.circle,
+
+                // 세로 구분선
+                Container(
+                  width: 1.1,
+                  height: 23,
+                  color: grey01,
+                  margin: const EdgeInsets.only(left: 15),
                 ),
-                child: _posting
-                    ? const Padding(
-                        padding: EdgeInsets.all(10),
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: SvgPicture.asset(
-                          'assets/icons/send.svg',
-                          color: Colors.white,
-                        ),
+
+                // 댓글 입력창
+                Expanded(
+                  child: TextField(
+                    cursorColor: grey03,
+                    controller: _commentCtl,
+                    focusNode: _commentFocus,
+                    maxLines: null,
+                    keyboardType: TextInputType.multiline,
+                    textInputAction: TextInputAction.newline,
+                    inputFormatters: [LengthLimitingTextInputFormatter(1000)],
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: dark,
+                    ),
+                    decoration: const InputDecoration(
+                      hintText: "Write a comment...",
+                      hintStyle: TextStyle(color: grey03, fontSize: 14),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 18,
                       ),
-              ),
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                    ),
+                  ),
+                ),
+
+                // 전송 버튼
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: GestureDetector(
+                    onTap: _posting ? null : _submitComment,
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _posting ? grey01 : green,
+                      ),
+                      child: Padding(
+                        padding: _posting
+                            ? const EdgeInsets.all(12)
+                            : const EdgeInsets.fromLTRB(14, 12, 11, 12),
+                        child: _posting
+                            ? const CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              )
+                            : SvgPicture.asset(
+                                'assets/icons/send.svg',
+                                width: 18,
+                                height: 18,
+                                color: Colors.white,
+                              ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
