@@ -18,8 +18,7 @@ class SocialCommPage extends StatefulWidget {
   State<SocialCommPage> createState() => _SocialCommPageState();
 }
 
-class _SocialCommPageState extends State<SocialCommPage>
-    with RouteAware {
+class _SocialCommPageState extends State<SocialCommPage> with RouteAware {
   // 내가 가입한 커뮤니티
   List<CommunityModel> _myCommunities = [];
   // 인기 커뮤니티 (Trending)
@@ -250,7 +249,7 @@ class _SocialCommPageState extends State<SocialCommPage>
             ),
           ],
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 18),
         SizedBox(height: 180, child: _buildTrendingList()),
 
         const SizedBox(height: 36),
@@ -265,7 +264,7 @@ class _SocialCommPageState extends State<SocialCommPage>
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 18),
 
         _buildFeedSection(),
 
@@ -278,17 +277,10 @@ class _SocialCommPageState extends State<SocialCommPage>
               child: SizedBox(
                 width: 22,
                 height: 22,
-                child: CircularProgressIndicator(strokeWidth: 2.4, color: green),
-              ),
-            ),
-          )
-        else if (!_feedHasMore && _feedPosts.isNotEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            child: Center(
-              child: Text(
-                "You're all caught up",
-                style: TextStyle(fontSize: 12, color: grey03),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.4,
+                  color: green,
+                ),
               ),
             ),
           ),
@@ -323,8 +315,7 @@ class _SocialCommPageState extends State<SocialCommPage>
   Future<void> _openCommunityDetail(CommunityModel c) async {
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) =>
-            CommunityDetailPage(communityId: c.id, initial: c),
+        builder: (_) => CommunityDetailPage(communityId: c.id, initial: c),
       ),
     );
   }
@@ -644,14 +635,18 @@ class _SocialCommPageState extends State<SocialCommPage>
                     Text(
                       post.authorName.isEmpty ? 'Unknown' : post.authorName,
                       style: const TextStyle(
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w800,
                         fontSize: 15,
                       ),
                     ),
                     const SizedBox(height: 5),
                     Text(
                       _timeAgo(post.regTime),
-                      style: const TextStyle(fontSize: 12, color: grey03),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: grey03,
+                      ),
                     ),
                   ],
                 ),
@@ -675,7 +670,7 @@ class _SocialCommPageState extends State<SocialCommPage>
             style: const TextStyle(
               fontSize: 14,
               height: 1.4,
-              fontWeight: FontWeight.w400,
+              fontWeight: FontWeight.w600,
               color: dark,
             ),
           ),
@@ -684,7 +679,7 @@ class _SocialCommPageState extends State<SocialCommPage>
             ClipRRect(
               borderRadius: BorderRadius.circular(18),
               child: SizedBox(
-                height: 200,
+                height: 170,
                 width: double.infinity,
                 child: Image.network(
                   imageUrl,
@@ -706,31 +701,34 @@ class _SocialCommPageState extends State<SocialCommPage>
                 onTap: () => _onTapLike(post),
                 child: SvgPicture.asset(
                   'assets/icons/heart.svg',
-                  color: post.likedByMe ? Colors.redAccent : null,
+                  color: post.likedByMe ? green : dark,
+                  width: 16,
                 ),
               ),
               const SizedBox(width: 4),
               Text(
                 _likesLabel(post.likeCount),
-                style: const TextStyle(fontSize: 14),
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(width: 16),
-              SvgPicture.asset(
-                'assets/icons/community.svg',
-                width: 21,
-                height: 21,
-              ),
+              SvgPicture.asset('assets/icons/community.svg', width: 16),
               const SizedBox(width: 4),
               Text(
                 '${post.commentCount}',
-                style: const TextStyle(fontSize: 14),
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const Spacer(),
               SvgPicture.asset(
                 'assets/icons/bookmark.svg',
-                width: 19,
-                height: 19,
                 color: dark,
+                width: 16,
+                height: 16,
               ),
             ],
           ),

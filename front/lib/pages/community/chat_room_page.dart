@@ -1314,7 +1314,6 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           itemBuilder: (context, index) {
             final item = menuItems[index];
 
-            final isWallet = item['label'] == 'Wallet';
             final isMap = item['label'] == 'Location';
 
             return GestureDetector(
@@ -1334,7 +1333,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                         item['icon'],
                         width: isMap ? 24 : 22,
                         height: isMap ? 24 : 22,
-                        color: isWallet ? darkgreen : null,
+                        color: darkgreen,
                       ),
                     ),
                   ),
