@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 
 import 'package:front/constants/colors.dart';
+import 'package:front/constants/exchange_rate.dart';
 import 'package:front/models/payment_model.dart';
 import 'package:front/services/payment_service.dart';
 import 'package:front/widgets/custom_header.dart';
@@ -18,7 +19,10 @@ import 'create_split_bill_page.dart';
 ///  - Split Bill History 카드 (최근 1건 미리보기 + See all)
 ///  - "Create Split Bill" CTA
 ///
-/// 통화는 호주달러(AUD) — `$` 기호 + 천 단위 구분.
+/// 통화 정책:
+///   - DB / 서버 응답 amount  → KRW 정수 (그대로 차트·합계에 사용)
+///   - 화면 표시              → AUD 로 환산하여 "$166" / 작은 글씨로 "₩166,000"
+/// 환산은 [krwToAud] 한 곳에 일원화돼 있다 (front/lib/constants/exchange_rate.dart).
 class SplitBillsPage extends StatefulWidget {
   const SplitBillsPage({super.key});
 
@@ -121,14 +125,14 @@ class _SplitBillsPageState extends State<SplitBillsPage> {
   // 포맷팅
   // ---------------------------------------------------------------------------
 
-  String _fmtMoney(num v) {
-    final f = NumberFormat.currency(
-      locale: 'en_AU',
-      symbol: '\$',
-      decimalDigits: 2,
-    );
-    return f.format(v);
-  }
+  /// 서버에서 받아온 KRW 정수를 AUD 로 환산해 "\$166.00" 으로 표기한다.
+  ///
+  /// 차트 라벨처럼 좁은 자리에서 단독으로 사용한다.
+  String _fmtMoney(num krwAmount) =>
+      formatAud(krwToAud(krwAmount), showCents: true);
+
+  /// KRW 정수를 받아 "₩166,000" 형태로 작은 글씨용 보조 표기를 만든다.
+  String _fmtKrw(num krwAmount) => formatKrw(krwAmount);
 
   String _fmtTxDate(DateTime d) {
     return DateFormat('dd MMM, yyyy · HH:mm').format(d);
@@ -236,6 +240,15 @@ class _SplitBillsPageState extends State<SplitBillsPage> {
               color: green,
             ),
           ),
+          const SizedBox(height: 4),
+          Text(
+            '≈ ${_fmtKrw(total)}',
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: grey03,
+            ),
+          ),
           const SizedBox(height: 14),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -278,8 +291,12 @@ class _SplitBillsPageState extends State<SplitBillsPage> {
       (acc, v) => v > acc ? v : acc,
     );
 
+    // 차트 높이 구성:
+    //   labelHeight(말풍선) + topGap + barArea + bottomGap + monthTextHeight
+    // 이 값들의 합이 SizedBox.height 와 정확히 일치해야 한다.
+    // 합이 컨테이너보다 크면 "BOTTOM OVERFLOWED BY N PIXELS" 경고가 뜬다.
     return SizedBox(
-      height: 120,
+      height: 140,
       // 💡 1. 가로 스크롤을 가능하게 해주는 좌우 스크롤 뷰 배치
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -287,8 +304,17 @@ class _SplitBillsPageState extends State<SplitBillsPage> {
         child: LayoutBuilder(
           builder: (context, constraints) {
             const double labelHeight = 24;
-            const double barAreaTop = labelHeight + 6;
-            final double barAreaHeight = 110 - barAreaTop;
+            const double topGap = 6;
+            const double bottomGap = 8;
+            const double monthTextHeight = 16;
+            // 막대 영역 = 전체 높이 - 말풍선/간격/월 라벨.
+            // 외부 SizedBox 높이가 바뀌어도 자동으로 들어맞는다.
+            final double barAreaHeight = (constraints.maxHeight -
+                    labelHeight -
+                    topGap -
+                    bottomGap -
+                    monthTextHeight)
+                .clamp(0.0, double.infinity);
 
             return Row(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -367,7 +393,7 @@ class _SplitBillsPageState extends State<SplitBillsPage> {
                               )
                             : const SizedBox.shrink(),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: topGap),
                       // 막대 기둥
                       Container(
                         width: 23,
@@ -377,15 +403,19 @@ class _SplitBillsPageState extends State<SplitBillsPage> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _shortMonths[i],
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: isCurrent
-                              ? FontWeight.w800
-                              : FontWeight.w600,
-                          color: isCurrent ? green : grey03,
+                      const SizedBox(height: bottomGap),
+                      SizedBox(
+                        height: monthTextHeight,
+                        child: Text(
+                          _shortMonths[i],
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: isCurrent
+                                ? FontWeight.w800
+                                : FontWeight.w600,
+                            color: isCurrent ? green : grey03,
+                            height: 1.2,
+                          ),
                         ),
                       ),
                     ],
@@ -530,13 +560,29 @@ class _SplitBillsPageState extends State<SplitBillsPage> {
             ),
           ),
           const SizedBox(width: 8),
-          Text(
-            _fmtMoney(p.amount),
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w800,
-              color: darkgreen,
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _fmtMoney(p.amount),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: darkgreen,
+                  height: 1.1,
+                ),
+              ),
+              Text(
+                _fmtKrw(p.amount),
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: grey03,
+                  height: 1.1,
+                ),
+              ),
+            ],
           ),
         ],
       ),

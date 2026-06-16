@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:front/constants/colors.dart';
+import 'package:front/constants/exchange_rate.dart';
 import 'package:front/index.dart' show goToMyPageTab;
 import 'package:front/widgets/custom_header.dart';
 import 'package:front/widgets/circle_icon_button.dart';
@@ -333,25 +334,27 @@ class _FinancePageState extends State<FinancePage> {
     return DateFormat('dd MMM · hh:mma').format(d);
   }
 
-  String _fmtAud(num v) {
-    return NumberFormat.currency(
-      locale: 'en_AU',
-      symbol: '\$',
-      decimalDigits: 0,
-    ).format(v);
-  }
+  /// 서버에서 받아온 KRW 정수를 AUD 로 환산해 "$166" 형태로 표기한다.
+  ///
+  /// 서버/DB/토스 결제는 모두 KRW 정수이지만 사용자에게는 호주달러로 보여준다.
+  String _fmtAud(num krwAmount) => formatAud(krwToAud(krwAmount));
 
-  // 필터링된 거래 내역 가져오기
+  // 필터링된 거래 내역 가져오기.
+  //
+  // 탭별 의미:
+  //   - All splits : Pending(=내가 결제할 것) + 모든 거래
+  //   - You paid   : Pending(=내가 결제할 것) + 내가 결제 완료한 OUT 거래
+  //   - Mate paid  : 메이트가 결제한/할 IN 거래만 (본인 Pending 은 의미가 달라 숨김)
   Map<String, List<TransactionItem>> _getFilteredTransactions() {
-    // "Pending" 섹션은 항상 그대로 노출하고, 거래 내역에만 필터를 적용.
     final pending = _transactionsByMonth['Pending'];
     if (_selectedFilter == 0) {
-      // All splits - 전체 표시
       return _transactionsByMonth;
     }
 
     Map<String, List<TransactionItem>> filtered = {};
-    if (pending != null && pending.isNotEmpty) {
+    // Pending 섹션은 "You paid" 탭에만 노출.
+    // Mate paid 탭에서는 본인이 결제할 Pending 이 함께 보이면 의미가 헷갈리므로 제외.
+    if (_selectedFilter == 1 && pending != null && pending.isNotEmpty) {
       filtered['Pending'] = pending;
     }
 
@@ -966,7 +969,10 @@ class _FinancePageState extends State<FinancePage> {
         : 'assets/icons/wallet.svg';
     final Color amountColor = item.isIncoming ? darkgreen : dark;
     final String sign = item.amount >= 0 ? '' : '- ';
-    final String moneyText = '$sign${_fmtAud(item.amount.abs().toInt())}';
+    final int absKrw = item.amount.abs().toInt();
+    // 큰 글씨로는 호주달러, 작은 글씨로는 실제 결제 통화인 원화를 병기한다.
+    final String moneyText = '$sign${_fmtAud(absKrw)}';
+    final String moneyKrwText = '$sign${formatKrw(absKrw)}';
 
     final tile = ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
@@ -1010,9 +1016,19 @@ class _FinancePageState extends State<FinancePage> {
               fontSize: 14,
               fontWeight: FontWeight.w800,
               color: amountColor,
+              height: 1.1,
             ),
           ),
-          const SizedBox(height: 6),
+          Text(
+            moneyKrwText,
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: grey03,
+              height: 1.1,
+            ),
+          ),
+          const SizedBox(height: 4),
           if (item.isPayable)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
