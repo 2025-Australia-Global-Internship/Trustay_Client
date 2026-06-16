@@ -1208,7 +1208,7 @@ class _HouseCommPageState extends State<HouseCommPage> with RouteAware {
           );
         }
         final item = _chatRooms[index];
-        final unreadCount = 0;
+        final int unreadCount = item.unreadCount;
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
@@ -1268,20 +1268,24 @@ class _HouseCommPageState extends State<HouseCommPage> with RouteAware {
                           if (unreadCount > 0) ...[
                             const SizedBox(width: 6),
                             Container(
-                              width: 22,
-                              height: 22,
-                              decoration: const BoxDecoration(
-                                color: green,
-                                shape: BoxShape.circle,
+                              constraints: const BoxConstraints(
+                                minWidth: 22,
+                                minHeight: 22,
                               ),
-                              child: Center(
-                                child: Text(
-                                  unreadCount.toString(),
-                                  style: const TextStyle(
-                                    color: yellow,
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w800,
-                                  ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: green,
+                                borderRadius: BorderRadius.circular(11),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                unreadCount > 99 ? '99+' : '$unreadCount',
+                                style: const TextStyle(
+                                  color: yellow,
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w800,
                                 ),
                               ),
                             ),

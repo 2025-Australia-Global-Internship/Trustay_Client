@@ -7,8 +7,10 @@ import 'package:front/models/user_model.dart';
 import 'package:front/models/sharehouse_model.dart';
 import 'package:front/services/auth_service.dart';
 import 'package:front/services/sharehouse_service.dart';
+import 'package:front/services/notification_service.dart';
 import 'package:front/widgets/circle_icon_button.dart';
 import 'package:front/widgets/house_card.dart';
+import 'package:front/widgets/notification_bell_button.dart';
 // 상세 페이지 이동을 위해 import 추가
 import '../../pages/mypage/sharehouse_detail_page.dart';
 
@@ -38,6 +40,8 @@ class _HomePageState extends State<HomePage> with RouteAware {
 
     _loadProfile();
     _loadHouses();
+    // 종 아이콘의 빨간 뱃지를 위해 안 읽은 개수를 미리 받아둔다.
+    NotificationService.fetchUnreadCount();
   }
 
   @override
@@ -58,6 +62,8 @@ class _HomePageState extends State<HomePage> with RouteAware {
   @override
   void didPopNext() {
     _loadHouses(); // ← 여기서 실행됨
+    // 알림 페이지에서 돌아오는 경우를 포함해 뱃지 갱신.
+    NotificationService.fetchUnreadCount();
   }
 
   // 전역 사용자 정보가 갱신될 때 호출되는 리스너
@@ -192,12 +198,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
                           Navigator.pushNamed(context, '/search');
                         },
                       ),
-                      CircleIconButton(
-                        svgAsset: 'assets/icons/bell.svg',
-                        iconSize: 22,
-                        iconColor: dark,
-                        onPressed: () {},
-                      ),
+                      const NotificationBellButton(),
                     ],
                   ),
                 ),
@@ -479,3 +480,4 @@ class _HomePageState extends State<HomePage> with RouteAware {
     );
   }
 }
+

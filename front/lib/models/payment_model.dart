@@ -111,6 +111,10 @@ class PendingPayment {
   final String paymentType;
   final String? targetAccount;
   final int? dutchPayGroupId;
+  /// 더치페이 제목 (UI 표시용). 월세는 null.
+  final String? title;
+  /// 받는 사람 이름. UI 의 부제목에 사용.
+  final String? payeeName;
 
   PendingPayment({
     required this.paymentId,
@@ -119,16 +123,20 @@ class PendingPayment {
     required this.paymentType,
     this.targetAccount,
     this.dutchPayGroupId,
+    this.title,
+    this.payeeName,
   });
 
   factory PendingPayment.fromJson(Map<String, dynamic> json) {
     return PendingPayment(
-      paymentId: json['paymentId'] ?? 0,
+      paymentId: (json['paymentId'] as num?)?.toInt() ?? 0,
       orderId: json['orderId']?.toString() ?? '',
-      amount: json['amount'] ?? 0,
+      amount: (json['amount'] as num?)?.toInt() ?? 0,
       paymentType: json['paymentType']?.toString() ?? '',
       targetAccount: json['targetAccount'] as String?,
-      dutchPayGroupId: json['dutchPayGroupId'] as int?,
+      dutchPayGroupId: (json['dutchPayGroupId'] as num?)?.toInt(),
+      title: json['title'] as String?,
+      payeeName: json['payeeName'] as String?,
     );
   }
 }

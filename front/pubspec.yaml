@@ -61,6 +61,9 @@ dependencies:
 
   flutter_dotenv: ^6.0.1
 
+  # 토스 결제 위젯 (테스트 모드) 띄우기 위해 사용.
+  webview_flutter: ^4.7.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
