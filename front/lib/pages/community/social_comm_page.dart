@@ -300,11 +300,11 @@ class _SocialCommPageState extends State<SocialCommPage> with RouteAware {
           children: [
             const Text(
               'Trending',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
             ),
           ],
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 16),
         SizedBox(height: 180, child: _buildTrendingList()),
 
         const SizedBox(height: 36),
@@ -315,7 +315,7 @@ class _SocialCommPageState extends State<SocialCommPage> with RouteAware {
           children: const [
             Text(
               'Posts for you',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
             ),
           ],
         ),
@@ -591,7 +591,7 @@ class _SocialCommPageState extends State<SocialCommPage> with RouteAware {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: dark,
-                      fontSize: 15,
+                      fontSize: 14,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
@@ -607,7 +607,7 @@ class _SocialCommPageState extends State<SocialCommPage> with RouteAware {
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             color: grey03,
-                            fontSize: 12.5,
+                            fontSize: 12,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -791,7 +791,9 @@ class _SocialCommPageState extends State<SocialCommPage> with RouteAware {
               GestureDetector(
                 onTap: () => _onTapLike(post),
                 child: SvgPicture.asset(
-                  'assets/icons/heart.svg',
+                  post.likedByMe
+                      ? 'assets/icons/heart_filled.svg'
+                      : 'assets/icons/heart.svg',
                   color: post.likedByMe ? green : dark,
                   width: 16,
                 ),

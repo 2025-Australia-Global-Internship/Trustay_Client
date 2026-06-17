@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 
 import 'package:front/constants/colors.dart';
 import 'package:front/services/paper_contract_service.dart';
+import 'package:front/widgets/primary_button.dart';
 
 /// "+" 메뉴 → Contract 누른 뒤 열리는 종이 계약서 스캔 업로드 화면.
 ///
@@ -27,6 +28,7 @@ class ContractScanUploadPage extends StatefulWidget {
 }
 
 class _ContractScanUploadPageState extends State<ContractScanUploadPage> {
+  final _formKey = GlobalKey<FormState>();
   final ImagePicker _picker = ImagePicker();
   final List<XFile> _pages = [];
   bool _uploading = false;
@@ -78,9 +80,9 @@ class _ContractScanUploadPageState extends State<ContractScanUploadPage> {
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Upload failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Upload failed: $e')));
     } finally {
       if (mounted) setState(() => _uploading = false);
     }
@@ -116,9 +118,7 @@ class _ContractScanUploadPageState extends State<ContractScanUploadPage> {
         children: [
           _buildHelpBanner(),
           Expanded(
-            child: _pages.isEmpty
-                ? _buildEmptyState()
-                : _buildPagesGrid(),
+            child: _pages.isEmpty ? _buildEmptyState() : _buildPagesGrid(),
           ),
           _buildBottomBar(),
         ],
@@ -155,7 +155,7 @@ class _ContractScanUploadPageState extends State<ContractScanUploadPage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(Icons.description_outlined, size: 64, color: grey02),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           const Text(
             'No pages added yet.',
             style: TextStyle(
@@ -164,7 +164,7 @@ class _ContractScanUploadPageState extends State<ContractScanUploadPage> {
               color: grey03,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 30),
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -242,23 +242,23 @@ class _ContractScanUploadPageState extends State<ContractScanUploadPage> {
               ),
             ],
           ),
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.fromLTRB(15, 10, 10, 10),
           child: Row(
             children: [
               Container(
-                width: 28,
-                height: 28,
+                width: 22,
+                height: 22,
                 alignment: Alignment.center,
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  color: darkgreen,
+                  color: green,
                 ),
                 child: Text(
                   '${index + 1}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w800,
-                    fontSize: 12,
+                    fontSize: 11,
                   ),
                 ),
               ),
@@ -286,14 +286,26 @@ class _ContractScanUploadPageState extends State<ContractScanUploadPage> {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.delete_outline, color: grey03),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                icon: SvgPicture.asset(
+                  'assets/icons/trash.svg',
+                  color: grey03,
+                  width: 18,
+                  height: 18,
+                ),
                 onPressed: () => _removeAt(index),
               ),
               ReorderableDragStartListener(
                 index: index,
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 4),
-                  child: Icon(Icons.drag_handle, color: grey02),
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(6, 0, 4, 0),
+                  child: SvgPicture.asset(
+                    'assets/icons/drag-handle.svg',
+                    color: grey03,
+                    width: 20,
+                    height: 20,
+                  ),
                 ),
               ),
             ],
@@ -308,7 +320,7 @@ class _ContractScanUploadPageState extends State<ContractScanUploadPage> {
       top: false,
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-        decoration: const BoxDecoration(color: Colors.white),
+        decoration: const BoxDecoration(color: Colors.transparent),
         child: Row(
           children: [
             if (_pages.isNotEmpty) ...[
@@ -331,34 +343,22 @@ class _ContractScanUploadPageState extends State<ContractScanUploadPage> {
               ),
             ],
             Expanded(
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _pages.isEmpty ? grey01 : green,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                onPressed: _pages.isEmpty || _uploading ? null : _upload,
-                child: _uploading
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : Text(
-                        _pages.isEmpty
-                            ? 'Add at least one page'
-                            : 'Upload ${_pages.length} page${_pages.length == 1 ? '' : 's'}',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
+              child: PrimaryButton(
+                formKey: _formKey,
+                text: _pages.isEmpty
+                    ? 'Add at least one page'
+                    : 'Upload ${_pages.length} page${_pages.length == 1 ? '' : 's'}',
+                isLoading: _uploading,
+                enabled: _pages.isNotEmpty, // 페이지가 있을 때만 활성화
+                color: green,
+                textColor: Colors.white,
+                successMessage: 'Upload successful',
+                failMessage: 'Upload failed',
+                onAction: () async {
+                  // PrimaryButton은 Future<bool> 형식을 리턴해야 하므로 기존 _upload 함수를 실행하고 결과 반환
+                  await _upload();
+                  return true;
+                },
               ),
             ),
           ],
@@ -367,7 +367,10 @@ class _ContractScanUploadPageState extends State<ContractScanUploadPage> {
     );
   }
 
-  Widget _miniIconButton({required IconData icon, required VoidCallback onTap}) {
+  Widget _miniIconButton({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
     return InkWell(
       onTap: _uploading ? null : onTap,
       borderRadius: BorderRadius.circular(12),

@@ -226,7 +226,7 @@ class _CreateSplitBillPageState extends State<CreateSplitBillPage> {
               center: Text(
                 'Create Split Bills',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 17,
                   fontWeight: FontWeight.w800,
                   color: dark,
                 ),
@@ -271,7 +271,7 @@ class _CreateSplitBillPageState extends State<CreateSplitBillPage> {
                           Text(
                             '${_selectedMates.length} person',
                             style: const TextStyle(
-                              fontSize: 12,
+                              fontSize: 11,
                               color: grey03,
                               fontWeight: FontWeight.w700,
                             ),
@@ -311,7 +311,7 @@ class _CreateSplitBillPageState extends State<CreateSplitBillPage> {
     return Text(
       text,
       style: const TextStyle(
-        fontSize: 15,
+        fontSize: 14,
         color: dark,
         fontWeight: FontWeight.w700,
       ),
@@ -398,10 +398,10 @@ class _CreateSplitBillPageState extends State<CreateSplitBillPage> {
       child: Row(
         children: [
           _buildAddMateSmallButton(),
-          const SizedBox(width: 14),
+          const SizedBox(width: 8),
           for (final m in _selectedMates) ...[
             _buildMateChip(m),
-            const SizedBox(width: 14),
+            const SizedBox(width: 8),
           ],
         ],
       ),
@@ -447,14 +447,14 @@ class _CreateSplitBillPageState extends State<CreateSplitBillPage> {
       child: Column(
         children: [
           Container(
-            width: 52,
-            height: 52,
+            width: 56,
+            height: 56,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: grey02, width: 1.4),
+              border: Border.all(color: green, width: 1.2),
             ),
             alignment: Alignment.center,
-            child: const Icon(Icons.add, size: 18, color: dark),
+            child: const Icon(Icons.add, size: 18, color: green),
           ),
           const SizedBox(height: 6),
           const SizedBox(
@@ -478,7 +478,7 @@ class _CreateSplitBillPageState extends State<CreateSplitBillPage> {
           clipBehavior: Clip.none,
           children: [
             CircleAvatar(
-              radius: 26,
+              radius: 29,
               backgroundColor: Colors.grey[300],
               backgroundImage: hasImg
                   ? NetworkImage(m.profileImageUrl!) as ImageProvider

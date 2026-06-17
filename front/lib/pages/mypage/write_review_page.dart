@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../constants/colors.dart';
 import '../../services/review_service.dart';
@@ -16,11 +17,7 @@ class WriteReviewPage extends StatefulWidget {
   final int houseId;
   final String? houseTitle;
 
-  const WriteReviewPage({
-    super.key,
-    required this.houseId,
-    this.houseTitle,
-  });
+  const WriteReviewPage({super.key, required this.houseId, this.houseTitle});
 
   @override
   State<WriteReviewPage> createState() => _WriteReviewPageState();
@@ -53,15 +50,15 @@ class _WriteReviewPageState extends State<WriteReviewPage> {
         content: content.isEmpty ? null : content,
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Thanks for your review!')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Thanks for your review!')));
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to submit review: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to submit review: $e')));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -80,7 +77,7 @@ class _WriteReviewPageState extends State<WriteReviewPage> {
                 center: const Text(
                   'Write a Review',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 17,
                     fontWeight: FontWeight.w800,
                     color: dark,
                   ),
@@ -89,7 +86,7 @@ class _WriteReviewPageState extends State<WriteReviewPage> {
               ),
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -97,10 +94,12 @@ class _WriteReviewPageState extends State<WriteReviewPage> {
                           widget.houseTitle!.trim().isNotEmpty) ...[
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 12),
+                            horizontal: 18,
+                            vertical: 20,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(33),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withOpacity(0.04),
@@ -111,9 +110,13 @@ class _WriteReviewPageState extends State<WriteReviewPage> {
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.home_outlined,
-                                  size: 18, color: darkgreen),
-                              const SizedBox(width: 8),
+                              SvgPicture.asset(
+                                'assets/icons/house.svg',
+                                width: 19,
+                                height: 19,
+                                color: dark,
+                              ),
+                              const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
                                   widget.houseTitle!,
@@ -129,52 +132,64 @@ class _WriteReviewPageState extends State<WriteReviewPage> {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 22),
+                        const SizedBox(height: 35),
                       ],
                       const Text(
                         'How would you rate your stay?',
                         style: TextStyle(
-                          fontSize: 15,
+                          fontSize: 14,
                           fontWeight: FontWeight.w800,
                           color: dark,
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 15),
                       _StarPicker(
                         rating: _rating,
                         onChanged: (v) => setState(() => _rating = v),
                       ),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 38),
                       const Text(
                         'Tell others about your stay',
                         style: TextStyle(
-                          fontSize: 15,
+                          fontSize: 14,
                           fontWeight: FontWeight.w800,
                           color: dark,
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 15),
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: grey01, width: 1),
+                          borderRadius: BorderRadius.circular(18),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.03),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
                         child: TextField(
                           controller: _contentCtrl,
                           maxLength: 2000,
                           maxLines: 8,
+                          cursorColor: grey03,
                           decoration: const InputDecoration(
                             hintText:
                                 'What did you like? What could be better? (optional)',
-                            hintStyle: TextStyle(color: grey03, fontSize: 13),
+                            hintStyle: TextStyle(
+                              color: grey03,
+                              fontWeight: FontWeight.w400,
+                              fontSize: 11,
+                            ),
                             contentPadding: EdgeInsets.all(14),
                             border: InputBorder.none,
                             counterText: '',
                           ),
                           style: const TextStyle(
-                            fontSize: 14,
+                            fontSize: 13,
                             color: dark,
+                            fontWeight: FontWeight.w700,
                             height: 1.5,
                           ),
                         ),
@@ -246,9 +261,9 @@ class _StarPicker extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 6),
             child: Icon(
-              filled ? Icons.star_rounded : Icons.star_border_rounded,
-              size: 44,
-              color: filled ? green : grey02,
+              filled ? Icons.star : Icons.star_border,
+              size: 40,
+              color: filled ? green : grey01,
             ),
           ),
         );

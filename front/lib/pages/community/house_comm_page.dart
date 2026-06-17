@@ -467,7 +467,7 @@ class _HouseCommPageState extends State<HouseCommPage> with RouteAware {
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: 14,
                     fontWeight: FontWeight.w800,
                     color: isSelected ? darkgreen : grey03,
                   ),
@@ -641,15 +641,15 @@ class _HouseCommPageState extends State<HouseCommPage> with RouteAware {
                             color: dark,
                           ),
                         ] else if (hasHosting && hasStaying) ...[
-                          const SizedBox(width: 6),
+                          const SizedBox(width: 7),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
+                              horizontal: 10,
+                              vertical: 7,
                             ),
                             decoration: BoxDecoration(
                               color: yellow.withOpacity(0.3),
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
                               _noticeRole == _NoticeRole.hosting
@@ -657,7 +657,7 @@ class _HouseCommPageState extends State<HouseCommPage> with RouteAware {
                                   : 'Guest',
                               style: const TextStyle(
                                 fontSize: 10,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w600,
                                 color: darkgreen,
                               ),
                             ),
@@ -1044,7 +1044,7 @@ class _HouseCommPageState extends State<HouseCommPage> with RouteAware {
                 maxLines: hasImage ? 2 : 4,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 13,
+                  fontSize: 12,
                   height: 1.4,
                   color: dark,
                   fontWeight: FontWeight.w600,
@@ -1079,7 +1079,7 @@ class _HouseCommPageState extends State<HouseCommPage> with RouteAware {
               Row(
                 children: [
                   CircleAvatar(
-                    radius: 13,
+                    radius: 12,
                     backgroundColor: Colors.grey[300],
                     backgroundImage: hasAvatar
                         ? NetworkImage(post.profileImageUrl!) as ImageProvider
@@ -1091,7 +1091,7 @@ class _HouseCommPageState extends State<HouseCommPage> with RouteAware {
                   Text(
                     post.authorName.isEmpty ? 'Host' : post.authorName,
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 11,
                       color: grey03,
                       fontWeight: FontWeight.w700,
                     ),
@@ -1106,12 +1106,12 @@ class _HouseCommPageState extends State<HouseCommPage> with RouteAware {
                     color: grey03,
                   ),
 
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 5),
 
                   Text(
                     _formatNoticeDate(post.regTime),
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 11,
                       color: grey03,
                       fontWeight: FontWeight.w700,
                     ),
@@ -1254,10 +1254,11 @@ class _HouseCommPageState extends State<HouseCommPage> with RouteAware {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 4),
                       Row(
                         children: [
-                          Expanded(
+                          SizedBox(
+                            width: 180,
                             child: Text(
                               item.lastMessage,
                               style: const TextStyle(
@@ -1268,8 +1269,10 @@ class _HouseCommPageState extends State<HouseCommPage> with RouteAware {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          if (unreadCount > 0) ...[
-                            const SizedBox(width: 6),
+
+                          const Spacer(), // 남은 공간 밀어줌
+
+                          if (unreadCount > 0)
                             Container(
                               constraints: const BoxConstraints(
                                 minWidth: 22,
@@ -1286,13 +1289,12 @@ class _HouseCommPageState extends State<HouseCommPage> with RouteAware {
                               child: Text(
                                 unreadCount > 99 ? '99+' : '$unreadCount',
                                 style: const TextStyle(
-                                  color: yellow,
+                                  color: Colors.white,
                                   fontSize: 10.5,
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
                             ),
-                          ],
                         ],
                       ),
                     ],
@@ -1308,7 +1310,7 @@ class _HouseCommPageState extends State<HouseCommPage> with RouteAware {
 
   Widget _buildFloatingButton() {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 90),
+      padding: const EdgeInsets.only(bottom: 105),
       child: SizedBox(
         width: 60,
         height: 60,

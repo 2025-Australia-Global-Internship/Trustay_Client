@@ -5,6 +5,8 @@ import 'package:signature/signature.dart';
 
 import 'package:front/constants/colors.dart';
 import 'package:front/services/contract_service.dart';
+import 'package:front/widgets/common_text_field.dart';
+import 'package:front/widgets/primary_button.dart';
 
 /// Contract proposal screen.
 ///
@@ -38,6 +40,7 @@ class ContractProposePage extends StatefulWidget {
 }
 
 class _ContractProposePageState extends State<ContractProposePage> {
+  final _formKey = GlobalKey<FormState>();
   final _depositCtl = TextEditingController();
   final _rentCtl = TextEditingController();
   DateTime? _startDate;
@@ -95,16 +98,17 @@ class _ContractProposePageState extends State<ContractProposePage> {
     if (!_formValid) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Please fill in every field and sign before sending.')),
+          content: Text('Please fill in every field and sign before sending.'),
+        ),
       );
       return;
     }
     final deposit = int.tryParse(_depositCtl.text.replaceAll(',', ''));
     final rent = int.tryParse(_rentCtl.text.replaceAll(',', ''));
     if (deposit == null || rent == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Amounts must be numbers.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Amounts must be numbers.')));
       return;
     }
     final sigBytes = await _sigCtl.toPngBytes();
@@ -129,16 +133,15 @@ class _ContractProposePageState extends State<ContractProposePage> {
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to send proposal: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to send proposal: $e')));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
   }
 
-  String get _roleLabel =>
-      widget.iAm == 'LANDLORD' ? 'Landlord' : 'Tenant';
+  String get _roleLabel => widget.iAm == 'LANDLORD' ? 'Landlord' : 'Tenant';
 
   @override
   Widget build(BuildContext context) {
@@ -175,17 +178,42 @@ class _ContractProposePageState extends State<ContractProposePage> {
             _roleBanner(),
             const SizedBox(height: 18),
 
-            _sectionTitle('Terms'),
-            _amountField(
+            // 1. Deposit (보증금) 입력창 변경
+            CommonTextField(
+              label: 'Terms',
+              hintText: 'Deposit (AUD)',
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(12),
+              ],
               controller: _depositCtl,
-              hint: 'Deposit (AUD)',
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) {
+                  return 'Please enter deposit';
+                }
+                return null;
+              },
             ),
-            const SizedBox(height: 10),
-            _amountField(
+
+            // 2. Monthly Rent (월세) 입력창 변경
+            CommonTextField(
+              label: '',
+              hintText: 'Monthly rent (AUD)',
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(12),
+              ],
               controller: _rentCtl,
-              hint: 'Monthly rent (AUD)',
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) {
+                  return 'Please enter monthly rent';
+                }
+                return null;
+              },
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 16),
 
             _sectionTitle('Period'),
             Row(
@@ -197,7 +225,7 @@ class _ContractProposePageState extends State<ContractProposePage> {
                     onTap: () => _pickDate(start: true),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 14),
                 Expanded(
                   child: _dateField(
                     label: 'End',
@@ -207,21 +235,27 @@ class _ContractProposePageState extends State<ContractProposePage> {
                 ),
               ],
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 25),
 
             _sectionTitle('Your signature'),
             Container(
               decoration: BoxDecoration(
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+                borderRadius: BorderRadius.circular(18),
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: grey01),
               ),
               child: Column(
                 children: [
                   ClipRRect(
                     borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(14),
-                      topRight: Radius.circular(14),
+                      topLeft: Radius.circular(18),
+                      topRight: Radius.circular(18),
                     ),
                     child: Signature(
                       controller: _sigCtl,
@@ -233,7 +267,9 @@ class _ContractProposePageState extends State<ContractProposePage> {
                   const Divider(height: 1, color: grey01),
                   Padding(
                     padding: const EdgeInsets.symmetric(
-                        vertical: 6, horizontal: 8),
+                      vertical: 6,
+                      horizontal: 12,
+                    ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -241,7 +277,7 @@ class _ContractProposePageState extends State<ContractProposePage> {
                           'Sign here with your finger',
                           style: TextStyle(
                             fontSize: 11,
-                            color: grey03,
+                            color: grey02,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -250,13 +286,16 @@ class _ContractProposePageState extends State<ContractProposePage> {
                             _sigCtl.clear();
                             setState(() {});
                           },
-                          icon: const Icon(Icons.refresh,
-                              size: 16, color: grey04),
+                          icon: const Icon(
+                            Icons.refresh,
+                            size: 16,
+                            color: grey02,
+                          ),
                           label: const Text(
                             'Clear',
                             style: TextStyle(
                               fontSize: 12,
-                              color: grey04,
+                              color: grey02,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -269,28 +308,22 @@ class _ContractProposePageState extends State<ContractProposePage> {
             ),
             const SizedBox(height: 24),
 
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: green,
-                foregroundColor: Colors.white,
-                minimumSize: const Size.fromHeight(54),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-              onPressed: _submitting ? null : _submit,
-              child: _submitting
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                          color: Colors.white, strokeWidth: 2),
-                    )
-                  : const Text(
-                      'Send proposal',
-                      style: TextStyle(
-                          fontSize: 14, fontWeight: FontWeight.w800),
-                    ),
+            PrimaryButton(
+              formKey: _formKey,
+              text: 'Send proposal',
+              isLoading: _submitting, // 로딩 중일 때 로딩 서클 자동 작동
+              enabled: !_submitting, // 로딩 중이 아닐 때만 활성화
+              color: green,
+              textColor: Colors.white,
+              successMessage:
+                  'Proposal sent successfully', // 성공 시 상단/하단 스낵바용 메시지
+              failMessage: 'Failed to send proposal', // 실패 시 스낵바용 메시지
+              onAction: () async {
+                // PrimaryButton은 비동기로 bool 값(성공 여부)을 반환해야 합니다.
+                // 기존 _submit() 메서드를 실행하고 정상 작동 시 true를 리턴하도록 합니다.
+                await _submit();
+                return true;
+              },
             ),
           ],
         ),
@@ -300,11 +333,14 @@ class _ContractProposePageState extends State<ContractProposePage> {
 
   Widget _sectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      padding: const EdgeInsets.only(bottom: 11),
       child: Text(
         title,
         style: const TextStyle(
-            fontSize: 13, fontWeight: FontWeight.w800, color: dark),
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+          color: dark,
+        ),
       ),
     );
   }
@@ -312,15 +348,14 @@ class _ContractProposePageState extends State<ContractProposePage> {
   /// 역할 안내 배너 — 선택지가 아니라 정보 표시.
   Widget _roleBanner() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 15),
       decoration: BoxDecoration(
         color: darkgreen.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(22),
       ),
       child: Row(
         children: [
-          const Icon(Icons.verified_user_outlined,
-              size: 18, color: darkgreen),
+          const Icon(Icons.verified_user_outlined, size: 18, color: darkgreen),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -337,33 +372,6 @@ class _ContractProposePageState extends State<ContractProposePage> {
     );
   }
 
-  Widget _amountField({
-    required TextEditingController controller,
-    required String hint,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: grey01),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-      child: TextField(
-        controller: controller,
-        keyboardType: TextInputType.number,
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        onChanged: (_) => setState(() {}),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: const TextStyle(color: grey03, fontSize: 13),
-          border: InputBorder.none,
-        ),
-        style: const TextStyle(
-            fontSize: 14, fontWeight: FontWeight.w700, color: dark),
-      ),
-    );
-  }
-
   Widget _dateField({
     required String label,
     required String value,
@@ -371,13 +379,19 @@ class _ContractProposePageState extends State<ContractProposePage> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(18),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 17),
         decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          borderRadius: BorderRadius.circular(18),
           color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: grey01),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -390,22 +404,27 @@ class _ContractProposePageState extends State<ContractProposePage> {
                   label,
                   style: const TextStyle(
                     fontSize: 11,
-                    color: grey04,
+                    color: grey03,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 7),
                 Text(
                   value,
                   style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      color: dark),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: dark,
+                  ),
                 ),
               ],
             ),
-            const Icon(Icons.calendar_today_outlined,
-                size: 18, color: grey03),
+            SvgPicture.asset(
+              'assets/icons/calendar.svg',
+              color: grey03,
+              width: 15,
+              height: 15,
+            ),
           ],
         ),
       ),

@@ -121,7 +121,7 @@ class _ListingPage extends State<ListingPage> {
                   center: const Text(
                     'Listings',
                     style: TextStyle(
-                      fontSize: 20,
+                      fontSize: 17,
                       fontWeight: FontWeight.w800,
                       color: dark,
                     ),

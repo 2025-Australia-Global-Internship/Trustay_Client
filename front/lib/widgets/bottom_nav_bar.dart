@@ -39,7 +39,7 @@ class BottomNavbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const double navbarHeight = 74;
-    const double circleSize = 58;
+    const double circleSize = 62;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 30),

@@ -145,7 +145,7 @@ class _MyPageState extends State<MyPage> {
                 child: Text(
                   'Profile',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: FontWeight.w800,
                     color: dark,
                   ),
@@ -211,7 +211,7 @@ class _MyPageState extends State<MyPage> {
                       Text(
                         user?.name ?? '',
                         style: const TextStyle(
-                          fontSize: 20,
+                          fontSize: 18,
                           fontWeight: FontWeight.w800,
                           color: dark,
                         ),
@@ -300,8 +300,7 @@ class _MyPageState extends State<MyPage> {
                 MyPageMenuItem(
                   title: 'Current Stay',
                   leadingPath: 'assets/icons/house-user.svg',
-                  onTap: () =>
-                      Navigator.pushNamed(context, '/current_stay'),
+                  onTap: () => Navigator.pushNamed(context, '/current_stay'),
                 ),
                 MyPageMenuItem(
                   title: 'Listings',
@@ -398,12 +397,12 @@ class MyPageMenuItem extends StatelessWidget {
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
       leading: Container(
         padding: const EdgeInsets.all(7),
-        child: SvgPicture.asset(leadingPath, width: 26, color: dark),
+        child: SvgPicture.asset(leadingPath, width: 25, color: dark),
       ),
       title: Text(
         title,
         style: const TextStyle(
-          fontSize: 15,
+          fontSize: 14,
           fontWeight: FontWeight.w700,
           color: dark,
         ),

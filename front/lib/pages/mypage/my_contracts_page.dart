@@ -158,7 +158,7 @@ class _MyContractsPageState extends State<MyContractsPage> {
               center: Text(
                 'My Contracts',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: 17,
                   fontWeight: FontWeight.w800,
                   color: dark,
                 ),
@@ -241,9 +241,9 @@ class _MyContractsPageState extends State<MyContractsPage> {
         ],
       );
     }
+    // 마지막 항목 다음에 로딩 표시를 위한 tail 슬롯.
+    final int extraTail = _isLoadingMore ? 1 : 0;
 
-    // 마지막 항목 다음에 로딩/끝 안내를 보여주기 위한 tail 슬롯.
-    final int extraTail = (_isLoadingMore || !_hasMore) ? 1 : 0;
     return ListView.separated(
       controller: _scrollController,
       physics: const AlwaysScrollableScrollPhysics(),
@@ -252,31 +252,21 @@ class _MyContractsPageState extends State<MyContractsPage> {
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         if (index >= _contracts.length) {
-          if (_isLoadingMore) {
-            return const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Center(
-                child: SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.4,
-                    color: green,
-                  ),
-                ),
-              ),
-            );
-          }
           return const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Center(
-              child: Text(
-                'No more contracts',
-                style: TextStyle(fontSize: 12, color: grey03),
+              child: SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.4,
+                  color: green,
+                ),
               ),
             ),
           );
         }
+
         return _ContractCard(
           contract: _contracts[index],
           onTap: () => _openDetail(_contracts[index]),
@@ -306,137 +296,165 @@ class _ContractCard extends StatelessWidget {
         ? 'Open signed PDF'
         : (c.paperContractPdfUrl != null ? 'Open scan PDF' : null);
 
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _Thumbnail(imageUrl: c.houseImageUrl),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                c.houseTitle?.isNotEmpty == true
-                                    ? c.houseTitle!
-                                    : 'Untitled listing',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w800,
-                                  color: dark,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            _StatusBadge(status: c.status),
-                          ],
-                        ),
-                        if ((c.houseAddress ?? '').isNotEmpty) ...[
-                          const SizedBox(height: 4),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 5,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.hardEdge,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _Thumbnail(imageUrl: c.houseImageUrl),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _StatusBadge(status: c.status),
+                          const SizedBox(height: 8),
                           Text(
-                            c.houseAddress!,
+                            c.houseTitle?.isNotEmpty == true
+                                ? c.houseTitle!
+                                : 'Untitled listing',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              fontSize: 11,
-                              color: grey04,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: dark,
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            (c.houseAddress ?? '').isNotEmpty
+                                ? c.houseAddress!
+                                : '-',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 11, color: grey04),
+                          ),
+                          const SizedBox(height: 8),
+
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF7F7F4),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${c.startDate ?? '-'} ~ ${c.endDate ?? '-'}',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: dark,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  c.monthlyRent == null
+                                      ? 'Monthly: -'
+                                      : 'Monthly ${_money(c.monthlyRent!)} AUD',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: dark,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${c.deposit != null ? 'Deposit ${_money(c.deposit!)} AUD' : ''}',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: dark,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
-                        const SizedBox(height: 8),
-                        Text(
-                          '${c.startDate ?? '-'} ~ ${c.endDate ?? '-'}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: dark,
-                            fontWeight: FontWeight.w700,
-                          ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                if (pdfUrl != null && pdfLabel != null)
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: darkgreen,
+                        side: const BorderSide(color: darkgreen),
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
                         ),
-                        const SizedBox(height: 2),
+                      ),
+                      onPressed: () => onOpenPdf(pdfUrl),
+                      icon: const Icon(Icons.picture_as_pdf_outlined, size: 16),
+                      label: Text(
+                        pdfLabel,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3F3F3),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.hourglass_bottom, size: 14, color: grey03),
+                        SizedBox(width: 6),
                         Text(
-                          c.monthlyRent == null
-                              ? 'Monthly: -'
-                              : 'Monthly ${_money(c.monthlyRent!)} AUD'
-                                    '${c.deposit != null ? '  ·  Deposit ${_money(c.deposit!)} AUD' : ''}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: grey04,
+                          'PDF will be generated after both parties sign.',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: grey03,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              if (pdfUrl != null && pdfLabel != null)
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: darkgreen,
-                      side: const BorderSide(color: darkgreen),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    onPressed: () => onOpenPdf(pdfUrl),
-                    icon: const Icon(Icons.picture_as_pdf_outlined, size: 16),
-                    label: Text(
-                      pdfLabel,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                )
-              else
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF3F3F3),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.hourglass_bottom, size: 14, color: grey03),
-                      SizedBox(width: 6),
-                      Text(
-                        'PDF will be generated after both parties sign.',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: grey03,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -464,8 +482,8 @@ class _Thumbnail extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(10),
       child: SizedBox(
-        width: 64,
-        height: 64,
+        width: 105,
+        height: 130,
         child: imageUrl != null && imageUrl!.isNotEmpty
             ? Image.network(
                 imageUrl!,
@@ -501,25 +519,26 @@ class _StatusBadge extends StatelessWidget {
     switch (status) {
       case 'ACTIVE':
         color = green;
-        label = 'Active';
+        label = 'ACTIVE';
         break;
       case 'SIGNED':
         color = green;
-        label = 'Signed';
+        label = 'SIGNED';
         break;
       case 'EXPIRED':
         color = grey03;
-        label = 'Expired';
+        label = 'EXPIRED';
         break;
       default:
         color = const Color(0xFFFFB020);
-        label = 'Pending';
+        label = 'PENDING';
     }
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: color.withOpacity(0.15),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.5), width: 0.5),
       ),
       child: Text(
         label,

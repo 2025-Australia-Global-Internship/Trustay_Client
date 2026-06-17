@@ -161,7 +161,7 @@ class MyReviewCard extends StatelessWidget {
                           height: 15,
                           child: SvgPicture.asset(
                             'assets/icons/trash.svg',
-                            color: const Color(0xFFB24A4A),
+                            color: Colors.redAccent,
                             fit: BoxFit.contain,
                           ),
                         ),
@@ -171,7 +171,7 @@ class MyReviewCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFFB24A4A),
+                            color: Colors.redAccent,
                           ),
                         ),
                       ],

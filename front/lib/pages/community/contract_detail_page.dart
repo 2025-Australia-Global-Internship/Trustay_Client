@@ -129,7 +129,12 @@ class _ContractDetailPageState extends State<ContractDetailPage> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.open_in_new, color: dark),
+            icon: SvgPicture.asset(
+              'assets/icons/export.svg',
+              color: dark,
+              width: 22,
+              height: 22,
+            ),
             onPressed: _openPdfExternal,
             tooltip: 'Open PDF externally',
           ),
@@ -138,8 +143,8 @@ class _ContractDetailPageState extends State<ContractDetailPage> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? _buildError()
-              : _buildBody(),
+          ? _buildError()
+          : _buildBody(),
       // 하단 영역:
       //   - 세입자(TENANT) → "Propose contract from this scan" CTA
       //   - 호스트(LANDLORD) → 수정/입력 권한 없음을 알리는 read-only 안내 박스
@@ -212,23 +217,28 @@ class _ContractDetailPageState extends State<ContractDetailPage> {
           // 호스트는 자신이 보낸 계약서를 확인만 할 수 있다는 안내 배지.
           if (isHost) ...[
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 15),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: grey01),
+                color: darkgreen.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(22),
               ),
               child: Row(
-                children: const [
-                  Icon(Icons.visibility_outlined, size: 16, color: darkgreen),
-                  SizedBox(width: 6),
-                  Text(
-                    'Sent by you · read only',
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w800,
-                      color: darkgreen,
+                children: [
+                  const Icon(
+                    Icons.verified_user_outlined,
+                    size: 18,
+                    color: darkgreen,
+                  ),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    // 혹시 모를 글자 넘침 방지를 위해 Expanded 권장
+                    child: Text(
+                      'Sent by you · read only',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: darkgreen,
+                      ),
                     ),
                   ),
                 ],
@@ -244,8 +254,11 @@ class _ContractDetailPageState extends State<ContractDetailPage> {
               height: 460,
               child: pages.isEmpty
                   ? const Center(
-                      child: Icon(Icons.image_not_supported,
-                          size: 48, color: grey02),
+                      child: Icon(
+                        Icons.image_not_supported,
+                        size: 48,
+                        color: grey02,
+                      ),
                     )
                   : Stack(
                       children: [
@@ -258,8 +271,11 @@ class _ContractDetailPageState extends State<ContractDetailPage> {
                               pages[i],
                               fit: BoxFit.contain,
                               errorBuilder: (_, __, ___) => const Center(
-                                child: Icon(Icons.broken_image,
-                                    size: 48, color: grey02),
+                                child: Icon(
+                                  Icons.broken_image,
+                                  size: 48,
+                                  color: grey02,
+                                ),
                               ),
                             ),
                           ),
@@ -269,9 +285,11 @@ class _ContractDetailPageState extends State<ContractDetailPage> {
                           top: 12,
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 4),
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.55),
+                              color: Colors.black.withOpacity(0.45),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
@@ -290,10 +308,7 @@ class _ContractDetailPageState extends State<ContractDetailPage> {
           ),
           const SizedBox(height: 16),
 
-          _MetaRow(
-            label: 'Status',
-            value: doc.status ?? '-',
-          ),
+          _MetaRow(label: 'Status', value: doc.status ?? '-'),
           _MetaRow(
             label: 'Created',
             value: doc.regTime?.split('T').first ?? '-',
@@ -304,20 +319,24 @@ class _ContractDetailPageState extends State<ContractDetailPage> {
           // OCR 텍스트
           if ((doc.ocrText ?? '').isNotEmpty) ...[
             InkWell(
-              onTap: () =>
-                  setState(() => _ocrExpanded = !_ocrExpanded),
-              borderRadius: BorderRadius.circular(14),
+              onTap: () => setState(() => _ocrExpanded = !_ocrExpanded),
+              borderRadius: BorderRadius.circular(20),
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 12),
+                  horizontal: 16,
+                  vertical: 18,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(18),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.text_snippet_outlined,
-                        size: 18, color: darkgreen),
+                    const Icon(
+                      Icons.text_snippet_outlined,
+                      size: 18,
+                      color: darkgreen,
+                    ),
                     const SizedBox(width: 8),
                     const Expanded(
                       child: Text(
@@ -329,11 +348,12 @@ class _ContractDetailPageState extends State<ContractDetailPage> {
                         ),
                       ),
                     ),
-                    Icon(
+                    SvgPicture.asset(
                       _ocrExpanded
-                          ? Icons.keyboard_arrow_up
-                          : Icons.keyboard_arrow_down,
+                          ? 'assets/icons/arrow_up.svg'
+                          : 'assets/icons/arrow_down.svg',
                       color: grey03,
+                      width: 15,
                     ),
                   ],
                 ),
@@ -383,16 +403,17 @@ class _ContractDetailPageState extends State<ContractDetailPage> {
             backgroundColor: green,
             foregroundColor: Colors.white,
             minimumSize: const Size.fromHeight(54),
+            elevation: 0,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(26),
             ),
           ),
           onPressed: _gotoPropose,
           child: const Text(
             'Propose contract from this scan',
             style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w800,
+              fontSize: 13,
+              fontWeight: FontWeight.w800, // 기존 두께 유지
             ),
           ),
         ),
@@ -419,7 +440,7 @@ class _MetaRow extends StatelessWidget {
               label,
               style: const TextStyle(
                 fontSize: 12,
-                color: grey04,
+                color: grey03,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -428,7 +449,7 @@ class _MetaRow extends StatelessWidget {
             child: Text(
               value,
               style: const TextStyle(
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: FontWeight.w700,
                 color: dark,
               ),

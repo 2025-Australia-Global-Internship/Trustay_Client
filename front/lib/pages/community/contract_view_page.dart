@@ -57,8 +57,10 @@ class _ContractViewPageState extends State<ContractViewPage> {
   }
 
   Future<void> _openPdf(String url) async {
-    if (!await launchUrl(Uri.parse(url),
-        mode: LaunchMode.externalApplication)) {
+    if (!await launchUrl(
+      Uri.parse(url),
+      mode: LaunchMode.externalApplication,
+    )) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Couldn't open the PDF externally.")),
@@ -108,14 +110,13 @@ class _ContractViewPageState extends State<ContractViewPage> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child:
-                        Text(_error!, style: const TextStyle(color: grey03)),
-                  ),
-                )
-              : _buildBody(),
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(_error!, style: const TextStyle(color: grey03)),
+              ),
+            )
+          : _buildBody(),
       bottomNavigationBar: _loading || _error != null || _contract == null
           ? null
           : _buildBottomBar(_contract!),
@@ -125,7 +126,7 @@ class _ContractViewPageState extends State<ContractViewPage> {
   Widget _buildBody() {
     final c = _contract!;
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
       children: [
         _statusBadge(c.status),
         const SizedBox(height: 12),
@@ -134,18 +135,25 @@ class _ContractViewPageState extends State<ContractViewPage> {
           child: Text(
             c.houseTitle ?? '-',
             style: const TextStyle(
-                fontSize: 14, fontWeight: FontWeight.w800, color: dark),
+              fontSize: 17,
+              fontWeight: FontWeight.w800,
+              color: dark,
+            ),
           ),
         ),
         _card(
           title: 'Terms',
           child: Column(
             children: [
-              _rowKV('Deposit',
-                  c.deposit == null ? '-' : '${_money(c.deposit!)} AUD'),
+              _rowKV(
+                'Deposit',
+                c.deposit == null ? '-' : '${_money(c.deposit!)} AUD',
+              ),
               const SizedBox(height: 6),
-              _rowKV('Monthly',
-                  c.monthlyRent == null ? '-' : '${_money(c.monthlyRent!)} AUD'),
+              _rowKV(
+                'Monthly',
+                c.monthlyRent == null ? '-' : '${_money(c.monthlyRent!)} AUD',
+              ),
               const SizedBox(height: 6),
               _rowKV('Period', '${c.startDate ?? '-'} ~ ${c.endDate ?? '-'}'),
             ],
@@ -165,7 +173,11 @@ class _ContractViewPageState extends State<ContractViewPage> {
           title: 'Signature status',
           child: Column(
             children: [
-              _signatureRow('Landlord', c.landlordSignatureUrl, c.landlordSignedAt),
+              _signatureRow(
+                'Landlord',
+                c.landlordSignatureUrl,
+                c.landlordSignedAt,
+              ),
               const SizedBox(height: 10),
               _signatureRow('Tenant', c.tenantSignatureUrl, c.tenantSignedAt),
             ],
@@ -176,9 +188,9 @@ class _ContractViewPageState extends State<ContractViewPage> {
             style: OutlinedButton.styleFrom(
               foregroundColor: darkgreen,
               side: const BorderSide(color: darkgreen),
-              minimumSize: const Size.fromHeight(46),
+              minimumSize: const Size.fromHeight(52),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(18),
               ),
             ),
             onPressed: () => _openPdf(c.signedPdfUrl!),
@@ -193,9 +205,9 @@ class _ContractViewPageState extends State<ContractViewPage> {
             style: OutlinedButton.styleFrom(
               foregroundColor: darkgreen,
               side: const BorderSide(color: darkgreen),
-              minimumSize: const Size.fromHeight(46),
+              minimumSize: const Size.fromHeight(52),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(18),
               ),
             ),
             onPressed: () => _openPdf(c.paperContractPdfUrl!),
@@ -224,35 +236,38 @@ class _ContractViewPageState extends State<ContractViewPage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: green,
                   foregroundColor: Colors.white,
-                  minimumSize: const Size.fromHeight(54),
+                  minimumSize: const Size.fromHeight(52),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(26),
                   ),
                 ),
                 onPressed: _gotoSign,
                 child: const Text(
                   'Add my signature',
-                  style:
-                      TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
                 ),
               )
             : Container(
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 17,
+                  vertical: 15,
+                ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEFF6E5),
-                  borderRadius: BorderRadius.circular(14),
+                  color: darkgreen.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(22),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.verified, color: green, size: 20),
+                    const Icon(Icons.verified, size: 18, color: darkgreen),
                     const SizedBox(width: 8),
                     const Expanded(
+                      // 혹시 모를 글자 넘침 방지를 위해 Expanded 권장
                       child: Text(
                         'Active contract · automatically linked at payment.',
                         style: TextStyle(
-                          color: darkgreen,
                           fontSize: 12,
                           fontWeight: FontWeight.w800,
+                          color: darkgreen,
                         ),
                       ),
                     ),
@@ -286,7 +301,7 @@ class _ContractViewPageState extends State<ContractViewPage> {
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: color.withOpacity(0.15),
           borderRadius: BorderRadius.circular(20),
@@ -295,7 +310,7 @@ class _ContractViewPageState extends State<ContractViewPage> {
           label,
           style: TextStyle(
             color: color,
-            fontSize: 11,
+            fontSize: 12,
             fontWeight: FontWeight.w800,
           ),
         ),
@@ -306,10 +321,10 @@ class _ContractViewPageState extends State<ContractViewPage> {
   Widget _card({required String title, required Widget child}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      padding: const EdgeInsets.fromLTRB(15, 15, 15, 17),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -317,9 +332,10 @@ class _ContractViewPageState extends State<ContractViewPage> {
           Text(
             title,
             style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                color: darkgreen),
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              color: dark,
+            ),
           ),
           const SizedBox(height: 8),
           child,
@@ -336,14 +352,20 @@ class _ContractViewPageState extends State<ContractViewPage> {
           child: Text(
             k,
             style: const TextStyle(
-                fontSize: 12, color: grey04, fontWeight: FontWeight.w700),
+              fontSize: 12,
+              color: grey03,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
         Expanded(
           child: Text(
             v,
             style: const TextStyle(
-                fontSize: 13, color: dark, fontWeight: FontWeight.w700),
+              fontSize: 13,
+              color: dark,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ],
@@ -365,10 +387,13 @@ class _ContractViewPageState extends State<ContractViewPage> {
           child: signed
               ? ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: Image.network(signedUrl, fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) {
-                    return const Icon(Icons.image_not_supported, size: 18);
-                  }),
+                  child: Image.network(
+                    signedUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) {
+                      return const Icon(Icons.image_not_supported, size: 18);
+                    },
+                  ),
                 )
               : const Icon(Icons.edit_off, size: 18, color: grey03),
         ),
@@ -380,9 +405,12 @@ class _ContractViewPageState extends State<ContractViewPage> {
               Text(
                 label,
                 style: const TextStyle(
-                    fontSize: 13, color: dark, fontWeight: FontWeight.w800),
+                  fontSize: 13,
+                  color: dark,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 4),
               Text(
                 signed
                     ? 'Signed · ${(signedAt ?? '').split('.').first}'

@@ -13,7 +13,7 @@ import 'package:front/widgets/primary_button.dart';
 
 /// 새 공지 작성 페이지. 플로팅 버튼(연필 아이콘)에서 진입한다.
 ///
-/// - 제목 / 내용 / (선택) 이미지 1~10장
+/// - 제목 / 내용 / (선택) 이미지 1장
 /// - 작성 후 Navigator.pop(context, true) 로 부모 화면에 새로고침을 요청한다.
 class NoticeCreatePage extends StatefulWidget {
   final int sharehouseId;
@@ -32,7 +32,7 @@ class _NoticeCreatePageState extends State<NoticeCreatePage> {
   final TextEditingController _contentCtl = TextEditingController();
 
   final List<File> _selectedImages = [];
-  static const int _maxImages = 5;
+  static const int _maxImages = 1;
 
   bool _submitting = false;
 
@@ -43,20 +43,14 @@ class _NoticeCreatePageState extends State<NoticeCreatePage> {
     super.dispose();
   }
 
-  Future<void> _pickImages() async {
-    if (_selectedImages.length >= _maxImages) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('You can add up to $_maxImages images.')),
-      );
-      return;
-    }
-
-    final picked = await _picker.pickMultiImage();
-    if (picked.isEmpty) return;
+  Future<void> _pickImage() async {
+    final picked = await _picker.pickImage(source: ImageSource.gallery);
+    if (picked == null) return;
 
     setState(() {
-      final remaining = _maxImages - _selectedImages.length;
-      _selectedImages.addAll(picked.take(remaining).map((x) => File(x.path)));
+      _selectedImages
+        ..clear()
+        ..add(File(picked.path));
     });
   }
 
@@ -191,7 +185,7 @@ class _NoticeCreatePageState extends State<NoticeCreatePage> {
         Row(
           children: [
             const Text(
-              'Photos',
+              'Photo',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
@@ -208,19 +202,9 @@ class _NoticeCreatePageState extends State<NoticeCreatePage> {
         const SizedBox(height: 12),
         SizedBox(
           height: 100,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: [
-              _buildAddImageButton(),
-              const SizedBox(width: 8),
-              ..._selectedImages.asMap().entries.map(
-                (e) => Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: _buildSelectedImage(e.key, e.value),
-                ),
-              ),
-            ],
-          ),
+          child: _selectedImages.isEmpty
+              ? _buildAddImageButton()
+              : _buildSelectedImage(0, _selectedImages.first),
         ),
       ],
     );
@@ -228,7 +212,7 @@ class _NoticeCreatePageState extends State<NoticeCreatePage> {
 
   Widget _buildAddImageButton() {
     return GestureDetector(
-      onTap: _pickImages,
+      onTap: _pickImage,
       child: Container(
         width: 100,
         height: 90,
@@ -249,7 +233,7 @@ class _NoticeCreatePageState extends State<NoticeCreatePage> {
             const Icon(Icons.photo_camera, color: grey02, size: 32),
             const SizedBox(height: 6),
             const Text(
-              'Photos',
+              'Photo',
               style: TextStyle(
                 color: grey02,
                 fontSize: 12,

@@ -11,6 +11,7 @@ class CurrentStayCard extends StatelessWidget {
   final ContractModel contract;
   final int myMemberId;
   final VoidCallback? onTap;
+
   /// 사용자가 세입자(tenant) 로서 이 매물에서 "나가기" 를 눌렀을 때.
   /// null 이면 버튼을 노출하지 않는다.
   final VoidCallback? onLeave;
@@ -73,17 +74,19 @@ class CurrentStayCard extends StatelessWidget {
     final address = contract.houseAddress?.trim().isNotEmpty == true
         ? contract.houseAddress!
         : 'Address unavailable';
-    final period =
-        '${contract.startDate ?? '-'} ~ ${contract.endDate ?? '-'}';
+    final period = '${contract.startDate ?? '-'} ~ ${contract.endDate ?? '-'}';
     final isLandlord = contract.isLandlord(myMemberId);
-    final roleLabel = isLandlord ? 'You are the Landlord' : 'You are the Tenant';
-    final counterparty =
-        isLandlord ? contract.tenantName : contract.landlordName;
+    final roleLabel = isLandlord
+        ? 'You are the Landlord'
+        : 'You are the Tenant';
+    final counterparty = isLandlord
+        ? contract.tenantName
+        : contract.landlordName;
 
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -135,12 +138,14 @@ class CurrentStayCard extends StatelessWidget {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: _statusColor(contract.status)
-                                  .withOpacity(0.1),
+                              color: _statusColor(
+                                contract.status,
+                              ).withOpacity(0.1),
                               borderRadius: BorderRadius.circular(50),
                               border: Border.all(
-                                color: _statusColor(contract.status)
-                                    .withOpacity(0.5),
+                                color: _statusColor(
+                                  contract.status,
+                                ).withOpacity(0.5),
                                 width: 0.5,
                               ),
                             ),
@@ -169,10 +174,7 @@ class CurrentStayCard extends StatelessWidget {
                             address,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: grey04,
-                            ),
+                            style: const TextStyle(fontSize: 11, color: grey04),
                           ),
                         ],
                       ),
@@ -181,32 +183,32 @@ class CurrentStayCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 13,
+                    vertical: 15,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF7F7F4),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(18),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _kv('Role', roleLabel),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 8),
                       _kv(isLandlord ? 'Tenant' : 'Landlord', counterparty),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 8),
                       _kv('Period', period),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 8),
                       _kv('Monthly', _formatAud(contract.monthlyRent)),
                     ],
                   ),
                 ),
-                if (!isLandlord &&
-                    contract.isActive &&
-                    onLeave != null) ...[
+                if (!isLandlord && contract.isActive && onLeave != null) ...[
                   const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
-                    height: 42,
+                    height: 46,
                     child: OutlinedButton.icon(
                       onPressed: onLeave,
                       style: OutlinedButton.styleFrom(
@@ -245,7 +247,7 @@ class CurrentStayCard extends StatelessWidget {
             key,
             style: const TextStyle(
               fontSize: 11,
-              color: grey04,
+              color: grey03,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -254,7 +256,7 @@ class CurrentStayCard extends StatelessWidget {
           child: Text(
             value,
             style: const TextStyle(
-              fontSize: 12,
+              fontSize: 11,
               color: dark,
               fontWeight: FontWeight.w600,
             ),

@@ -168,7 +168,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
                                   (user?.location ?? 'Location'),
                                   style: const TextStyle(
                                     color: grey04,
-                                    fontSize: 13,
+                                    fontSize: 11,
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
@@ -178,7 +178,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
                             Text(
                               'Welcome, ${user?.name ?? ''}!',
                               style: const TextStyle(
-                                fontSize: 18,
+                                fontSize: 16,
                                 fontWeight: FontWeight.w800,
                                 color: dark,
                               ),
@@ -214,7 +214,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
                       Text(
                         'Explore Your Place to Stay,',
                         style: TextStyle(
-                          fontSize: 23,
+                          fontSize: 20,
                           fontWeight: FontWeight.w800,
                           color: dark,
                         ),
@@ -223,7 +223,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
                       Text(
                         'Built on Trust.',
                         style: TextStyle(
-                          fontSize: 23,
+                          fontSize: 20,
                           fontWeight: FontWeight.w800,
                           color: dark,
                         ),
@@ -294,7 +294,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
                       Text(
                         'Popular listings',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 16,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -302,8 +302,8 @@ class _HomePageState extends State<HomePage> with RouteAware {
                         'See all',
                         style: TextStyle(
                           color: green,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
                     ],
@@ -366,7 +366,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
                       Text(
                         'Personalized',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 16,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -374,8 +374,8 @@ class _HomePageState extends State<HomePage> with RouteAware {
                         'See all',
                         style: TextStyle(
                           color: green,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
                     ],
@@ -421,12 +421,12 @@ class _HomePageState extends State<HomePage> with RouteAware {
                     crossAxisCount: 2,
                     mainAxisSpacing: 9,
                     crossAxisSpacing: 11,
-                    childAspectRatio: 0.65,
+                    childAspectRatio: 0.69,
                   ),
                 ),
               ),
 
-              const SliverToBoxAdapter(child: SizedBox(height: 72)),
+              const SliverToBoxAdapter(child: SizedBox(height: 110)),
             ],
           ),
         ),
@@ -480,4 +480,3 @@ class _HomePageState extends State<HomePage> with RouteAware {
     );
   }
 }
-

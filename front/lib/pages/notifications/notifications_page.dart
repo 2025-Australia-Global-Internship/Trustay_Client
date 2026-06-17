@@ -266,7 +266,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
               center: const Text(
                 'Notifications',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 17,
                   fontWeight: FontWeight.w800,
                   color: dark,
                 ),
@@ -432,9 +432,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
           borderRadius: BorderRadius.circular(16),
           onTap: () => _onTapItem(n),
           child: Container(
-            padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(18),
               border: Border.all(
                 color: n.isRead ? grey01.withOpacity(0.6) : yellow,
                 width: 1,
@@ -457,7 +457,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                   ? _defaultTitleFor(n.type)
                                   : n.title,
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: 13,
                                 fontWeight: n.isRead
                                     ? FontWeight.w700
                                     : FontWeight.w800,
@@ -484,10 +484,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         Text(
                           n.body!,
                           style: const TextStyle(
-                            fontSize: 12,
+                            fontSize: 11,
                             color: grey04,
                             height: 1.4,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w700,
                           ),
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
@@ -497,8 +497,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       Text(
                         _timeAgo(n.regTime),
                         style: const TextStyle(
-                          fontSize: 11,
-                          color: grey03,
+                          fontSize: 10,
+                          color: grey02,
                           fontWeight: FontWeight.w700,
                         ),
                       ),

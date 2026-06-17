@@ -264,7 +264,7 @@ class _NoticeDetailPageState extends State<NoticeDetailPage> {
               color: dark,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 25),
           if (_comments.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 24),
@@ -328,7 +328,7 @@ class _NoticeDetailPageState extends State<NoticeDetailPage> {
         Text(
           post.content,
           style: const TextStyle(
-            fontSize: 14,
+            fontSize: 13,
             height: 1.5,
             color: dark,
             fontWeight: FontWeight.w700,
@@ -357,15 +357,15 @@ class _NoticeDetailPageState extends State<NoticeDetailPage> {
           children: [
             SvgPicture.asset(
               'assets/icons/calendar.svg',
-              width: 15,
-              height: 15,
+              width: 14,
+              height: 14,
               color: grey03,
             ),
             const SizedBox(width: 6),
             Text(
               _fmtDate(post.regTime),
               style: const TextStyle(
-                fontSize: 12,
+                fontSize: 11,
                 color: grey03,
                 fontWeight: FontWeight.w700,
               ),
@@ -376,7 +376,7 @@ class _NoticeDetailPageState extends State<NoticeDetailPage> {
             Text(
               _timeAgo(post.regTime),
               style: const TextStyle(
-                fontSize: 12,
+                fontSize: 11,
                 color: grey03,
                 fontWeight: FontWeight.w700,
               ),
@@ -402,7 +402,7 @@ class _NoticeDetailPageState extends State<NoticeDetailPage> {
           Row(
             children: [
               CircleAvatar(
-                radius: 17,
+                radius: 16,
                 backgroundColor: Colors.grey[300],
                 backgroundImage: hasAvatar
                     ? NetworkImage(c.authorProfileImageUrl!) as ImageProvider
@@ -419,7 +419,7 @@ class _NoticeDetailPageState extends State<NoticeDetailPage> {
                         Text(
                           c.authorName.isEmpty ? 'User' : c.authorName,
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 13,
                             fontWeight: FontWeight.w800,
                             color: c.isDeleted ? grey03 : dark,
                           ),
@@ -445,7 +445,7 @@ class _NoticeDetailPageState extends State<NoticeDetailPage> {
                         Text(
                           _fmtDate(c.regTime),
                           style: const TextStyle(
-                            fontSize: 12,
+                            fontSize: 11,
                             color: grey03,
                             fontWeight: FontWeight.w600,
                           ),
@@ -480,7 +480,7 @@ class _NoticeDetailPageState extends State<NoticeDetailPage> {
           Text(
             c.content,
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 13,
               height: 1.4,
               color: c.isDeleted ? grey03 : dark,
               fontStyle: c.isDeleted ? FontStyle.italic : FontStyle.normal,
@@ -496,7 +496,7 @@ class _NoticeDetailPageState extends State<NoticeDetailPage> {
     return Container(
       color: Colors.transparent, // 배경을 투명하게 하여 메시지 창과 동일한 레이어감 유지
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 20),
         child: SafeArea(
           top: false,
           child: Container(

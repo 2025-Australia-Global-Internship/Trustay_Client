@@ -92,9 +92,8 @@ class _SplitBillsPageState extends State<SplitBillsPage> {
   /// - "내가 지불한" 더치페이만 포함 (OUT, CONFIRMED).
   ///   - PENDING 은 아직 결제 전이라 합산하면 사용자 입장에서 잘못된 금액이 노출됨.
   ///   - IN 은 내가 받은 돈이라 "이번 달 사용 금액"엔 들어가면 안 됨.
-  Iterable<PaymentHistoryItem> get _confirmedOutgoing => _dutchHistory.where(
-        (p) => !p.isIncoming && p.status == 'CONFIRMED',
-      );
+  Iterable<PaymentHistoryItem> get _confirmedOutgoing =>
+      _dutchHistory.where((p) => !p.isIncoming && p.status == 'CONFIRMED');
 
   /// 올해(현재 연도) 월별 합계(달러). 1=Jan ... 12=Dec.
   Map<int, double> _monthlyTotalsThisYear() {
@@ -154,7 +153,7 @@ class _SplitBillsPageState extends State<SplitBillsPage> {
               center: Text(
                 'Split Bills',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: 17,
                   fontWeight: FontWeight.w800,
                   color: dark,
                 ),
@@ -226,7 +225,7 @@ class _SplitBillsPageState extends State<SplitBillsPage> {
           const Text(
             'Total Split Bill This Month',
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 12,
               fontWeight: FontWeight.w700,
               color: dark,
             ),
@@ -309,12 +308,13 @@ class _SplitBillsPageState extends State<SplitBillsPage> {
             const double monthTextHeight = 16;
             // 막대 영역 = 전체 높이 - 말풍선/간격/월 라벨.
             // 외부 SizedBox 높이가 바뀌어도 자동으로 들어맞는다.
-            final double barAreaHeight = (constraints.maxHeight -
-                    labelHeight -
-                    topGap -
-                    bottomGap -
-                    monthTextHeight)
-                .clamp(0.0, double.infinity);
+            final double barAreaHeight =
+                (constraints.maxHeight -
+                        labelHeight -
+                        topGap -
+                        bottomGap -
+                        monthTextHeight)
+                    .clamp(0.0, double.infinity);
 
             return Row(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -455,7 +455,7 @@ class _SplitBillsPageState extends State<SplitBillsPage> {
               const Text(
                 'Split Bill History',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: FontWeight.w800,
                   color: dark,
                 ),
@@ -520,7 +520,7 @@ class _SplitBillsPageState extends State<SplitBillsPage> {
             height: 38,
             alignment: Alignment.center,
             decoration: const BoxDecoration(
-              color: darkgreen,
+              color: green,
               shape: BoxShape.circle,
             ),
             child: Text(
@@ -573,6 +573,7 @@ class _SplitBillsPageState extends State<SplitBillsPage> {
                   height: 1.1,
                 ),
               ),
+              const SizedBox(height: 4),
               Text(
                 _fmtKrw(p.amount),
                 style: const TextStyle(

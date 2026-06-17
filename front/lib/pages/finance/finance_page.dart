@@ -453,7 +453,7 @@ class _FinancePageState extends State<FinancePage> {
                     child: const Text(
                       'House Finances',
                       style: TextStyle(
-                        fontSize: 21,
+                        fontSize: 18,
                         fontWeight: FontWeight.w800,
                         color: Color(0xFF1A1A1A),
                       ),
@@ -639,7 +639,7 @@ class _FinancePageState extends State<FinancePage> {
                 child: const Text(
                   'Calendar',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 18,
                     fontWeight: FontWeight.w800,
                     color: dark,
                   ),
@@ -908,7 +908,7 @@ class _FinancePageState extends State<FinancePage> {
                 child: Text(
                   _filters[i],
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: FontWeight.w700,
                     color: dark,
                   ),
@@ -964,19 +964,28 @@ class _FinancePageState extends State<FinancePage> {
 
   Widget _buildTransactionRow(TransactionItem item) {
     final isRent = item.paymentType == 'RENT';
+
     final String leadingIcon = isRent
         ? 'assets/icons/coin-fill.svg'
         : 'assets/icons/wallet.svg';
+
     final Color amountColor = item.isIncoming ? darkgreen : dark;
+
     final String sign = item.amount >= 0 ? '' : '- ';
     final int absKrw = item.amount.abs().toInt();
-    // 큰 글씨로는 호주달러, 작은 글씨로는 실제 결제 통화인 원화를 병기한다.
-    final String moneyText = '$sign${_fmtAud(absKrw)}';
-    final String moneyKrwText = '$sign${formatKrw(absKrw)}';
 
-    final tile = ListTile(
+    final String moneyText = '$sign${_fmtAud(absKrw)}';
+
+    final Color? statusColor = item.isPayable
+        ? green
+        : item.isAwaiting
+        ? yellow
+        : null;
+
+    return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
       onTap: item.isPayable ? () => _payPending(item.pending!) : null,
+
       leading: Container(
         width: 42,
         height: 42,
@@ -990,6 +999,7 @@ class _FinancePageState extends State<FinancePage> {
           color: yellow,
         ),
       ),
+
       title: Text(
         item.title,
         style: const TextStyle(
@@ -998,82 +1008,50 @@ class _FinancePageState extends State<FinancePage> {
           color: dark,
         ),
       ),
+
       subtitle: Text(
         item.subtitle,
         style: const TextStyle(
-          fontSize: 10.5,
+          fontSize: 11,
           color: grey03,
           fontWeight: FontWeight.w700,
         ),
       ),
+
       trailing: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Text(
-            moneyText,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w800,
-              color: amountColor,
-              height: 1.1,
-            ),
-          ),
-          Text(
-            moneyKrwText,
-            style: const TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: grey03,
-              height: 1.1,
-            ),
-          ),
-          const SizedBox(height: 4),
-          if (item.isPayable)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: yellow,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Text(
-                'Pay',
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                moneyText,
                 style: TextStyle(
-                  fontSize: 9.5,
+                  fontSize: 14,
                   fontWeight: FontWeight.w800,
-                  color: dark,
+                  color: amountColor,
+                  height: 1.1,
                 ),
               ),
-            )
-          else if (item.isAwaiting)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE6F4EA),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Text(
-                'Awaiting',
-                style: TextStyle(
-                  fontSize: 9.5,
-                  fontWeight: FontWeight.w800,
-                  color: darkgreen,
+
+              if (statusColor != null) ...[
+                const SizedBox(width: 10),
+                Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: statusColor,
+                    shape: BoxShape.circle,
+                  ),
                 ),
-              ),
-            )
-          else
-            Text(
-              item.date,
-              style: const TextStyle(
-                fontSize: 9.5,
-                color: grey03,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+              ],
+            ],
+          ),
         ],
       ),
+
       dense: true,
     );
-    return tile;
   }
 }

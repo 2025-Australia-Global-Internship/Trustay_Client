@@ -59,7 +59,7 @@ class _SavedListingsPageState extends State<SavedListingsPage> {
               center: const Text(
                 'Saved',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: 17,
                   fontWeight: FontWeight.w800,
                   color: dark,
                 ),
@@ -133,7 +133,7 @@ class _SavedListingsPageState extends State<SavedListingsPage> {
         crossAxisCount: 2,
         mainAxisSpacing: 9,
         crossAxisSpacing: 11,
-        childAspectRatio: 0.65, // 카드의 가로세로 비율
+        childAspectRatio: 0.69, // 카드의 가로세로 비율
       ),
       itemBuilder: (context, index) {
         final item = _wishlist[index];

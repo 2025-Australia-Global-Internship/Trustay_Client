@@ -119,7 +119,7 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
               center: const Text(
                 'My Reviews',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: 17,
                   fontWeight: FontWeight.w800,
                   color: dark,
                 ),

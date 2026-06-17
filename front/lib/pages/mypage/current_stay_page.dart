@@ -150,7 +150,7 @@ class _CurrentStayPageState extends State<CurrentStayPage> {
               center: const Text(
                 'Current Stay',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: 17,
                   fontWeight: FontWeight.w800,
                   color: dark,
                 ),

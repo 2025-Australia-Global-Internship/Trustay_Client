@@ -171,7 +171,7 @@ class _PersonalDetailsPage extends State<PersonalDetailsPage> {
                 'Personal Details',
                 style: TextStyle(
                   color: dark,
-                  fontSize: 18,
+                  fontSize: 17,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -180,9 +180,7 @@ class _PersonalDetailsPage extends State<PersonalDetailsPage> {
 
             Expanded(
               child: _isLoading
-                  ? const Center(
-                      child: CircularProgressIndicator(color: green),
-                    )
+                  ? const Center(child: CircularProgressIndicator(color: green))
                   : Form(
                       key: _formKey,
                       child: Padding(
@@ -242,9 +240,9 @@ class _PersonalDetailsPage extends State<PersonalDetailsPage> {
                                       // 기존 입력값이 있으면 그걸 초기값으로
                                       DateTime selectedDate =
                                           _parseDisplayDate(
-                                                _dateController.text,
-                                              ) ??
-                                              DateTime(2000);
+                                            _dateController.text,
+                                          ) ??
+                                          DateTime(2000);
                                       await showModalBottomSheet(
                                         context: context,
                                         backgroundColor: Colors.transparent,

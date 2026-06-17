@@ -68,8 +68,10 @@ class _ContractSignPageState extends State<ContractSignPage> {
   }
 
   Future<void> _openPdf(String url) async {
-    if (!await launchUrl(Uri.parse(url),
-        mode: LaunchMode.externalApplication)) {
+    if (!await launchUrl(
+      Uri.parse(url),
+      mode: LaunchMode.externalApplication,
+    )) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Couldn't open the PDF externally.")),
@@ -97,17 +99,19 @@ class _ContractSignPageState extends State<ContractSignPage> {
       setState(() => _contract = updated);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(updated.isActive
-              ? 'Signed! The contract is now active.'
-              : 'Your signature has been recorded.'),
+          content: Text(
+            updated.isActive
+                ? 'Signed! The contract is now active.'
+                : 'Your signature has been recorded.',
+          ),
         ),
       );
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to sign: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to sign: $e')));
     } finally {
       if (mounted) setState(() => _signing = false);
     }
@@ -142,14 +146,13 @@ class _ContractSignPageState extends State<ContractSignPage> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Text(_error!,
-                        style: const TextStyle(color: grey03)),
-                  ),
-                )
-              : _buildBody(),
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(_error!, style: const TextStyle(color: grey03)),
+              ),
+            )
+          : _buildBody(),
     );
   }
 
@@ -170,7 +173,10 @@ class _ContractSignPageState extends State<ContractSignPage> {
             child: Text(
               c.houseTitle ?? '-',
               style: const TextStyle(
-                  fontSize: 14, fontWeight: FontWeight.w800, color: dark),
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                color: dark,
+              ),
             ),
           ),
 
@@ -189,11 +195,15 @@ class _ContractSignPageState extends State<ContractSignPage> {
             title: 'Terms',
             child: Column(
               children: [
-                _rowKV('Deposit',
-                    c.deposit == null ? '-' : '${_money(c.deposit!)} AUD'),
+                _rowKV(
+                  'Deposit',
+                  c.deposit == null ? '-' : '${_money(c.deposit!)} AUD',
+                ),
                 const SizedBox(height: 6),
-                _rowKV('Monthly',
-                    c.monthlyRent == null ? '-' : '${_money(c.monthlyRent!)} AUD'),
+                _rowKV(
+                  'Monthly',
+                  c.monthlyRent == null ? '-' : '${_money(c.monthlyRent!)} AUD',
+                ),
                 const SizedBox(height: 6),
                 _rowKV('Period', '${c.startDate ?? '-'} ~ ${c.endDate ?? '-'}'),
               ],
@@ -206,9 +216,9 @@ class _ContractSignPageState extends State<ContractSignPage> {
               style: OutlinedButton.styleFrom(
                 foregroundColor: darkgreen,
                 side: const BorderSide(color: darkgreen),
-                minimumSize: const Size.fromHeight(46),
+                minimumSize: const Size.fromHeight(52),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(18),
                 ),
               ),
               onPressed: () => _openPdf(c.paperContractPdfUrl!),
@@ -274,9 +284,10 @@ class _ContractSignPageState extends State<ContractSignPage> {
                       label: const Text(
                         'Clear',
                         style: TextStyle(
-                            color: grey04,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700),
+                          color: grey04,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ),
@@ -288,9 +299,9 @@ class _ContractSignPageState extends State<ContractSignPage> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: green,
                 foregroundColor: Colors.white,
-                minimumSize: const Size.fromHeight(54),
+                minimumSize: const Size.fromHeight(52),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(26),
                 ),
               ),
               onPressed: _signing ? null : _sign,
@@ -299,12 +310,16 @@ class _ContractSignPageState extends State<ContractSignPage> {
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(
-                          color: Colors.white, strokeWidth: 2),
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
                     )
                   : const Text(
                       'Agree and sign',
                       style: TextStyle(
-                          fontSize: 14, fontWeight: FontWeight.w800),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
             ),
             const SizedBox(height: 10),
@@ -328,7 +343,10 @@ class _ContractSignPageState extends State<ContractSignPage> {
                     ? 'Both parties have signed. This contract is now active.'
                     : 'Your signature is already recorded. Waiting for the other party.',
                 style: const TextStyle(
-                    fontSize: 12, color: grey04, fontWeight: FontWeight.w700),
+                  fontSize: 12,
+                  color: grey04,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ],
@@ -360,7 +378,7 @@ class _ContractSignPageState extends State<ContractSignPage> {
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: color.withOpacity(0.15),
           borderRadius: BorderRadius.circular(20),
@@ -369,7 +387,7 @@ class _ContractSignPageState extends State<ContractSignPage> {
           label,
           style: TextStyle(
             color: color,
-            fontSize: 11,
+            fontSize: 12,
             fontWeight: FontWeight.w800,
           ),
         ),
@@ -380,10 +398,10 @@ class _ContractSignPageState extends State<ContractSignPage> {
   Widget _card({required String title, required Widget child}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      padding: const EdgeInsets.fromLTRB(15, 15, 15, 17),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -391,9 +409,9 @@ class _ContractSignPageState extends State<ContractSignPage> {
           Text(
             title,
             style: const TextStyle(
-              fontSize: 12,
+              fontSize: 13,
               fontWeight: FontWeight.w800,
-              color: darkgreen,
+              color: dark,
             ),
           ),
           const SizedBox(height: 8),
@@ -411,14 +429,20 @@ class _ContractSignPageState extends State<ContractSignPage> {
           child: Text(
             k,
             style: const TextStyle(
-                fontSize: 12, color: grey04, fontWeight: FontWeight.w700),
+              fontSize: 12,
+              color: grey03,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
         Expanded(
           child: Text(
             v,
             style: const TextStyle(
-                fontSize: 13, color: dark, fontWeight: FontWeight.w700),
+              fontSize: 13,
+              color: dark,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ],
@@ -462,7 +486,10 @@ class _ContractSignPageState extends State<ContractSignPage> {
               Text(
                 label,
                 style: const TextStyle(
-                    fontSize: 13, color: dark, fontWeight: FontWeight.w800),
+                  fontSize: 13,
+                  color: dark,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               const SizedBox(height: 2),
               Text(

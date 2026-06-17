@@ -619,7 +619,9 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
         if (_myContractRole != 'LANDLORD') {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Only the host of this listing can send a contract.'),
+              content: Text(
+                'Only the host of this listing can send a contract.',
+              ),
             ),
           );
           break;
@@ -695,14 +697,14 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     try {
       await ContractService.requestContract(roomId: widget.roomId);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Contract request sent.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Contract request sent.')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to request: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to request: $e')));
     }
   }
 
@@ -958,8 +960,8 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       subtitle: msg.message.isNotEmpty
           ? msg.message
           : (isMe
-              ? "You've asked the host for a contract."
-              : 'The tenant is asking you to share a contract.'),
+                ? "You've asked the host for a contract."
+                : 'The tenant is asking you to share a contract.'),
       ctaLabel: isHost ? 'Send contract' : 'Awaiting host…',
     );
   }
@@ -1457,7 +1459,7 @@ class _ContractCardBase extends StatelessWidget {
                     child: Text(
                       title,
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: FontWeight.w800,
                         color: dark,
                       ),
@@ -1469,9 +1471,9 @@ class _ContractCardBase extends StatelessWidget {
               Text(
                 subtitle,
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontSize: 11,
                   height: 1.45,
-                  color: grey04,
+                  color: grey03,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -1483,7 +1485,7 @@ class _ContractCardBase extends StatelessWidget {
                     ctaLabel,
                     style: TextStyle(
                       color: accent,
-                      fontSize: 12,
+                      fontSize: 11,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
