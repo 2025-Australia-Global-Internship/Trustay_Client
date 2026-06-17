@@ -101,6 +101,10 @@ class _IndexPageState extends State<IndexPage> {
     return Scaffold(
       // 1. extendBody를 true로 설정해서 body가 바텀바 영역까지 확장되게 함
       extendBody: true,
+      // 키보드가 뜰 때 Stack 높이가 줄어들면서 bottom:0 네비바가 키보드 위로
+      // 따라 올라가는 것을 방지 — 네비바는 항상 화면 맨 아래에 고정시키고,
+      // 키보드가 그 위를 덮어 자연스럽게 가려지도록 한다.
+      resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
           // 페이지들
@@ -111,10 +115,7 @@ class _IndexPageState extends State<IndexPage> {
             left: 0,
             right: 0,
             bottom: 0,
-            child: BottomNavbar(
-              currentIndex: _currentIndex,
-              onTap: _setTab,
-            ),
+            child: BottomNavbar(currentIndex: _currentIndex, onTap: _setTab),
           ),
         ],
       ),

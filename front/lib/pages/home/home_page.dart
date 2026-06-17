@@ -316,7 +316,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
               // Popular horizontal list (수정됨: 클릭 시 상세페이지 이동)
               SliverToBoxAdapter(
                 child: SizedBox(
-                  height: 270,
+                  height: 260,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     clipBehavior: Clip.none,

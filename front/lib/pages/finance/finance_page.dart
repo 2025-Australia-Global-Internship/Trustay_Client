@@ -542,11 +542,11 @@ class _FinancePageState extends State<FinancePage> {
                                 height: 48,
                                 color: grey01,
                               ),
-                              const SizedBox(height: 10),
+                              const SizedBox(height: 13),
                               const Text(
                                 'No transactions yet',
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: 13,
                                   color: grey03,
                                   fontWeight: FontWeight.w400,
                                 ),
@@ -555,7 +555,7 @@ class _FinancePageState extends State<FinancePage> {
                               const Text(
                                 'Create a split bill to get started.',
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: 13,
                                   color: grey03,
                                   fontWeight: FontWeight.w400,
                                 ),

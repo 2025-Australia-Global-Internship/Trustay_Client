@@ -151,7 +151,7 @@ class HouseCard extends StatelessWidget {
                   ],
                 ),
 
-                SizedBox(height: isGrid ? 14 : 19),
+                const SizedBox(height: 14),
 
                 // 아이콘 영역 (서버 모델 필드명에 맞게 수정)
                 Wrap(
@@ -193,11 +193,11 @@ Widget _iconChip({
 }) {
   return Container(
     padding: EdgeInsets.symmetric(
-      horizontal: isGrid ? 9 : 14,
+      horizontal: isGrid ? 9 : 12,
       vertical: isGrid ? 7 : 8,
     ),
     decoration: BoxDecoration(
-      border: Border.all(color: grey01, width: 1.2),
+      border: Border.all(color: grey01, width: 1.1),
       borderRadius: BorderRadius.circular(isGrid ? 16 : 20),
     ),
     child: Row(
@@ -205,11 +205,11 @@ Widget _iconChip({
       children: [
         SvgPicture.asset(
           svg,
-          width: isGrid ? 13 : 18,
-          height: isGrid ? 13 : 18,
+          width: isGrid ? 13 : 17,
+          height: isGrid ? 13 : 17,
           colorFilter: const ColorFilter.mode(dark, BlendMode.srcIn),
         ),
-        SizedBox(width: isGrid ? 6 : 10),
+        SizedBox(width: isGrid ? 6 : 8),
         Text(
           text,
           style: TextStyle(

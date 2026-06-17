@@ -241,9 +241,10 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
                       Text(
                         _house!.description,
                         style: const TextStyle(
-                          fontSize: 15,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
                           color: dark,
-                          height: 1.5,
+                          height: 1.7,
                         ),
                       ),
                       const SizedBox(height: 35),
@@ -394,7 +395,7 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
         Expanded(
           child: Text(
             house.title,
-            style: const TextStyle(fontSize: 23, fontWeight: FontWeight.w800),
+            style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800),
             maxLines: 2, // 원하면 줄 수 제한
             overflow: TextOverflow.ellipsis, // 길면 ... 처리
           ),
@@ -428,7 +429,7 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
 
   Widget _buildFeatureIcons(SharehouseDetailModel house) {
     return SizedBox(
-      height: 120,
+      height: 110,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         clipBehavior: Clip.none,
@@ -526,7 +527,7 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
                 house.address!,
                 style: const TextStyle(
                   height: 1.4,
-                  fontSize: 15,
+                  fontSize: 14,
                   fontWeight: FontWeight.w700,
                   color: dark,
                   decoration: TextDecoration.underline,
@@ -546,7 +547,7 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
             ),
           ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 7),
         Container(
           height: 160,
           decoration: BoxDecoration(
@@ -702,6 +703,17 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
             ),
           ],
         ),
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            Expanded(
+              child: _buildDetailItem(
+                'DietaryPreference',
+                house.dietaryPreference != '' ? house.dietaryPreference : 'Any',
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -713,7 +725,7 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
         Text(
           label,
           style: const TextStyle(
-            fontSize: 15,
+            fontSize: 14,
             fontWeight: FontWeight.w700,
             color: dark,
           ),
@@ -767,7 +779,7 @@ class _SharehouseDetailPageState extends State<SharehouseDetailPage> {
         Text(
           title,
           style: const TextStyle(
-            fontSize: 16,
+            fontSize: 14,
             fontWeight: FontWeight.w700,
             color: dark,
           ),
