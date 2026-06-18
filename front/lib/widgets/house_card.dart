@@ -100,7 +100,7 @@ class HouseCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontSize: isGrid ? 13 : 16,
+                          fontSize: isGrid ? 13 : 15,
                           fontWeight: FontWeight.w800,
                           color: dark,
                           height: 1.2,
@@ -111,7 +111,7 @@ class HouseCard extends StatelessWidget {
                     Text(
                       '\$${house.rentPrice}', // .price 대신 .rentPrice
                       style: TextStyle(
-                        fontSize: isGrid ? 12 : 13,
+                        fontSize: isGrid ? 12 : 14,
                         fontWeight: FontWeight.w800,
                         color: dark,
                         height: 1.2,
@@ -209,11 +209,11 @@ Widget _iconChip({
           height: isGrid ? 13 : 17,
           colorFilter: const ColorFilter.mode(dark, BlendMode.srcIn),
         ),
-        SizedBox(width: isGrid ? 6 : 8),
+        SizedBox(width: isGrid ? 5 : 8),
         Text(
           text,
           style: TextStyle(
-            fontSize: isGrid ? 11 : 13,
+            fontSize: isGrid ? 10 : 12,
             fontWeight: FontWeight.w700,
             color: dark,
             height: 1,
